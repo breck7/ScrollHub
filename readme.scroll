@@ -1,0 +1,8 @@
+# Sand.Scroll.Pub
+
+This repo powers the sand.scroll.pub server, where anyone in the world can instantly launch a new (ephemeral) website powered by Scroll.
+
+The purpose of this site is meant to allow people to try and learn Scroll without installing anything on their machine.
+
+The server is erased every hour.
+

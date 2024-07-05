@@ -1,8 +1,18 @@
-description My thoughts about life and the world.
-title My Blog
+import settings.scroll
+metaTags
+gazetteCss
+title Try Scroll
 
-import header.scroll
-printTitle
-printSnippets All
+<link rel="stylesheet" type="text/css" href="style.css" />
 
+
+# Scroll is a language and static site generator for scientists of all ages.
+ https://scroll.pub Scroll
+ underline Scroll
+
+<form method="post" action="create">
+<input type="text" name="folder" placeholder="Folder name"><button>Create site</button>
+</form>
+
+viewSource
 import footer.scroll
