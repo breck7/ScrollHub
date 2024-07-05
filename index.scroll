@@ -1,7 +1,7 @@
 import settings.scroll
 metaTags
 gazetteCss
-title Try Scroll
+title Launch a new website in 1 second using Scroll
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
