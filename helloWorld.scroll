@@ -1,0 +1,13 @@
+date 07/05/2024
+groups All
+title Hello world
+
+import header.scroll
+printTitle
+
+thinColumns 1
+
+This is my first blog post using Scroll.
+
+endColumns
+import footer.scroll

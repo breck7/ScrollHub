@@ -1,0 +1,8 @@
+description My thoughts about life and the world.
+title My Blog
+
+import header.scroll
+printTitle
+printSnippets All
+
+import footer.scroll
