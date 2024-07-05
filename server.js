@@ -71,114 +71,33 @@ const createLimiter = rateLimit({
 	max: 1, // limit each IP to 1 request per windowMs
 	message: "Sorry, you exceeded 1 site every 5 seconds",
 	standardHeaders: true,
-	legacyHeaders: false,
+	legacyHeaders: false
 })
 
 // Sanitize folder name
-function sanitizeFolderName(name) {
-	return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
-}
+const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 
 // Validate folder name
-function isValidFolderName(name) {
-	return /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
-}
+const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
 
-app.get("/createFromForm", (req, res) => {
-	const { folderName } = req.query
-	res.redirect(`/create/${folderName}`)
-})
+app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
 
-app.get("/create/:folderName", createLimiter, (req, res) => {
+app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(__dirname, "sites", folderName)
 
-	if (!isValidFolderName(folderName)) {
-		return res
-			.status(400)
-			.send(
-				"Sorry, your folder name did not meet our requirements (sorry!). It should start with a letter a-z and pass a few other checks.",
-			)
-	}
+	if (!isValidFolderName(folderName)) return res.status(400).send("Sorry, your folder name did not meet our requirements (sorry!). It should start with a letter a-z and pass a few other checks.")
 
-	if (fs.existsSync(folderPath)) {
-		return res
-			.status(400)
-			.send("Sorry a folder with that name already exists")
-	}
+	if (fs.existsSync(folderPath)) return res.status(400).send("Sorry a folder with that name already exists")
 
 	try {
 		fs.mkdirSync(folderPath, { recursive: true })
 		execSync("scroll init", { cwd: folderPath })
 		execSync("scroll build", { cwd: folderPath })
-		res.redirect(
-			`/edit.html?folderName=${folderName}&fileName=helloWorld.scroll`,
-		)
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=helloWorld.scroll`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while creating the site")
-	}
-})
-
-app.get("/build/:folderName", (req, res) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
-
-	if (!fs.existsSync(folderPath)) {
-		return res.status(404).send("Folder not found")
-	}
-
-	try {
-		const output = execSync("scroll build", { cwd: folderPath })
-		res.send(output.toString())
-	} catch (error) {
-		console.error(error)
-		res.status(500).send("An error occurred while building the site")
-	}
-})
-
-app.get("/edit/:folderName", (req, res) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
-
-	if (!fs.existsSync(folderPath)) {
-		return res.status(404).send("Folder not found")
-	}
-
-	res.send(`Editing ${folderName}`)
-})
-
-app.get("/format/:folderName", (req, res) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
-
-	if (!fs.existsSync(folderPath)) {
-		return res.status(404).send("Folder not found")
-	}
-
-	try {
-		const output = execSync("scroll format", { cwd: folderPath })
-		res.send(output.toString())
-	} catch (error) {
-		console.error(error)
-		res.status(500).send("An error occurred while formatting the site")
-	}
-})
-
-app.get("/test/:folderName", (req, res) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
-
-	if (!fs.existsSync(folderPath)) {
-		return res.status(404).send("Folder not found")
-	}
-
-	try {
-		const output = execSync("scroll test", { cwd: folderPath })
-		res.send(output.toString())
-	} catch (error) {
-		console.error(error)
-		res.status(500).send("An error occurred while testing the site")
 	}
 })
 
@@ -193,33 +112,40 @@ app.get("/ls/:folderName", (req, res) => {
 	try {
 		const output = execSync("ls *.scroll", { cwd: folderPath }).toString()
 		// Split the output into lines and filter out any empty lines
-		const files = output.split("\n").filter((file) => file.trim() !== "")
+		const files = output.split("\n").filter(file => file.trim() !== "")
 		res.setHeader("Content-Type", "text/plain")
 		res.send(files.join("\n"))
 	} catch (error) {
 		console.error(error)
-		res.status(500).send(
-			"An error occurred while listing the .scroll files",
-		)
+		res.status(500).send("An error occurred while listing the .scroll files")
 	}
 })
 
+const runCommand = (req, res, command) => {
+	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
+
+	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
+
+	try {
+		const output = execSync(`scroll ${command}`, { cwd: folderPath })
+		res.send(output.toString())
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(`An error occurred while running '${command}' in '${folderName}'`)
+	}
+}
+
+app.get("/build/:folderName", (req, res) => runCommand(req, res, "build"))
+app.get("/format/:folderName", (req, res) => runCommand(req, res, "format"))
+app.get("/test/:folderName", (req, res) => runCommand(req, res, "test"))
+
 app.get("/read/:filePath(*)", (req, res) => {
-	const filePath = path.join(
-		__dirname,
-		"sites",
-		decodeURIComponent(req.params.filePath),
-	)
+	const filePath = path.join(__dirname, "sites", decodeURIComponent(req.params.filePath))
 
-	if (!filePath.endsWith(".scroll")) {
-		return res
-			.status(400)
-			.send("Invalid file type. Only .scroll files are allowed.")
-	}
+	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
-	if (!fs.existsSync(filePath)) {
-		return res.status(404).send("File not found")
-	}
+	if (!fs.existsSync(filePath)) return res.status(404).send("File not found")
 
 	try {
 		const content = fs.readFileSync(filePath, "utf8")
@@ -232,23 +158,13 @@ app.get("/read/:filePath(*)", (req, res) => {
 })
 
 app.get("/write", (req, res) => {
-	const filePath = path.join(
-		__dirname,
-		"sites",
-		decodeURIComponent(req.query.filePath),
-	)
+	const filePath = path.join(__dirname, "sites", decodeURIComponent(req.query.filePath))
 	const content = decodeURIComponent(req.query.content)
 
-	if (!filePath.endsWith(".scroll")) {
-		return res
-			.status(400)
-			.send("Invalid file type. Only .scroll files are allowed.")
-	}
+	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
 	const folderPath = path.dirname(filePath)
-	if (!fs.existsSync(folderPath)) {
-		return res.status(400).send("Folder does not exist")
-	}
+	if (!fs.existsSync(folderPath)) return res.status(400).send("Folder does not exist")
 
 	// Extract folder name and file name for the redirect
 	const folderName = path.relative(path.join(__dirname, "sites"), folderPath)
@@ -263,12 +179,8 @@ app.get("/write", (req, res) => {
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
 		console.error(error)
-		res.status(500).send(
-			"An error occurred while writing the file or rebuilding the site",
-		)
+		res.status(500).send("An error occurred while writing the file or rebuilding the site")
 	}
 })
 
-app.listen(port, () => {
-	console.log(`Server running at http://localhost:${port}`)
-})
+app.listen(port, () => console.log(`Server running at http://localhost:${port}`))

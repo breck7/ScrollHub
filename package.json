@@ -10,5 +10,15 @@
   },
   "scripts": {
     "start": "node server.js"
+  },
+  "prettier": {
+    "parser": "babel",
+    "useTabs": false,
+    "tabWidth": 2,
+    "semi": false,
+    "printWidth": 240,
+    "trailingComma": "none",
+    "arrowParens": "avoid",
+    "quoteProps": "as-needed"
   }
 }
