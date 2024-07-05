@@ -3,17 +3,10 @@ metaTags
 gazetteCss
 title Edit Site
 
-# Files
-
-# Edit File
-
-# Commands
-
-# Preview
-
+# <a id="folderNameLink"></a> is live on the web.
 <center>
 <div class="iframeHolder">
-<iframe src="http://localhost/bree/"></iframe>
+<iframe id="previewIFrame" src="http://localhost/bree/"></iframe>
 </div>
 </center>
 
@@ -36,6 +29,10 @@ css
    overflow: hidden;
  }
 
+# Files
+# Edit File
+// # Commands
 
-viewSource
+<script src="editor.js"></script>
+
 import footer.scroll
