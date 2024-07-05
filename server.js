@@ -248,13 +248,17 @@ app.get("/write", (req, res) => {
 		return res.status(400).send("Folder does not exist")
 	}
 
+	// Extract folder name and file name for the redirect
+	const folderName = path.relative(path.join(__dirname, "sites"), folderPath)
+	const fileName = path.basename(filePath)
+
 	try {
 		fs.writeFileSync(filePath, content, "utf8")
 
 		// Run scroll build on the folder
 		execSync("scroll build", { cwd: folderPath })
 
-		res.send("File written and site rebuilt successfully")
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send(
