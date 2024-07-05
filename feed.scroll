@@ -1,4 +1,0 @@
-buildRss feed.xml
-
-import settings.scroll
-printFeed All

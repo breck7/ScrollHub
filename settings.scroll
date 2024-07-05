@@ -1,3 +1,4 @@
-baseUrl https://scroll.pub/
-email feedback@scroll.pub
-git https://github.com/breck7/scroll
+baseUrl https://sand.scroll.pub/
+email sand@scroll.pub
+git https://github.com/breck7/sand.scroll.pub
+viewSourceBaseUrl https://github.com/breck7/sand.scroll.pub/blob/main
