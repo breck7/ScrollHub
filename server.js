@@ -43,8 +43,11 @@ const rateLimit = require("express-rate-limit")
 const app = express()
 const port = 80
 
-// Add this middleware before your route definitions
-app.use(express.static(path.join(__dirname)))
+// Serve the sites directory from the root URL
+app.use("/", express.static(path.join(__dirname, "sites")))
+
+// Serve the root directory statically
+app.use(express.static(__dirname))
 
 // Rate limiting middleware
 const createLimiter = rateLimit({
@@ -72,20 +75,21 @@ app.get("/createFromForm", (req, res) => {
 
 app.get("/create/:folderName", createLimiter, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
 
 	if (!isValidFolderName(folderName)) {
 		return res.status(400).send("Invalid folder name")
 	}
 
-	if (fs.existsSync(folderName)) {
+	if (fs.existsSync(folderPath)) {
 		return res.status(400).send("Folder already exists")
 	}
 
 	try {
-		fs.mkdirSync(folderName)
-		execSync("scroll init", { cwd: folderName })
-		execSync("scroll build", { cwd: folderName })
-		res.redirect(`/edit/${folderName}`)
+		fs.mkdirSync(folderPath, { recursive: true })
+		execSync("scroll init", { cwd: folderPath })
+		execSync("scroll build", { cwd: folderPath })
+		res.redirect(`/edit.html?folderName=${folderName}`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while creating the site")
@@ -94,13 +98,14 @@ app.get("/create/:folderName", createLimiter, (req, res) => {
 
 app.get("/build/:folderName", (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
 
-	if (!fs.existsSync(folderName)) {
+	if (!fs.existsSync(folderPath)) {
 		return res.status(404).send("Folder not found")
 	}
 
 	try {
-		const output = execSync("scroll build", { cwd: folderName })
+		const output = execSync("scroll build", { cwd: folderPath })
 		res.send(output.toString())
 	} catch (error) {
 		console.error(error)
@@ -110,8 +115,9 @@ app.get("/build/:folderName", (req, res) => {
 
 app.get("/edit/:folderName", (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
 
-	if (!fs.existsSync(folderName)) {
+	if (!fs.existsSync(folderPath)) {
 		return res.status(404).send("Folder not found")
 	}
 
@@ -120,13 +126,14 @@ app.get("/edit/:folderName", (req, res) => {
 
 app.get("/format/:folderName", (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
 
-	if (!fs.existsSync(folderName)) {
+	if (!fs.existsSync(folderPath)) {
 		return res.status(404).send("Folder not found")
 	}
 
 	try {
-		const output = execSync("scroll format", { cwd: folderName })
+		const output = execSync("scroll format", { cwd: folderPath })
 		res.send(output.toString())
 	} catch (error) {
 		console.error(error)
@@ -136,13 +143,14 @@ app.get("/format/:folderName", (req, res) => {
 
 app.get("/test/:folderName", (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
 
-	if (!fs.existsSync(folderName)) {
+	if (!fs.existsSync(folderPath)) {
 		return res.status(404).send("Folder not found")
 	}
 
 	try {
-		const output = execSync("scroll test", { cwd: folderName })
+		const output = execSync("scroll test", { cwd: folderPath })
 		res.send(output.toString())
 	} catch (error) {
 		console.error(error)
