@@ -102,7 +102,9 @@ app.get("/create/:folderName", createLimiter, (req, res) => {
 	}
 
 	if (fs.existsSync(folderPath)) {
-		return res.status(400).send("Sorry, rolder already exists")
+		return res
+			.status(400)
+			.send("Sorry a folder with the name already exists")
 	}
 
 	try {
