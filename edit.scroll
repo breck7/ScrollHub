@@ -5,7 +5,7 @@ title Edit Site
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
-# <a id="folderNameLink"></a> is live on the web.
+# Your website <a id="folderNameLink"></a> is online.
 
 <form method="get" action="write" id="editForm">
 <div>

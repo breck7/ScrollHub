@@ -92,9 +92,36 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 
 	try {
 		fs.mkdirSync(folderPath, { recursive: true })
-		execSync("scroll init", { cwd: folderPath })
+		fs.writeFileSync(
+			path.join(folderPath, "header.scroll"),
+			`metaTags
+gazetteCss
+pageHeader
+printTitle
+mediumColumns`,
+			"utf8"
+		)
+		fs.writeFileSync(
+			path.join(folderPath, "index.scroll"),
+			`import header.scroll
+title Hello world
+
+Welcome to my website.
+
+import footer.scroll`,
+			"utf8"
+		)
+		fs.writeFileSync(
+			path.join(folderPath, "footer.scroll"),
+			`importOnly
+****
+endColumns
+buildHtml
+buildTxt`,
+			"utf8"
+		)
 		execSync("scroll build", { cwd: folderPath })
-		res.redirect(`/edit.html?folderName=${folderName}&fileName=helloWorld.scroll`)
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while creating the site")

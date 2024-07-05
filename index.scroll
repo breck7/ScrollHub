@@ -14,5 +14,4 @@ title Launch a new website in 1 second using Scroll
 <input type="text" name="folderName" placeholder="Folder name"><button>Create site</button>
 </form>
 
-viewSource
 import footer.scroll

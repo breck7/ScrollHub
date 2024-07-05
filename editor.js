@@ -44,21 +44,18 @@ class EditorApp {
 		}
 
 		fetch(`/ls/${this.folderName}`)
-			.then((response) => {
+			.then(response => {
 				if (!response.ok) {
 					throw new Error("Network response was not ok")
 				}
 				return response.text()
 			})
-			.then((data) => {
+			.then(data => {
 				const files = data.split("\n")
 				this.updateFileList(files)
 			})
-			.catch((error) => {
-				console.error(
-					"There was a problem with the fetch operation:",
-					error.message,
-				)
+			.catch(error => {
+				console.error("There was a problem with the fetch operation:", error.message)
 			})
 	}
 
@@ -68,10 +65,8 @@ class EditorApp {
 			return
 		}
 
-		const fileLinks = files.map((file) => {
-			return `<a href="edit.html?folderName=${encodeURIComponent(
-				this.folderName,
-			)}&fileName=${encodeURIComponent(file)}">${file}</a>`
+		const fileLinks = files.map(file => {
+			return `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
 		})
 
 		this.fileList.innerHTML = fileLinks.join("<br>")
@@ -79,9 +74,7 @@ class EditorApp {
 
 	updateFilePathInput() {
 		if (!this.folderName || !this.fileName) {
-			console.error(
-				"File path input not found or folder/file name is missing",
-			)
+			console.error("File path input not found or folder/file name is missing")
 			return
 		}
 
@@ -97,24 +90,21 @@ class EditorApp {
 		const filePath = `${this.folderName}/${this.fileName}`
 
 		fetch(`/read/${encodeURIComponent(filePath)}`)
-			.then((response) => {
+			.then(response => {
 				if (!response.ok) {
 					throw new Error("Network response was not ok")
 				}
 				return response.text()
 			})
-			.then((content) => {
+			.then(content => {
 				if (this.fileEditor) {
 					this.fileEditor.value = content
 				} else {
 					console.error("File editor textarea not found")
 				}
 			})
-			.catch((error) => {
-				console.error(
-					"There was a problem reading the file:",
-					error.message,
-				)
+			.catch(error => {
+				console.error("There was a problem reading the file:", error.message)
 			})
 	}
 }
