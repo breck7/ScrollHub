@@ -6,10 +6,12 @@
   "author": "Breck Yunits",
   "dependencies": {
     "express": "^4.19.2",
-    "express-rate-limit": "^7.3.1"
+    "express-rate-limit": "^7.3.1",
+    "scroll-cli": "^101.5.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "up": "npm install scroll-cli@latest"
   },
   "prettier": {
     "parser": "babel",
