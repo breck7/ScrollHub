@@ -6,3 +6,16 @@ The purpose of this site is meant to allow people to try and learn Scroll withou
 
 The server is erased every hour.
 
+# Droplet setup
+code
+ apt install make
+ git clone https://github.com/tj/n
+ cd n
+ make install
+ n latest
+ cd
+ git clone https://github.com/breck7/sand.scroll.pub
+ cd sand.scroll.pub
+ npm install .
+ npm install -g scroll-cli
+ npm run start
