@@ -3,37 +3,20 @@ metaTags
 gazetteCss
 title Edit Site
 
+<link rel="stylesheet" type="text/css" href="style.css" />
+
 # <a id="folderNameLink"></a> is live on the web.
-<center>
-<div class="iframeHolder">
-<iframe id="previewIFrame" src="http://localhost/bree/"></iframe>
-</div>
-</center>
 
-css
- iframe {
-    height: 600px;
-    width: 600px;
-    border: 0;
-    transform: scale(0.5); 
-    transform-origin: 0 0;
- }
- .iframeHolder {
-   width: 300px;
-   height: 300px;
-   box-shadow: 2px 2px 2px 2px rgba(0,0,0,.2);
-   border-radius: 8px;
-   margin: 10px;
-   display: inline-block;
-   position: relative;
-   overflow: hidden;
- }
-
-# Edit File
-<div id="fileList"></div>
-<form method="post" action="write">
+<form method="post" action="write" id="editForm">
+<div>
+<div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
 <input type="hidden" name="filePath" id="filePathInput"/>
-<textarea name="content" id="fileEditor"></textarea>
+<div id="fileList"></div>
+</div>
+<div>
+ <textarea name="content" id="fileEditor" rows="20" cols="60"></textarea>
+ <button>Save</button>
+</div>
 </form>
 // # Commands
 

@@ -329,37 +329,19 @@ h4.scrollQuestion {
 
 </style>
 </div>
+<link rel="stylesheet" type="text/css" href="style.css" />
 <div class="scrollSection"><h1 class="scrollParagraph"><a id="folderNameLink"></a> is live on the web.</h1>
-<center>
-<div class="iframeHolder">
-<iframe id="previewIFrame" src="http://localhost/bree/"></iframe>
 </div>
-</center>
-</div>
-<style>iframe {
-   height: 600px;
-   width: 600px;
-   border: 0;
-   transform: scale(0.5); 
-   transform-origin: 0 0;
-}
-.iframeHolder {
-  width: 300px;
-  height: 300px;
-  box-shadow: 2px 2px 2px 2px rgba(0,0,0,.2);
-  border-radius: 8px;
-  margin: 10px;
-  display: inline-block;
-  position: relative;
-  overflow: hidden;
-}</style>
-<div class="scrollSection"><h1 class="scrollParagraph">Edit File</h1>
-<div id="fileList"></div>
-<form method="post" action="write">
+<form method="post" action="write" id="editForm">
+<div>
+<div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
 <input type="hidden" name="filePath" id="filePathInput"/>
-<textarea name="content" id="fileEditor"></textarea>
-</form>
+<div id="fileList"></div>
 </div>
+<div><textarea name="content" id="fileEditor" rows="20" cols="60"></textarea>
+<button>Save</button>
+</div>
+</form>
 <script src="editor.js"></script>
 </body>
 </html>

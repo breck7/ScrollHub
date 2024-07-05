@@ -6,7 +6,14 @@ class EditorApp {
 	}
 
 	main() {
-		this.getFolderNameFromQueryString()
+		const urlParams = new URLSearchParams(window.location.search)
+		this.folderName = urlParams.get("folderName")
+		this.fileName = urlParams.get("fileName")
+
+		if (!this.folderName) {
+			console.error("Folder name not provided in the query string")
+		}
+
 		this.updatePreviewIFrame()
 		this.fileList = document.getElementById("fileList")
 		this.fetchAndDisplayFileList()
@@ -15,15 +22,6 @@ class EditorApp {
 		this.fileEditor = document.getElementById("fileEditor")
 		this.updateFilePathInput()
 		this.loadFileContent()
-	}
-
-	getFolderNameFromQueryString() {
-		const urlParams = new URLSearchParams(window.location.search)
-		this.folderName = urlParams.get("folderName")
-
-		if (!this.folderName) {
-			console.error("Folder name not provided in the query string")
-		}
 	}
 
 	updatePreviewIFrame() {
@@ -80,7 +78,7 @@ class EditorApp {
 	}
 
 	updateFilePathInput() {
-		if (!this.filePathInput || !this.folderName || !this.fileName) {
+		if (!this.folderName || !this.fileName) {
 			console.error(
 				"File path input not found or folder/file name is missing",
 			)
