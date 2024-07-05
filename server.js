@@ -29,6 +29,10 @@ ServerJS has these routes:
 /test (GET)
  example: test/folderName
  - This runs "scroll test" on the folder name provided, using execSync, if the folder exists, and dumps the results to user
+/ls (GET)
+ example: ls/folderName
+ - This runs "ls *.scroll" in folderName and returns the results as plain text one filename per line
+
 
 It should also serve this folder statically
 
@@ -155,6 +159,28 @@ app.get("/test/:folderName", (req, res) => {
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while testing the site")
+	}
+})
+
+app.get("/ls/:folderName", (req, res) => {
+	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(__dirname, "sites", folderName)
+
+	if (!fs.existsSync(folderPath)) {
+		return res.status(404).send("Folder not found")
+	}
+
+	try {
+		const output = execSync("ls *.scroll", { cwd: folderPath }).toString()
+		// Split the output into lines and filter out any empty lines
+		const files = output.split("\n").filter((file) => file.trim() !== "")
+		res.setHeader("Content-Type", "text/plain")
+		res.send(files.join("\n"))
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(
+			"An error occurred while listing the .scroll files",
+		)
 	}
 })
 
