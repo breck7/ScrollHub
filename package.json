@@ -1,0 +1,10 @@
+{
+  "name": "sand.scroll.pub",
+  "version": "0.1.0",
+  "description": "This repo powers the sand.scroll.pub server, where anyone in the world can instantly launch a new (ephemeral) website powered by Scroll.",
+  "main": "server.js",
+  "author": "Breck Yunits",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
