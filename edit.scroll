@@ -31,7 +31,7 @@ css
 
 # Edit File
 <div id="fileList"></div>
-<form method="post" action="save">
+<form method="post" action="write">
 <input type="hidden" name="filePath" id="filePathInput"/>
 <textarea name="content" id="fileEditor"></textarea>
 </form>

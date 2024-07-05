@@ -353,8 +353,12 @@ h4.scrollQuestion {
   position: relative;
   overflow: hidden;
 }</style>
-<div id="fileList"></div>
 <div class="scrollSection"><h1 class="scrollParagraph">Edit File</h1>
+<div id="fileList"></div>
+<form method="post" action="write">
+<input type="hidden" name="filePath" id="filePathInput"/>
+<textarea name="content" id="fileEditor"></textarea>
+</form>
 </div>
 <script src="editor.js"></script>
 </body>

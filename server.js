@@ -109,7 +109,9 @@ app.get("/create/:folderName", createLimiter, (req, res) => {
 		fs.mkdirSync(folderPath, { recursive: true })
 		execSync("scroll init", { cwd: folderPath })
 		execSync("scroll build", { cwd: folderPath })
-		res.redirect(`/edit.html?folderName=${folderName}`)
+		res.redirect(
+			`/edit.html?folderName=${folderName}&fileName=helloWorld.scroll`,
+		)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while creating the site")
@@ -196,6 +198,67 @@ app.get("/ls/:folderName", (req, res) => {
 		console.error(error)
 		res.status(500).send(
 			"An error occurred while listing the .scroll files",
+		)
+	}
+})
+
+app.get("/read/:filePath(*)", (req, res) => {
+	const filePath = path.join(
+		__dirname,
+		"sites",
+		decodeURIComponent(req.params.filePath),
+	)
+
+	if (!filePath.endsWith(".scroll")) {
+		return res
+			.status(400)
+			.send("Invalid file type. Only .scroll files are allowed.")
+	}
+
+	if (!fs.existsSync(filePath)) {
+		return res.status(404).send("File not found")
+	}
+
+	try {
+		const content = fs.readFileSync(filePath, "utf8")
+		res.setHeader("Content-Type", "text/plain")
+		res.send(content)
+	} catch (error) {
+		console.error(error)
+		res.status(500).send("An error occurred while reading the file")
+	}
+})
+
+app.get("/write", (req, res) => {
+	const filePath = path.join(
+		__dirname,
+		"sites",
+		decodeURIComponent(req.query.filePath),
+	)
+	const content = decodeURIComponent(req.query.content)
+
+	if (!filePath.endsWith(".scroll")) {
+		return res
+			.status(400)
+			.send("Invalid file type. Only .scroll files are allowed.")
+	}
+
+	const folderPath = path.dirname(filePath)
+	if (!fs.existsSync(folderPath)) {
+		return res.status(400).send("Folder does not exist")
+	}
+
+	try {
+		fs.writeFileSync(filePath, content, "utf8")
+
+		// Run scroll build on the folder
+		execSync("scroll build", { cwd: folderPath })
+
+		res.send("File written and site rebuilt successfully")
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(
+			"An error occurred while writing the file or rebuilding the site",
 		)
 	}
 })

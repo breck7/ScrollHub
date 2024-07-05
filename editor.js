@@ -10,6 +10,11 @@ class EditorApp {
 		this.updatePreviewIFrame()
 		this.fileList = document.getElementById("fileList")
 		this.fetchAndDisplayFileList()
+
+		this.filePathInput = document.getElementById("filePathInput")
+		this.fileEditor = document.getElementById("fileEditor")
+		this.updateFilePathInput()
+		this.loadFileContent()
 	}
 
 	getFolderNameFromQueryString() {
@@ -72,6 +77,47 @@ class EditorApp {
 		})
 
 		this.fileList.innerHTML = fileLinks.join("<br>")
+	}
+
+	updateFilePathInput() {
+		if (!this.filePathInput || !this.folderName || !this.fileName) {
+			console.error(
+				"File path input not found or folder/file name is missing",
+			)
+			return
+		}
+
+		this.filePathInput.value = `${this.folderName}/${this.fileName}`
+	}
+
+	loadFileContent() {
+		if (!this.folderName || !this.fileName) {
+			console.error("Folder name or file name is missing")
+			return
+		}
+
+		const filePath = `${this.folderName}/${this.fileName}`
+
+		fetch(`/read/${encodeURIComponent(filePath)}`)
+			.then((response) => {
+				if (!response.ok) {
+					throw new Error("Network response was not ok")
+				}
+				return response.text()
+			})
+			.then((content) => {
+				if (this.fileEditor) {
+					this.fileEditor.value = content
+				} else {
+					console.error("File editor textarea not found")
+				}
+			})
+			.catch((error) => {
+				console.error(
+					"There was a problem reading the file:",
+					error.message,
+				)
+			})
 	}
 }
 
