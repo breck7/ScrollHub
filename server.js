@@ -98,7 +98,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 gazetteCss
 pageHeader
 printTitle
-mediumColumns`,
+mediumColumns 1`,
 			"utf8"
 		)
 		fs.writeFileSync(
