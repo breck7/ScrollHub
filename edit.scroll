@@ -24,3 +24,8 @@ title Edit Site
 
 import footer.scroll
 
+# Create site | Powered by Scroll
+ link index.html Create site
+ https://scroll.pub Scroll
+ underline Scroll
+
