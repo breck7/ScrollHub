@@ -32,6 +32,18 @@ ServerJS has these routes:
 /ls (GET)
  example: ls/folderName
  - This runs "ls *.scroll" in folderName and returns the results as plain text one filename per line
+/read (GET)
+ example: read/{filePath}
+ - This takes filePath param, which can be a deep multipart path, and returns the contents of the file as plain text
+ - Verify the provided path ends with .scroll.
+/write (GET)
+ example: write?filePath=${filePath}&content=${content}
+  - This takes filepath param, which can be a deep multpart path, and writes the content in content to disk.
+  - Verify the file ends with .scroll
+  - It vierfies the folder exists
+  - It then runs scroll build on the folder provided
+  - It uri decodes the filePath and content params first.
+
 
 
 It should also serve this folder statically
@@ -55,9 +67,9 @@ app.use(express.static(__dirname))
 
 // Rate limiting middleware
 const createLimiter = rateLimit({
-	windowMs: 10 * 1000, // 10 seconds
+	windowMs: 5 * 1000, // 10 seconds
 	max: 1, // limit each IP to 1 request per windowMs
-	message: "You are creating sites too fast",
+	message: "Sorry, you exceeded 1 site every 5 seconds",
 	standardHeaders: true,
 	legacyHeaders: false,
 })
@@ -82,11 +94,15 @@ app.get("/create/:folderName", createLimiter, (req, res) => {
 	const folderPath = path.join(__dirname, "sites", folderName)
 
 	if (!isValidFolderName(folderName)) {
-		return res.status(400).send("Invalid folder name")
+		return res
+			.status(400)
+			.send(
+				"Sorry, your folder name did not meet our requirements (sorry!). It should start with a letter a-z and pass a few other checks.",
+			)
 	}
 
 	if (fs.existsSync(folderPath)) {
-		return res.status(400).send("Folder already exists")
+		return res.status(400).send("Sorry, rolder already exists")
 	}
 
 	try {

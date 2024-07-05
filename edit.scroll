@@ -29,8 +29,12 @@ css
    overflow: hidden;
  }
 
-# Scroll Files
 # Edit File
+<div id="fileList"></div>
+<form method="post" action="save">
+<input type="hidden" name="filePath" id="filePathInput"/>
+<textarea name="content" id="fileEditor"></textarea>
+</form>
 // # Commands
 
 <script src="editor.js"></script>
