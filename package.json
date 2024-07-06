@@ -11,7 +11,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "up": "npm install scroll-cli@latest"
+    "up": "npm install scroll-cli@latest",
+    "deploy": "ssh root@sand.scroll.pub 'cd sand.scroll.pub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server'"
   },
   "prettier": {
     "parser": "babel",
