@@ -1,21 +1,29 @@
-# Sand.Scroll.Pub
+# ScrollHub: Host Unlimited Websites
 
-This repo powers the sand.scroll.pub server, where anyone in the world can instantly launch a new (ephemeral) website powered by Scroll.
+ScrollHub powers the https://hub.scroll.pub server, where anyone in the world can instantly launch a new (ephemeral) website powered by Scroll.
 
-The purpose of this site is meant to allow people to try and learn Scroll without installing anything on their machine.
+You can also run ScrollHub on your own server to power unlimited websites for you and/or your customers.
 
-The server is erased every hour.
+# 5 Minute Setup
 
-# Droplet setup
+1. Launch a new Ubuntu Droplet on Digital Ocean (or your cloud provider of choice)
+ https://www.digitalocean.com Digital Ocean
+
+2. Create a DNS A Record pointing from your domain or subdomain to your new server.
+
+3. SSH into your server and run these commands:
+
 code
  apt install make
+ # Install n, a great tool for installing node.js
  git clone https://github.com/tj/n
  cd n
  make install
+ # Install latest version of Node.js
  n latest
  cd
- git clone https://github.com/breck7/sand.scroll.pub
- cd sand.scroll.pub
+ git clone https://github.com/breck7/ScrollHub
+ cd ScrollHub
  npm install .
  npm install -g scroll-cli
  npm run start

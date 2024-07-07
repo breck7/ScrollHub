@@ -1,7 +1,7 @@
 {
-  "name": "sand.scroll.pub",
-  "version": "0.1.0",
-  "description": "This repo powers the sand.scroll.pub server, where anyone in the world can instantly launch a new (ephemeral) website powered by Scroll.",
+  "name": "ScrollHub",
+  "version": "0.2.0",
+  "description": "ScrollHub turns any server into a place where people can instantly launch unlimited new (ephemeral) website powered by Scroll.",
   "main": "server.js",
   "author": "Breck Yunits",
   "dependencies": {
@@ -12,7 +12,7 @@
   "scripts": {
     "start": "node server.js",
     "up": "npm install scroll-cli@latest",
-    "deploy": "ssh root@sand.scroll.pub 'cd sand.scroll.pub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server'"
+    "deploy": "ssh root@hub.scroll.pub 'cd hub.scroll.pub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server'"
   },
   "prettier": {
     "parser": "babel",
