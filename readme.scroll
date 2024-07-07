@@ -1,18 +1,23 @@
 # ScrollHub: Host Unlimited Websites
 
-ScrollHub powers the https://hub.scroll.pub server, where anyone in the world can instantly launch a new (ephemeral) website powered by Scroll.
+Some people want a super car.
 
-You can also run ScrollHub on your own server to power unlimited websites for you and/or your customers.
+I want a super server so me and everyone I know can launch unlimited websites in under a second for free.
 
-# 5 Minute Setup
+(Note: I also want a super car. Please contact me if you have an extra).
 
+Introducing ScrollHub, a super server for hosting ♾️ websites.
+ // limited only by your computers memory
+
+Don't take my word for it, try ScrollHub yourself here: http://hub.scroll.pub.
+
+Then follow the steps below to run your own ScrollHub.
+
+# ScrollHub's Famous Five Minute Setup
 1. Launch a new Ubuntu Droplet on Digital Ocean (or your cloud provider of choice)
  https://www.digitalocean.com Digital Ocean
-
 2. Create a DNS A Record pointing from your domain or subdomain to your new server.
-
 3. SSH into your server and run these commands:
-
 code
  apt install make
  # Install n, a great tool for installing node.js
@@ -33,3 +38,5 @@ code
  pm2 save
  pm2 list
  pm2 restart server
+
+ScrollHub is public domain because no one should settle for anything less. ❤️❤️❤️
