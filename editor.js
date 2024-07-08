@@ -38,6 +38,8 @@ class EditorApp {
 		document.getElementById("folderNameLink").innerHTML = `http://${serverName}/${this.folderName}`
 		document.getElementById("folderNameLink").href = this.folderName
 		document.getElementById("gitClone").innerHTML = `git clone http://${serverName}/git/${this.folderName}`
+
+		document.title = `Editing ${serverName}/${this.folderName}`
 	}
 
 	fetchAndDisplayFileList() {
