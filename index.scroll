@@ -1,7 +1,7 @@
 import settings.scroll
 metaTags
 gazetteCss
-title Launch a new website in 1 second using Scroll
+title ScrollHub: Launch a new website in 1 second
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
