@@ -16,6 +16,15 @@ body {
   padding: 20px;
 }
 
+.scrollCodeBlock {
+  border: 0;
+  background-color: transparent;
+  color: rgba(204, 204, 204, 0.8);
+  text-align: center;
+  max-width: 400px;
+  margin: auto;
+}
+
 iframe {
   height: 600px;
   width: 600px;

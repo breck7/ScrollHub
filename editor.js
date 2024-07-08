@@ -36,6 +36,9 @@ class EditorApp {
 
 		document.getElementById("folderNameLink").innerHTML = this.folderName
 		document.getElementById("folderNameLink").href = this.folderName
+
+		const serverName = window.location.hostname
+		document.getElementsByClassName("scrollCodeBlock")[0].innerHTML = `git clone http://${serverName}/git/${this.folderName}` + document.getElementsByClassName("scrollCodeBlock")[0].innerHTML
 	}
 
 	fetchAndDisplayFileList() {

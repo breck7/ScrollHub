@@ -55,6 +55,8 @@ const { execSync } = require("child_process")
 const fs = require("fs")
 const path = require("path")
 const rateLimit = require("express-rate-limit")
+const httpBackend = require("git-http-backend")
+const { spawn } = require("child_process")
 
 const app = express()
 const port = 80
@@ -166,6 +168,24 @@ const runCommand = (req, res, command) => {
 app.get("/build/:folderName", (req, res) => runCommand(req, res, "build"))
 app.get("/format/:folderName", (req, res) => runCommand(req, res, "format"))
 app.get("/test/:folderName", (req, res) => runCommand(req, res, "test"))
+
+app.use("/git", (req, res) => {
+	const repo = req.url.split("/")[1]
+	const repoPath = path.join(__dirname, "sites", repo)
+
+	req.url = "/" + req.url.split("/").slice(2).join("/")
+
+	const handlers = httpBackend(req.url, (err, service) => {
+		if (err) return res.end(err + "\n")
+
+		res.setHeader("content-type", service.type)
+
+		const ps = spawn(service.cmd, service.args.concat(repoPath))
+		ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
+	})
+
+	req.pipe(handlers).pipe(res)
+})
 
 app.get("/read/:filePath(*)", (req, res) => {
 	const filePath = path.join(__dirname, "sites", decodeURIComponent(req.params.filePath))

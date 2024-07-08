@@ -7,6 +7,8 @@ title Edit Site
 
 # Your website <a id="folderNameLink"></a> is online.
 
+code
+
 <form method="get" action="write" id="editForm">
 <div>
 <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
