@@ -5,9 +5,9 @@ title Edit Site
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
-# Your website <a id="folderNameLink"></a> is online.
+# <a id="folderNameLink"></a> is online.
 
-code
+<div id="gitClone"></div>
 
 <form method="get" action="write" id="editForm">
 <div>
@@ -16,7 +16,7 @@ code
 <div id="fileList"></div>
 </div>
 <div>
- <textarea name="content" id="fileEditor" rows="20" cols="60"></textarea>
+ <textarea name="content" id="fileEditor" rows="20"></textarea>
  <button>Save</button>
 </div>
 </form>

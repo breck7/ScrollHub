@@ -13,16 +13,17 @@ body {
   color: var(--text-color);
   background-color: var(--background-color);
   margin: 0;
-  padding: 20px;
+  padding: 10px;
 }
 
-.scrollCodeBlock {
-  border: 0;
-  background-color: transparent;
+#gitClone {
   color: rgba(204, 204, 204, 0.8);
   text-align: center;
-  max-width: 400px;
+  font-size: 0.8rem;
+  white-space: pre;
+  font-family: monospace;
   margin: auto;
+  padding: 0.5rem;
 }
 
 iframe {
@@ -61,7 +62,7 @@ form {
 #editForm {
   max-width: 1000px;
   margin-top: 20px;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
 input[type="text"],
@@ -71,6 +72,10 @@ textarea {
   border: 1px solid #ddd;
   border-radius: 4px 0 0 4px;
   font-size: 16px;
+}
+textarea {
+  width: 60ch; /* Set width to 60 characters */
+  max-width: 100%; /* Ensure it doesn't overflow on small screens */
 }
 
 button {

@@ -34,11 +34,10 @@ class EditorApp {
 			console.error("Preview iframe not found or folder name is missing")
 		}
 
-		document.getElementById("folderNameLink").innerHTML = this.folderName
-		document.getElementById("folderNameLink").href = this.folderName
-
 		const serverName = window.location.hostname
-		document.getElementsByClassName("scrollCodeBlock")[0].innerHTML = `git clone http://${serverName}/git/${this.folderName}` + document.getElementsByClassName("scrollCodeBlock")[0].innerHTML
+		document.getElementById("folderNameLink").innerHTML = `http://${serverName}/${this.folderName}`
+		document.getElementById("folderNameLink").href = this.folderName
+		document.getElementById("gitClone").innerHTML = `git clone http://${serverName}/git/${this.folderName}`
 	}
 
 	fetchAndDisplayFileList() {
