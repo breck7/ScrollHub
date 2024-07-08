@@ -34,6 +34,10 @@ iframe {
   overflow: hidden;
 }
 
+.createButton {
+  cursor: pointer;
+}
+
 form {
   background-color: var(--form-background);
   padding: 40px;

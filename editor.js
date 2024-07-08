@@ -22,6 +22,7 @@ class EditorApp {
 		this.fileEditor = document.getElementById("fileEditor")
 		this.updateFilePathInput()
 		this.loadFileContent()
+		return this
 	}
 
 	updatePreviewIFrame() {
@@ -69,7 +70,13 @@ class EditorApp {
 			return `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
 		})
 
-		this.fileList.innerHTML = fileLinks.join("<br>")
+		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
+	}
+
+	createFileCommand() {
+		const fileName = prompt("Enter a filename", "untitled")
+		if (!fileName) return ""
+		window.location = `edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(fileName.replace(".scroll", "") + ".scroll")}`
 	}
 
 	updateFilePathInput() {
@@ -110,6 +117,4 @@ class EditorApp {
 }
 
 // Initialize the app when the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", () => {
-	new EditorApp().main()
-})
+document.addEventListener("DOMContentLoaded", () => (window.app = new EditorApp().main()))

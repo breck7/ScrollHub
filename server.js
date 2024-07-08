@@ -120,7 +120,7 @@ buildHtml
 buildTxt`,
 			"utf8"
 		)
-		execSync("scroll build", { cwd: folderPath })
+		execSync("git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
 		console.error(error)
@@ -201,7 +201,7 @@ app.get("/write", (req, res) => {
 		fs.writeFileSync(filePath, content, "utf8")
 
 		// Run scroll build on the folder
-		execSync("scroll build", { cwd: folderPath })
+		execSync(`git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
