@@ -29,6 +29,8 @@ ServerJS has these routes:
 /test (GET)
  example: test/folderName
  - This runs "scroll test" on the folder name provided, using execSync, if the folder exists, and dumps the results to user
+/siteCounter (GET)
+ - returns number of sites created
 /ls (GET)
  example: ls/folderName
  - This runs "ls *.scroll" in folderName and returns the results as plain text one filename per line
@@ -61,8 +63,9 @@ const { spawn } = require("child_process")
 const app = express()
 const port = 80
 
+const sitesFolder = path.join(__dirname, "sites")
 // Serve the sites directory from the root URL
-app.use("/", express.static(path.join(__dirname, "sites")))
+app.use("/", express.static(sitesFolder))
 
 // Serve the root directory statically
 app.use(express.static(__dirname))
@@ -82,11 +85,18 @@ const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, ""
 // Validate folder name
 const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
 
+let sitesCreated = fs.readdirSync(sitesFolder).length
+
+app.get("/sitesCreated", (req, res) => {
+	res.setHeader("Content-Type", "text/plain")
+	res.send(sitesCreated.toString())
+})
+
 app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
 
 app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
+	const folderPath = path.join(sitesFolder, folderName)
 
 	if (!isValidFolderName(folderName)) return res.status(400).send("Sorry, your folder name did not meet our requirements (sorry!). It should start with a letter a-z and pass a few other checks.")
 
@@ -123,6 +133,7 @@ buildTxt`,
 			"utf8"
 		)
 		execSync("git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+		sitesCreated++
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
 		console.error(error)
@@ -132,7 +143,7 @@ buildTxt`,
 
 app.get("/ls/:folderName", (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
+	const folderPath = path.join(sitesFolder, folderName)
 
 	if (!fs.existsSync(folderPath)) {
 		return res.status(404).send("Folder not found")
@@ -152,7 +163,7 @@ app.get("/ls/:folderName", (req, res) => {
 
 const runCommand = (req, res, command) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(__dirname, "sites", folderName)
+	const folderPath = path.join(sitesFolder, folderName)
 
 	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
 
@@ -171,7 +182,7 @@ app.get("/test/:folderName", (req, res) => runCommand(req, res, "test"))
 
 app.use("/git", (req, res) => {
 	const repo = req.url.split("/")[1]
-	const repoPath = path.join(__dirname, "sites", repo)
+	const repoPath = path.join(sitesFolder, repo)
 
 	req.url = "/" + req.url.split("/").slice(2).join("/")
 
@@ -188,7 +199,7 @@ app.use("/git", (req, res) => {
 })
 
 app.get("/read/:filePath(*)", (req, res) => {
-	const filePath = path.join(__dirname, "sites", decodeURIComponent(req.params.filePath))
+	const filePath = path.join(sitesFolder, decodeURIComponent(req.params.filePath))
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
@@ -205,7 +216,7 @@ app.get("/read/:filePath(*)", (req, res) => {
 })
 
 app.get("/write", (req, res) => {
-	const filePath = path.join(__dirname, "sites", decodeURIComponent(req.query.filePath))
+	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
 	const content = decodeURIComponent(req.query.content)
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
@@ -214,7 +225,7 @@ app.get("/write", (req, res) => {
 	if (!fs.existsSync(folderPath)) return res.status(400).send("Folder does not exist")
 
 	// Extract folder name and file name for the redirect
-	const folderName = path.relative(path.join(__dirname, "sites"), folderPath)
+	const folderName = path.relative(sitesFolder, folderPath)
 	const fileName = path.basename(filePath)
 
 	try {

@@ -16,7 +16,8 @@ body {
   padding: 10px;
 }
 
-#gitClone {
+#gitClone,
+#sitesCreated {
   color: rgba(204, 204, 204, 0.8);
   text-align: center;
   font-size: 0.8rem;
