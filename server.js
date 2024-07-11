@@ -64,6 +64,18 @@ const app = express()
 const port = 80
 
 const sitesFolder = path.join(__dirname, "sites")
+
+// Middleware to serve .scroll files as plain text
+// This should come BEFORE the static file serving middleware
+app.use((req, res, next) => {
+	if (!req.url.endsWith(".scroll")) return next()
+	const filePath = path.join(sitesFolder, decodeURIComponent(req.url))
+	if (fs.existsSync(filePath)) {
+		res.setHeader("Content-Type", "text/plain; charset=utf-8")
+		res.sendFile(filePath)
+	} else next()
+})
+
 // Serve the sites directory from the root URL
 app.use("/", express.static(sitesFolder))
 
