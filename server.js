@@ -110,6 +110,8 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 gazetteCss
 pageHeader
 printTitle
+buildHtml
+buildTxt
 mediumColumns 1`,
 			"utf8"
 		)
@@ -120,16 +122,7 @@ title Hello world
 
 Welcome to my website.
 
-import footer.scroll`,
-			"utf8"
-		)
-		fs.writeFileSync(
-			path.join(folderPath, "footer.scroll"),
-			`importOnly
-****
-endColumns
-buildHtml
-buildTxt`,
+pageFooter`,
 			"utf8"
 		)
 		execSync("git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })

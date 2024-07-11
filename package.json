@@ -11,6 +11,7 @@
     "scroll-cli": "^103.0.2"
   },
   "scripts": {
+    "test": "scroll test",
     "start": "node server.js",
     "up": "npm install scroll-cli@latest",
     "deploy": "ssh root@hub.scroll.pub 'cd ScrollHub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server'"
