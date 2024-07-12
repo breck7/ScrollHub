@@ -237,7 +237,7 @@ app.get("/write", (req, res) => {
 		fs.writeFileSync(filePath, content, "utf8")
 
 		// Run scroll build on the folder
-		execSync(`git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
+		execSync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
