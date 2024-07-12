@@ -14,7 +14,7 @@ title ScrollHub: Launch a new website in 1 second
 <input type="text" name="folderName" placeholder="Folder name"><button>Create site</button>
 </form>
 
-* 475 sites created
+* 
  id sitesCreated
 <script>
  fetch('/sitesCreated').then(response => response.text()).then(data => document.getElementById('sitesCreated').innerText = `${data} sites created`);
