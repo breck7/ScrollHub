@@ -5,6 +5,10 @@ title Edit Site
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
+<link rel="stylesheet" type="text/css" href="./ide/codeMirror.css" />
+<script src="./ide/libs.js"></script>
+<script src="./ide/parsers.js"></script>
+
 # <a id="folderNameLink"></a> is online.
 
 <div id="gitClone"></div>

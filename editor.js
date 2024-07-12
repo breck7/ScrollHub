@@ -3,6 +3,12 @@ class EditorApp {
 		this.folderName = ""
 		this.previewIFrame = null
 		this.fileList = null
+		const scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
+		this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
+			lineWrapping: false,
+			lineNumbers: false
+		})
+		this.codeMirrorInstance.setSize(600, 360) // todo: adjust on resize
 	}
 
 	main() {
@@ -92,6 +98,11 @@ class EditorApp {
 		this.filePathInput.value = `${this.folderName}/${this.fileName}`
 	}
 
+	setFileContent(value) {
+		this.fileEditor.value = value
+		this.codeMirrorInstance.setValue(value)
+	}
+
 	loadFileContent() {
 		if (!this.folderName || !this.fileName) {
 			console.error("Folder name or file name is missing")
@@ -102,21 +113,12 @@ class EditorApp {
 
 		fetch(`/read/${encodeURIComponent(filePath)}`)
 			.then(response => {
-				if (!response.ok) {
-					throw new Error("Network response was not ok")
-				}
+				if (!response.ok) throw new Error("Network response was not ok")
+
 				return response.text()
 			})
-			.then(content => {
-				if (this.fileEditor) {
-					this.fileEditor.value = content
-				} else {
-					console.error("File editor textarea not found")
-				}
-			})
-			.catch(error => {
-				console.error("There was a problem reading the file:", error.message)
-			})
+			.then(content => this.setFileContent(content))
+			.catch(error => console.error("There was a problem reading the file:", error.message))
 	}
 }
 
