@@ -8,7 +8,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
     "git-http-backend": "^1.1.2",
-    "scroll-cli": "^105.1.0"
+    "scroll-cli": "^106.0.0"
   },
   "scripts": {
     "test": "scroll test",
