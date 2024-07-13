@@ -241,6 +241,11 @@ app.use("/git", (req, res) => {
 
 		const ps = spawn(service.cmd, service.args.concat(repoPath))
 		ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
+
+		// Log successful Git pushes
+		ps.on("close", code => {
+			if (code === 0 && service.action === "push") execSync(`scroll build`, { cwd: repoPath })
+		})
 	})
 
 	req.pipe(handlers).pipe(res)
