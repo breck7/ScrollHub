@@ -228,12 +228,11 @@ app.get("/build", checkPassword, (req, res) => runCommand(req, res, "build"))
 app.get("/format", checkPassword, (req, res) => runCommand(req, res, "format"))
 app.get("/test", checkPassword, (req, res) => runCommand(req, res, "test"))
 
-app.get("/git", (req, res) => {
-	const repo = req.query.folderName
+app.get("/git/:repo/*", (req, res) => {
+	const repo = req.params.repo
 	const repoPath = path.join(sitesFolder, repo)
-	if (!fs.existsSync(repoPath)) return res.status(404).send("Folder not found")
 
-	req.url = `/git/${repo}`
+	req.url = "/" + req.url.split("/").slice(3).join("/")
 
 	const handlers = httpBackend(req.url, (err, service) => {
 		if (err) return res.end(err + "\n")
@@ -247,7 +246,8 @@ app.get("/git", (req, res) => {
 	req.pipe(handlers).pipe(res)
 })
 
-app.post("/git/:repo/*", checkPassword, (req, res) => {
+// todo: check pw
+app.post("/git/:repo/*", (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(sitesFolder, repo)
 
