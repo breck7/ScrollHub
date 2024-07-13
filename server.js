@@ -65,6 +65,41 @@ const port = 80
 
 const sitesFolder = path.join(__dirname, "sites")
 
+const passwords = {}
+const passwordsFile = path.join(sitesFolder, "passwords.scroll")
+if (!fs.existsSync(passwordsFile)) fs.writeFileSync(path.join(sitesFolder, "passwords.scroll"), "", "utf8")
+fs.readFileSync(passwordsFile, "utf8")
+	.trim()
+	.split("\n")
+	.filter(l => l)
+	.forEach(line => {
+		const [folderName, password] = line.split(" ")
+		passwords[folderName] = password
+	})
+
+// Function to generate a password
+// 1 in 1T w rate limiting ok for now.
+const commonWords =
+	"the of and to in for is on that by this with you it not or be are from at as your all have new more an was we will home can us about if page my has search free but our one other do no information time they site he up may what which their news out use any there see only so his when contact here business who web also now help get pm view online first am been would how were me services some these click its like service than find price date back top people had list name just over state year day into email two health world".split(
+		" "
+	)
+const generatePassword = () => {
+	let password = []
+	for (let i = 0; i < 6; i++) {
+		password.push(commonWords[Math.floor(Math.random() * commonWords.length)])
+	}
+	return password.join("")
+}
+
+// Middleware to check password
+const checkPassword = (req, res, next) => {
+	const { folderName, password } = req.query
+	if (!folderName || !password) return res.status(400).send("Folder name and password are required")
+
+	if (passwords[folderName] !== password) return res.status(401).send("Invalid password")
+	next()
+}
+
 // Middleware to serve .scroll files as plain text
 // This should come BEFORE the static file serving middleware
 app.use((req, res, next) => {
@@ -84,9 +119,9 @@ app.use(express.static(__dirname))
 
 // Rate limiting middleware
 const createLimiter = rateLimit({
-	windowMs: 5 * 1000, // 10 seconds
+	windowMs: 3 * 1000, // 10 seconds
 	max: 1, // limit each IP to 1 request per windowMs
-	message: "Sorry, you exceeded 1 site every 5 seconds",
+	message: "Sorry, you exceeded 1 site every 3 seconds",
 	standardHeaders: true,
 	legacyHeaders: false
 })
@@ -142,20 +177,23 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
 		execSync("scroll build; rm stamp.scroll; scroll format; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 		sitesCreated++
-		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
+
+		// Generate and save password
+		const password = generatePassword()
+		fs.appendFileSync(passwordsFile, `${folderName} ${password}\n`)
+
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll&password=${password}`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while creating the site")
 	}
 })
 
-app.get("/ls/:folderName", (req, res) => {
+app.get("/ls/:folderName", checkPassword, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(sitesFolder, folderName)
 
-	if (!fs.existsSync(folderPath)) {
-		return res.status(404).send("Folder not found")
-	}
+	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
 
 	try {
 		const output = execSync("ls *.scroll", { cwd: folderPath }).toString()
@@ -184,9 +222,9 @@ const runCommand = (req, res, command) => {
 	}
 }
 
-app.get("/build/:folderName", (req, res) => runCommand(req, res, "build"))
-app.get("/format/:folderName", (req, res) => runCommand(req, res, "format"))
-app.get("/test/:folderName", (req, res) => runCommand(req, res, "test"))
+app.get("/build/:folderName", checkPassword, (req, res) => runCommand(req, res, "build"))
+app.get("/format/:folderName", checkPassword, (req, res) => runCommand(req, res, "format"))
+app.get("/test/:folderName", checkPassword, (req, res) => runCommand(req, res, "test"))
 
 app.use("/git", (req, res) => {
 	const repo = req.url.split("/")[1]
@@ -206,7 +244,7 @@ app.use("/git", (req, res) => {
 	req.pipe(handlers).pipe(res)
 })
 
-app.get("/read/:filePath(*)", (req, res) => {
+app.get("/read/:filePath(*)", checkPassword, (req, res) => {
 	const filePath = path.join(sitesFolder, decodeURIComponent(req.params.filePath))
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
@@ -223,7 +261,7 @@ app.get("/read/:filePath(*)", (req, res) => {
 	}
 })
 
-app.get("/write", (req, res) => {
+app.get("/write", checkPassword, (req, res) => {
 	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
 	const content = decodeURIComponent(req.query.content)
 

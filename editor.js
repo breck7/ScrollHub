@@ -1,6 +1,7 @@
 class EditorApp {
 	constructor() {
 		this.folderName = ""
+		this.password = ""
 		this.previewIFrame = null
 		this.fileList = null
 		const scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
@@ -15,18 +16,18 @@ class EditorApp {
 		const urlParams = new URLSearchParams(window.location.search)
 		this.folderName = urlParams.get("folderName")
 		this.fileName = urlParams.get("fileName")
+		this.password = urlParams.get("password")
 
-		if (!this.folderName) {
-			console.error("Folder name not provided in the query string")
-		}
+		if (!this.folderName) console.error("Folder name not provided in the query string")
+		if (!this.password) console.error("Password not provided in the query string")
 
 		this.updatePreviewIFrame()
 		this.fileList = document.getElementById("fileList")
 		this.fetchAndDisplayFileList()
 
-		this.filePathInput = document.getElementById("filePathInput")
 		this.fileEditor = document.getElementById("fileEditor")
-		this.updateFilePathInput()
+		document.getElementById("filePathInput").value = `${this.folderName}/${this.fileName}`
+		document.getElementById("password").value = this.password
 		this.loadFileContent()
 		return this
 	}
@@ -54,7 +55,7 @@ class EditorApp {
 			return
 		}
 
-		fetch(`/ls/${this.folderName}`)
+		fetch(`/ls/${this.folderName}?password=${this.password}`)
 			.then(response => {
 				if (!response.ok) {
 					throw new Error("Network response was not ok")
@@ -77,7 +78,7 @@ class EditorApp {
 		}
 
 		const fileLinks = files.map(file => {
-			return `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
+			return `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}&password=${this.password}">${file}</a>`
 		})
 
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
@@ -86,16 +87,7 @@ class EditorApp {
 	createFileCommand() {
 		const fileName = prompt("Enter a filename", "untitled")
 		if (!fileName) return ""
-		window.location = `edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(fileName.replace(".scroll", "") + ".scroll")}`
-	}
-
-	updateFilePathInput() {
-		if (!this.folderName || !this.fileName) {
-			console.error("File path input not found or folder/file name is missing")
-			return
-		}
-
-		this.filePathInput.value = `${this.folderName}/${this.fileName}`
+		window.location = `edit.html?folderName=${encodeURIComponent(this.folderName)}&password=${this.password}&fileName=${encodeURIComponent(fileName.replace(".scroll", "") + ".scroll")}`
 	}
 
 	setFileContent(value) {
@@ -111,7 +103,7 @@ class EditorApp {
 
 		const filePath = `${this.folderName}/${this.fileName}`
 
-		fetch(`/read/${encodeURIComponent(filePath)}`)
+		fetch(`/read/${encodeURIComponent(filePath)}?password=${this.password}`)
 			.then(response => {
 				if (!response.ok) throw new Error("Network response was not ok")
 
