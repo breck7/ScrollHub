@@ -233,7 +233,7 @@ app.get("/git", (req, res) => {
 	const repoPath = path.join(sitesFolder, repo)
 	if (!fs.existsSync(repoPath)) return res.status(404).send("Folder not found")
 
-	req.url = "/" + req.url.split("?")[0].split("/").slice(3).join("/")
+	req.url = `/git/${repo}`
 
 	const handlers = httpBackend(req.url, (err, service) => {
 		if (err) return res.end(err + "\n")
