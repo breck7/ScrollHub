@@ -190,8 +190,8 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	}
 })
 
-app.get("/ls/:folderName", checkPassword, (req, res) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
+app.get("/ls", checkPassword, (req, res) => {
+	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(sitesFolder, folderName)
 
 	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
@@ -209,7 +209,7 @@ app.get("/ls/:folderName", checkPassword, (req, res) => {
 })
 
 const runCommand = (req, res, command) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(sitesFolder, folderName)
 
 	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
@@ -223,9 +223,9 @@ const runCommand = (req, res, command) => {
 	}
 }
 
-app.get("/build/:folderName", checkPassword, (req, res) => runCommand(req, res, "build"))
-app.get("/format/:folderName", checkPassword, (req, res) => runCommand(req, res, "format"))
-app.get("/test/:folderName", checkPassword, (req, res) => runCommand(req, res, "test"))
+app.get("/build", checkPassword, (req, res) => runCommand(req, res, "build"))
+app.get("/format", checkPassword, (req, res) => runCommand(req, res, "format"))
+app.get("/test", checkPassword, (req, res) => runCommand(req, res, "test"))
 
 app.use("/git", (req, res) => {
 	const repo = req.url.split("/")[1]
@@ -245,8 +245,8 @@ app.use("/git", (req, res) => {
 	req.pipe(handlers).pipe(res)
 })
 
-app.get("/read/:filePath(*)", checkPassword, (req, res) => {
-	const filePath = path.join(sitesFolder, decodeURIComponent(req.params.filePath))
+app.get("/read", checkPassword, (req, res) => {
+	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 

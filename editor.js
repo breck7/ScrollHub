@@ -55,7 +55,7 @@ class EditorApp {
 			return
 		}
 
-		fetch(`/ls/${this.folderName}?password=${this.password}`)
+		fetch(`/ls${this.auth}`)
 			.then(response => {
 				if (!response.ok) {
 					throw new Error("Network response was not ok")
@@ -72,15 +72,7 @@ class EditorApp {
 	}
 
 	updateFileList(files) {
-		if (!this.fileList) {
-			console.error("File list element not found")
-			return
-		}
-
-		const fileLinks = files.map(file => {
-			return `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}&password=${this.password}">${file}</a>`
-		})
-
+		const fileLinks = files.map(file => `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}&password=${this.password}">${file}</a>`)
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
 
@@ -95,6 +87,10 @@ class EditorApp {
 		this.codeMirrorInstance.setValue(value)
 	}
 
+	get auth() {
+		return `?folderName=${this.folderName}&password=${this.password}&`
+	}
+
 	loadFileContent() {
 		if (!this.folderName || !this.fileName) {
 			console.error("Folder name or file name is missing")
@@ -103,7 +99,7 @@ class EditorApp {
 
 		const filePath = `${this.folderName}/${this.fileName}`
 
-		fetch(`/read/${encodeURIComponent(filePath)}?password=${this.password}`)
+		fetch(`/read${this.auth}filePath=${encodeURIComponent(filePath)}`)
 			.then(response => {
 				if (!response.ok) throw new Error("Network response was not ok")
 
