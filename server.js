@@ -228,11 +228,29 @@ app.get("/build", checkPassword, (req, res) => runCommand(req, res, "build"))
 app.get("/format", checkPassword, (req, res) => runCommand(req, res, "format"))
 app.get("/test", checkPassword, (req, res) => runCommand(req, res, "test"))
 
-app.use("/git", (req, res) => {
-	const repo = req.url.split("/")[1]
+app.get("/git/:repo/*", (req, res) => {
+	const repo = req.params.repo
 	const repoPath = path.join(sitesFolder, repo)
 
-	req.url = "/" + req.url.split("/").slice(2).join("/")
+	req.url = "/" + req.url.split("/").slice(3).join("/")
+
+	const handlers = httpBackend(req.url, (err, service) => {
+		if (err) return res.end(err + "\n")
+
+		res.setHeader("content-type", service.type)
+
+		const ps = spawn(service.cmd, service.args.concat(repoPath))
+		ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
+	})
+
+	req.pipe(handlers).pipe(res)
+})
+
+app.post("/git/:repo/*", checkPassword, (req, res) => {
+	const repo = req.params.repo
+	const repoPath = path.join(sitesFolder, repo)
+
+	req.url = "/" + req.url.split("/").slice(3).join("/")
 
 	const handlers = httpBackend(req.url, (err, service) => {
 		if (err) return res.end(err + "\n")
@@ -244,7 +262,9 @@ app.use("/git", (req, res) => {
 
 		// Log successful Git pushes
 		ps.on("close", code => {
-			if (code === 0 && service.action === "push") execSync(`scroll build`, { cwd: repoPath })
+			if (code === 0 && service.action === "push") {
+				execSync(`scroll build`, { cwd: repoPath })
+			}
 		})
 	})
 
