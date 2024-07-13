@@ -228,9 +228,10 @@ app.get("/build", checkPassword, (req, res) => runCommand(req, res, "build"))
 app.get("/format", checkPassword, (req, res) => runCommand(req, res, "format"))
 app.get("/test", checkPassword, (req, res) => runCommand(req, res, "test"))
 
-app.get("/git/:repo/*", (req, res) => {
-	const repo = req.params.repo
+app.get("/git", (req, res) => {
+	const repo = req.query.folderName
 	const repoPath = path.join(sitesFolder, repo)
+	if (!fs.existsSync(repoPath)) return res.status(404).send("Folder not found")
 
 	req.url = "/" + req.url.split("/").slice(3).join("/")
 
