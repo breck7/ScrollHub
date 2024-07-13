@@ -64,6 +64,7 @@ const app = express()
 const port = 80
 
 const sitesFolder = path.join(__dirname, "sites")
+if (!fs.existsSync(sitesFolder)) fs.mkdirSync(sitesFolder)
 
 const passwords = {}
 const passwordsFile = path.join(sitesFolder, "passwords.scroll")
