@@ -96,9 +96,8 @@ const generatePassword = () => {
 const checkPassword = (req, res, next) => {
 	const { folderName, password } = req.query
 	if (!folderName) return res.status(400).send("Folder name is required")
-	if (!password) return res.status(400).send("Password is required")
-
-	if (passwords[folderName] !== password) return res.status(401).send("Invalid password")
+	if (!passwords[folderName]) return res.status(404).send("Folder not found")
+	if (passwords[folderName] !== password) return res.status(401).send(`Invalid password for ${folderName}`)
 	next()
 }
 
