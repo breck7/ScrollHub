@@ -106,6 +106,28 @@ app.get("/sitesCreated", (req, res) => {
 
 app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
 
+// ideas: single page, blog, knowledge base.
+const stamps = {
+	bare: `stamp
+ index.scroll
+  buildHtml
+  buildTxt
+  metaTags
+  gazetteCss
+  pageHeader
+  printTitle
+  mediumColumns 1
+  title Hello world
+  
+  Welcome to my website.
+  
+  pageFooter
+ .gitignore
+  *.html
+  *.txt
+  *.xml`
+}
+
 app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(sitesFolder, folderName)
@@ -116,28 +138,9 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 
 	try {
 		fs.mkdirSync(folderPath, { recursive: true })
-		fs.writeFileSync(
-			path.join(folderPath, "header.scroll"),
-			`metaTags
-gazetteCss
-pageHeader
-printTitle
-buildHtml
-buildTxt
-mediumColumns 1`,
-			"utf8"
-		)
-		fs.writeFileSync(
-			path.join(folderPath, "index.scroll"),
-			`import header.scroll
-title Hello world
-
-Welcome to my website.
-
-pageFooter`,
-			"utf8"
-		)
-		execSync("git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+		const stamp = stamps.bare
+		fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
+		execSync("scroll build; rm stamp.scroll; scroll format; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 		sitesCreated++
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {

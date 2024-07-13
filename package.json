@@ -12,7 +12,8 @@
   },
   "scripts": {
     "test": "scroll test",
-    "start": "node server.js",
+    "local": "node server.js",
+    "ssh": "ssh root@hub.scroll.pub",
     "up": "npm install scroll-cli@latest",
     "deploy": "ssh root@hub.scroll.pub 'cd ScrollHub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server'"
   },

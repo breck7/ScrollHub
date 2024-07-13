@@ -32,12 +32,14 @@ code
  cd ScrollHub
  npm install .
  npm install -g scroll-cli
- npm run start
+ npm run local
  npm install pm2 -g
  pm2 start server.js
  pm2 startup
  pm2 save
  pm2 list
  pm2 restart server
+ # Allow recieving pushes
+ git config --global receive.denyCurrentBranch updateInstead
 
 ScrollHub is public domain because no one should settle for anything less. ❤️❤️❤️
