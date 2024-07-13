@@ -12,17 +12,22 @@ class EditorApp {
 		this.codeMirrorInstance.setSize(600, 360) // todo: adjust on resize
 	}
 
+	showError(message) {
+		console.error(message)
+		this.fileList.innerHTML = `<span style="color:red;">${message}</span>`
+	}
+
 	main() {
 		const urlParams = new URLSearchParams(window.location.search)
 		this.folderName = urlParams.get("folderName")
 		this.fileName = urlParams.get("fileName")
 		this.password = urlParams.get("password")
-
-		if (!this.folderName) console.error("Folder name not provided in the query string")
-		if (!this.password) console.error("Password not provided in the query string")
+		this.fileList = document.getElementById("fileList")
 
 		this.updatePreviewIFrame()
-		this.fileList = document.getElementById("fileList")
+		if (!this.folderName) return this.showError("Folder name not provided in the query string")
+		if (!this.password) return this.showError("Need correct password in the query string")
+
 		this.fetchAndDisplayFileList()
 
 		this.fileEditor = document.getElementById("fileEditor")
@@ -46,7 +51,6 @@ class EditorApp {
 		document.getElementById("folderNameLink").innerHTML = `http://${serverName}/${this.folderName}`
 		document.getElementById("folderNameLink").href = this.folderName
 		document.getElementById("gitClone").innerHTML = `git clone http://${serverName}/git/${this.folderName}`
-
 		document.title = `Editing ${serverName}/${this.folderName}`
 	}
 
