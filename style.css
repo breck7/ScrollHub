@@ -65,6 +65,9 @@ form {
   margin: 100px auto;
   max-width: 600px;
 }
+#islandForm {
+  margin-top: 20px;
+}
 #editForm {
   max-width: 1000px;
   margin-top: 20px;

@@ -1,0 +1,21 @@
+import settings.scroll
+metaTags
+gazetteCss
+title Idea Island
+import header.scroll
+<link rel="stylesheet" type="text/css" href="style.css" />
+
+# Convert your existing sites to Scroll
+ https://scroll.pub Scroll
+
+* _Give us your writings, your math, your music<br>Your novel ideas yearning to breathe free_
+ style font-size:200%; text-align: center; font-family: Exchange, Georgia, serif; line-height: 120%; padding: 40px;
+
+endColumns
+
+<form method="get" action="createFromForm" id="islandForm">
+<input type="text" name="url" placeholder="https://yoursite.com"><button>Convert to Scroll</button>
+</form>
+
+import footer.scroll
+
