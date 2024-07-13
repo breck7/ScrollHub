@@ -12,10 +12,10 @@
   },
   "scripts": {
     "test": "scroll test",
-    "local": "node server.js",
+    "local": "scroll build; node server.js",
     "ssh": "ssh root@hub.scroll.pub",
     "up": "npm install scroll-cli@latest",
-    "deploy": "ssh root@hub.scroll.pub 'cd ScrollHub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server'"
+    "deploy": "ssh root@hub.scroll.pub 'cd ScrollHub && git pull && npm install . && npm install -g scroll-cli && scroll build && pm2 restart server'"
   },
   "prettier": {
     "parser": "babel",
