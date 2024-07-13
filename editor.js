@@ -28,6 +28,7 @@ class EditorApp {
 		this.fileEditor = document.getElementById("fileEditor")
 		document.getElementById("filePathInput").value = `${this.folderName}/${this.fileName}`
 		document.getElementById("password").value = this.password
+		document.getElementById("folderNameInput").value = this.folderName
 		this.loadFileContent()
 		return this
 	}

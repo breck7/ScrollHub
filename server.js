@@ -95,7 +95,8 @@ const generatePassword = () => {
 // Middleware to check password
 const checkPassword = (req, res, next) => {
 	const { folderName, password } = req.query
-	if (!folderName || !password) return res.status(400).send("Folder name and password are required")
+	if (!folderName) return res.status(400).send("Folder name is required")
+	if (!password) return res.status(400).send("Password is required")
 
 	if (passwords[folderName] !== password) return res.status(401).send("Invalid password")
 	next()
@@ -182,6 +183,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		// Generate and save password
 		const password = generatePassword()
 		fs.appendFileSync(passwordsFile, `${folderName} ${password}\n`)
+		passwords[folderName] = password
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll&password=${password}`)
 	} catch (error) {
@@ -265,6 +267,7 @@ app.get("/read", checkPassword, (req, res) => {
 app.get("/write", checkPassword, (req, res) => {
 	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
 	const content = decodeURIComponent(req.query.content)
+	const password = req.query.password
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
@@ -281,7 +284,7 @@ app.get("/write", checkPassword, (req, res) => {
 		// Run scroll build on the folder
 		execSync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
-		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}&password=${password}`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while writing the file or rebuilding the site")

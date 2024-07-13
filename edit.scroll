@@ -17,6 +17,7 @@ title Edit Site
 <div>
 <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
 <input type="hidden" name="filePath" id="filePathInput"/>
+<input type="hidden" name="folderName" id="folderNameInput"/>
 <input type="hidden" name="password" id="password"/>
 <div id="fileList"></div>
 </div>
