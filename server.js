@@ -295,7 +295,7 @@ app.get("/write", checkPassword, (req, res) => {
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}&password=${password}`)
 	} catch (error) {
 		console.error(error)
-		res.status(500).send("An error occurred while writing the file or rebuilding the site")
+		res.status(500).send(`An error occurred while writing the file or rebuilding the site:\n ${error.replace(/</g, "&lt;")}`)
 	}
 })
 
