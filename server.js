@@ -101,23 +101,6 @@ const checkPassword = (req, res, next) => {
 	next()
 }
 
-// Middleware to serve .scroll files as plain text
-// This should come BEFORE the static file serving middleware
-app.use((req, res, next) => {
-	if (!req.url.endsWith(".scroll")) return next()
-	const filePath = path.join(sitesFolder, decodeURIComponent(req.url))
-	if (fs.existsSync(filePath)) {
-		res.setHeader("Content-Type", "text/plain; charset=utf-8")
-		res.sendFile(filePath)
-	} else next()
-})
-
-// Serve the sites directory from the root URL
-app.use("/", express.static(sitesFolder))
-
-// Serve the root directory statically
-app.use(express.static(__dirname))
-
 // Rate limiting middleware
 const createLimiter = rateLimit({
 	windowMs: 3 * 1000, // 10 seconds
@@ -315,5 +298,26 @@ app.get("/write", checkPassword, (req, res) => {
 		res.status(500).send("An error occurred while writing the file or rebuilding the site")
 	}
 })
+
+// Static file serving comes AFTER our routes, so if someone creates a site with a route name, our route name wont break.
+// todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
+// of what names are taken, for instant feedback.
+
+// Middleware to serve .scroll files as plain text
+// This should come BEFORE the static file serving middleware
+app.use((req, res, next) => {
+	if (!req.url.endsWith(".scroll")) return next()
+	const filePath = path.join(sitesFolder, decodeURIComponent(req.url))
+	if (fs.existsSync(filePath)) {
+		res.setHeader("Content-Type", "text/plain; charset=utf-8")
+		res.sendFile(filePath)
+	} else next()
+})
+
+// Serve the sites directory from the root URL
+app.use("/", express.static(sitesFolder))
+
+// Serve the root directory statically
+app.use(express.static(__dirname))
 
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`))
