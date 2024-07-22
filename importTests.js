@@ -29,8 +29,8 @@ cases.forEach(async url => {
 	const { hostname } = new URL(url)
 	const folder = path.join(rootFolder, hostname)
 	try {
-		fs.mkdirSync(folder)
-		await importSite(url, folder)
+		if (!fs.existsSync(folder)) fs.mkdirSync(folder)
+		await new SiteImporter().importSite(url, folder)
 		new ScrollCli().buildCommand(folder)
 	} catch (err) {
 		console.error(err)

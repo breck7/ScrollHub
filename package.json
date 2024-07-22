@@ -9,7 +9,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
     "git-http-backend": "^1.1.2",
-    "got": "^14.4.1",
+    "ky": "^1.4.0",
     "rss-parser": "^3.13.0",
     "scroll-cli": "^109.3.0"
   },

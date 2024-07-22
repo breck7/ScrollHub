@@ -1,8 +1,15 @@
 // To use:
 // npm install rss-parser got cheerio
 const Parser = require("rss-parser")
-const got = require("got")
+const { Disk } = require("scrollsdk/products/Disk.node.js")
+const { Utils } = require("scrollsdk/products/Utils.js")
+const path = require("path")
 const cheerio = require("cheerio")
+let ky
+;(async () => {
+	ky = await import("ky")
+})()
+
 const removeReturnCharsAndRightShift = (str, numSpaces) => str.replace(/\r/g, "").replace(/\n/g, "\n" + " ".repeat(numSpaces))
 
 const SCROLL_FILE_EXTENSION = ".scroll"
@@ -20,7 +27,7 @@ class RssImporter {
 ${date}
 * ${removeReturnCharsAndRightShift(content, 1)}
 `
-		write(path.join(destinationFolder, Utils.stringToPermalink(title) + SCROLL_FILE_EXTENSION), scrollFile)
+		Disk.write(path.join(destinationFolder, Utils.stringToPermalink(title) + SCROLL_FILE_EXTENSION), scrollFile)
 	}
 
 	async downloadFilesTo(destinationFolder) {
@@ -34,7 +41,7 @@ ${date}
 
 				try {
 					console.log(`⏳ downloading '${item.link}'`)
-					const response = await got(item.link)
+					const response = await ky.get(item.link)
 					const html = response.body
 					const dom = cheerio.load(html)
 					this.savePost(item, dom.text(), destinationFolder)
