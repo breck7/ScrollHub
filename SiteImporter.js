@@ -6,6 +6,7 @@ const { Utils } = require("scrollsdk/products/Utils.js")
 const path = require("path")
 const ky = require("./ky.js")
 const cheerio = require("cheerio")
+const { execSync } = require("child_process")
 
 const removeReturnCharsAndRightShift = (str, numSpaces) => str.replace(/\r/g, "").replace(/\n/g, "\n" + " ".repeat(numSpaces))
 
@@ -22,7 +23,9 @@ class RssImporter {
 		const date = pubDate || isoDate ? `date ${pubDate || isoDate}` : ""
 		const scrollFile = `title ${title}
 ${date}
-* ${removeReturnCharsAndRightShift(content, 1)}
+groups All
+
+${removeReturnCharsAndRightShift(content, 1)}
 `
 		Disk.write(path.join(destinationFolder, Utils.stringToPermalink(title) + SCROLL_FILE_EXTENSION), scrollFile)
 	}
@@ -61,6 +64,19 @@ class SiteImporter {
 		}
 
 		return `❌ Scroll wasn't sure how to import '${importFrom}'.\n💡 You can open an issue here: https://github.com/breck7/scroll/issues`
+	}
+
+	async importFromUrl(url, rootFolder) {
+		const { hostname } = new URL(url)
+		const folder = path.join(rootFolder, hostname)
+		try {
+			if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true })
+			execSync("scroll init; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folder })
+			await this.importSite(url, folder)
+			execSync("scroll build", { cwd: folder })
+		} catch (err) {
+			console.error(err)
+		}
 	}
 }
 

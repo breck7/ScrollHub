@@ -1,7 +1,5 @@
 #! /usr/bin/env node
-const { ScrollCli } = require("scroll-cli")
 const { SiteImporter } = require("./SiteImporter.js")
-const fs = require("fs")
 const path = require("path")
 
 const cases = `https://juliagalef.com/feed/
@@ -19,20 +17,4 @@ https://worksinprogress.co/feed/
 https://meyerweb.com/eric/thoughts/feed/`.split("\n")
 
 const rootFolder = path.join(__dirname, "sites")
-
-try {
-	fs.mkdirSync(rootFolder)
-} catch (err) {
-	console.error(err)
-}
-cases.forEach(async url => {
-	const { hostname } = new URL(url)
-	const folder = path.join(rootFolder, hostname)
-	try {
-		if (!fs.existsSync(folder)) fs.mkdirSync(folder)
-		await new SiteImporter().importSite(url, folder)
-		new ScrollCli().buildCommand(folder)
-	} catch (err) {
-		console.error(err)
-	}
-})
+cases.forEach(async url => new SiteImporter().importFromUrl(url, rootFolder))
