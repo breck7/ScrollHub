@@ -4,11 +4,8 @@ const Parser = require("rss-parser")
 const { Disk } = require("scrollsdk/products/Disk.node.js")
 const { Utils } = require("scrollsdk/products/Utils.js")
 const path = require("path")
+const ky = require("./ky.js")
 const cheerio = require("cheerio")
-let ky
-;(async () => {
-	ky = await import("ky")
-})()
 
 const removeReturnCharsAndRightShift = (str, numSpaces) => str.replace(/\r/g, "").replace(/\n/g, "\n" + " ".repeat(numSpaces))
 
@@ -46,6 +43,7 @@ ${date}
 					const dom = cheerio.load(html)
 					this.savePost(item, dom.text(), destinationFolder)
 				} catch (err) {
+					console.error(err)
 					console.log(`❌ downloading '${item.link}'`)
 				}
 			})
