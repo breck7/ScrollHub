@@ -11,6 +11,7 @@ https://believermag.com/feed/
 https://waitbutwhy.com/feed
 https://xkcd.com/rss.xml
 https://torrentfreak.com/feed/
+https://paulgraham.com/articles.html
 https://blogmaverick.com/feed/
 https://vitalik.ca/feed.xml
 https://worksinprogress.co/feed/
