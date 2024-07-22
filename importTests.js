@@ -1,6 +1,6 @@
 #! /usr/bin/env node
-const { ScrollCli } = require("../scroll.js")
-const { importSite } = require("./RssImporter.js")
+const { ScrollCli } = require("scroll-cli")
+const { SiteImporter } = require("./SiteImporter.js")
 const fs = require("fs")
 const path = require("path")
 
@@ -18,7 +18,7 @@ https://vitalik.ca/feed.xml
 https://worksinprogress.co/feed/
 https://meyerweb.com/eric/thoughts/feed/`.split("\n")
 
-const rootFolder = path.join(__dirname, "importExamples")
+const rootFolder = path.join(__dirname, "sites")
 
 try {
 	fs.mkdirSync(rootFolder)
