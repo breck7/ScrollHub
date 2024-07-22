@@ -29,6 +29,9 @@ groups All
 ${removeReturnCharsAndRightShift(content, 1)}
 `
 		Disk.write(path.join(destinationFolder, Utils.stringToPermalink(title) + SCROLL_FILE_EXTENSION), scrollFile)
+
+		// Build incrementally
+		execSync("scroll build", { cwd: destinationFolder })
 	}
 
 	async downloadFilesTo(destinationFolder) {
