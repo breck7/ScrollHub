@@ -24,7 +24,7 @@ class RssImporter {
 		const date = pubDate || isoDate ? `date ${pubDate || isoDate}` : ""
 		const scrollFile = `title ${title}
 ${date}
-groups All
+tags All
 
 ${removeReturnCharsAndRightShift(content, 1)}
 `
