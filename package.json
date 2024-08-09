@@ -11,14 +11,14 @@
     "git-http-backend": "^1.1.2",
     "ky": "^1.4.0",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^118.2.2"
+    "scroll-cli": "^118.6.2"
   },
   "scripts": {
     "build": "scroll build",
     "test": "scroll test",
     "local": "scroll build; node server.js",
     "ssh": "ssh root@hub.scroll.pub",
-    "up": "npm install scroll-cli@latest",
+    "up": "npm install scroll-cli@latest; cp ~/tryscroll/dist/constants.js ide/parsers.js",
     "deploy": "ssh root@hub.scroll.pub 'cd ScrollHub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server && npm run build'"
   },
   "prettier": {
