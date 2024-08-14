@@ -133,14 +133,15 @@ const stamps = {
   buildTxt
   metaTags
   gazetteCss
-  pageHeader
+  homeButton
+  viewSourceButton
   printTitle
   mediumColumns 1
   title Hello world
   
   Welcome to my website.
   
-  pageFooter
+  scrollVersionLink
  .gitignore
   *.html
   *.txt
