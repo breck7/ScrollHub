@@ -11,7 +11,7 @@ title Edit Site
 
 # <a id="folderNameLink"></a> is online.
 
-<div id="gitClone"></div>
+<div id="gitClone" class="greyText"></div>
 
 <form method="get" action="write" id="editForm">
 <div>

@@ -16,8 +16,11 @@ title ScrollHub: Launch a new website in 1 second
 
 * 
  id sitesCreated
+ class greyText
 <script>
  fetch('/sitesCreated').then(response => response.text()).then(data => document.getElementById('sitesCreated').innerText = `${data} sites created`);
  </script>
+
+<br><br>
 
 import footer.scroll
