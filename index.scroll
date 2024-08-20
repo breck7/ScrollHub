@@ -6,12 +6,12 @@ title ScrollHub: Launch a new website in 1 second
 <link rel="stylesheet" type="text/css" href="style.css" />
 
 
-# Scroll is a language and static site generator for scientists of all ages.
- https://scroll.pub Scroll
- underline Scroll
+# Scroll is a language and community for scientists of all ages.
+ https://scroll.pub language
+ https://www.reddit.com/r/WorldWideScroll/ community
 
 <form method="get" action="createFromForm">
-<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Create site</button>
+<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Publish</button>
 <div style="color:red; flex: 100%; padding: 30px 8px 0; display:none;" id="errorMessage"></div>
 <script>
  {
@@ -28,10 +28,10 @@ title ScrollHub: Launch a new website in 1 second
 </form>
 
 * 
- id sitesCreated
+ id sitesPublished
  class greyText
 <script>
- fetch('/sitesCreated').then(response => response.text()).then(data => document.getElementById('sitesCreated').innerText = `${data} sites created`);
+ fetch('/sitesPublished').then(response => response.text()).then(data => document.getElementById('sitesPublished').innerText = `${data} sites published`);
  </script>
 
 <br><br>

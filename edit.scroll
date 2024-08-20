@@ -23,7 +23,7 @@ title Edit Site
 </div>
 <div>
  <textarea name="content" id="fileEditor" rows="20"></textarea>
- <button>Save</button>
+ <button>Publish</button>
 </div>
 </form>
 // # Commands
@@ -32,8 +32,8 @@ title Edit Site
 
 import footer.scroll
 
-# Create site | Powered by Scroll
- link index.html Create site
+# New folder | Powered by Scroll
+ link index.html New folder
  https://scroll.pub Scroll
  underline Scroll
 

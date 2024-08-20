@@ -121,11 +121,11 @@ const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, ""
 // Validate folder name
 const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
 
-let sitesCreated = fs.readdirSync(sitesFolder).length
+let sitesPublished = fs.readdirSync(sitesFolder).length
 
-app.get("/sitesCreated", (req, res) => {
+app.get("/sitesPublished", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
-	res.send(sitesCreated.toString())
+	res.send(sitesPublished.toString())
 })
 
 app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
@@ -170,7 +170,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		const stamp = stamps.bare
 		fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
 		execSync("scroll build; rm stamp.scroll; scroll format; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
-		sitesCreated++
+		sitesPublished++
 
 		// Generate and save password
 		const password = generatePassword()
