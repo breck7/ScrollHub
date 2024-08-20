@@ -13,7 +13,7 @@ title Edit Site
 
 <div id="gitClone" class="greyText"></div>
 
-<form method="get" action="write" id="editForm">
+<form method="post" action="write" id="editForm">
 <div>
 <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
 <input type="hidden" name="filePath" id="filePathInput"/>

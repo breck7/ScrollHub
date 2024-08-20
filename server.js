@@ -63,6 +63,9 @@ const { spawn } = require("child_process")
 const app = express()
 const port = 80
 
+// Middleware to parse URL-encoded bodies (form data)
+app.use(express.urlencoded({ extended: true }))
+
 const sitesFolder = path.join(__dirname, "sites")
 if (!fs.existsSync(sitesFolder)) fs.mkdirSync(sitesFolder)
 
@@ -94,7 +97,8 @@ const generatePassword = () => {
 
 // Middleware to check password
 const checkPassword = (req, res, next) => {
-	const { folderName, password } = req.query
+	const folderName = req.query.folderName || req.body.folderName
+	const password = req.query.password || req.body.password
 	if (!folderName) return res.status(400).send("Folder name is required")
 	if (!passwords[folderName]) return res.status(404).send("Folder not found")
 	if (passwords[folderName] !== password) return res.status(401).send(`Invalid password for ${folderName}`)
@@ -278,10 +282,8 @@ app.get("/read", checkPassword, (req, res) => {
 	}
 })
 
-app.get("/write", checkPassword, (req, res) => {
-	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
-	const content = decodeURIComponent(req.query.content)
-	const password = req.query.password
+const writeFile = (res, filePath, content, password) => {
+	filePath = path.join(sitesFolder, filePath)
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
@@ -303,7 +305,10 @@ app.get("/write", checkPassword, (req, res) => {
 		console.error(error)
 		res.status(500).send(`An error occurred while writing the file or rebuilding the site:\n ${error.toString().replace(/</g, "&lt;")}`)
 	}
-})
+}
+
+app.get("/write", checkPassword, (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content), req.query.password))
+app.post("/write", checkPassword, (req, res) => writeFile(res, req.body.filePath, req.body.content, req.body.password))
 
 // Static file serving comes AFTER our routes, so if someone creates a site with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
