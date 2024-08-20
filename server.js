@@ -129,7 +129,7 @@ app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folde
 // ideas: single page, blog, knowledge base.
 const stamps = {
 	bare: `stamp
- index.scroll
+ header.scroll
   buildHtml
   buildTxt
   metaTags
@@ -138,6 +138,8 @@ const stamps = {
   viewSourceButton
   printTitle
   mediumColumns 1
+ index.scroll
+  import header.scroll
   title Hello world
   
   Welcome to my website.
