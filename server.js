@@ -102,10 +102,11 @@ const checkPassword = (req, res, next) => {
 }
 
 // Rate limiting middleware
+const rateLimitSeconds = 0.1
 const createLimiter = rateLimit({
-	windowMs: 3 * 1000, // 10 seconds
+	windowMs: rateLimit * 1000, // 10 seconds
 	max: 1, // limit each IP to 1 request per windowMs
-	message: "Sorry, you exceeded 1 site every 3 seconds",
+	message: `Sorry, you exceeded 1 site every ${rateLimitSeconds} seconds`,
 	standardHeaders: true,
 	legacyHeaders: false
 })
@@ -148,13 +149,15 @@ const stamps = {
   *.xml`
 }
 
+const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
+
 app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(sitesFolder, folderName)
 
-	if (!isValidFolderName(folderName)) return res.status(400).send("Sorry, your folder name did not meet our requirements (sorry!). It should start with a letter a-z and pass a few other checks.")
+	if (!isValidFolderName(folderName)) return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z and pass a few other checks.`, folderName })
 
-	if (fs.existsSync(folderPath)) return res.status(400).send("Sorry a folder with that name already exists")
+	if (fs.existsSync(folderPath)) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName })
 
 	try {
 		fs.mkdirSync(folderPath, { recursive: true })
@@ -171,7 +174,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll&password=${password}`)
 	} catch (error) {
 		console.error(error)
-		res.status(500).send("An error occurred while creating the site")
+		res.status(500).send("Sorry, an error occurred while creating the site:", error)
 	}
 })
 
