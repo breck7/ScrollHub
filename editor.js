@@ -84,7 +84,7 @@ class EditorApp {
 	createFileCommand() {
 		const fileName = prompt("Enter a filename", "untitled")
 		if (!fileName) return ""
-		window.location = `edit.html?folderName=${encodeURIComponent(this.folderName)}&password=${this.password}&fileName=${encodeURIComponent(fileName.replace(".scroll", "") + ".scroll")}`
+		window.location = `write.html?content=&folderName=${encodeURIComponent(this.folderName)}&password=${this.password}&fileName=${encodeURIComponent(fileName.replace(".scroll", "") + ".scroll")}`
 	}
 
 	setFileContent(value) {
