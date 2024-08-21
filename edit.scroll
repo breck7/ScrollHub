@@ -2,7 +2,7 @@ import settings.scroll
 metaTags
 homeButton
 gazetteCss
-title Edit Site
+title Edit Folder
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
