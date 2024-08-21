@@ -86,12 +86,12 @@ const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, ""
 // Validate folder name
 const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
 
-app.get("/sitesPublished", (req, res) => {
+app.get("/foldersPublished", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
 	res.send(allFolders.length.toString())
 })
 
-const getSites = () => {
+const getFolders = () => {
 	const all = fs.readdirSync(sitesFolder).map(folder => {
 		const fullPath = path.join(sitesFolder, folder)
 		const stats = fs.statSync(fullPath)
@@ -108,7 +108,7 @@ const getSites = () => {
 
 let allFolders
 const updateList = () => {
-	allFolders = getSites()
+	allFolders = getFolders()
 	const scroll = `import settings.scroll
 homeButton
 buildHtml
