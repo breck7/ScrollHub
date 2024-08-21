@@ -59,6 +59,7 @@ const path = require("path")
 const rateLimit = require("express-rate-limit")
 const httpBackend = require("git-http-backend")
 const { spawn } = require("child_process")
+const { TreeNode } = require("scrollsdk/products/TreeNode.js")
 
 const app = express()
 const port = 80
@@ -68,42 +69,6 @@ app.use(express.urlencoded({ extended: true }))
 
 const sitesFolder = path.join(__dirname, "sites")
 if (!fs.existsSync(sitesFolder)) fs.mkdirSync(sitesFolder)
-
-const passwords = {}
-const passwordsFile = path.join(sitesFolder, "passwords.scroll")
-if (!fs.existsSync(passwordsFile)) fs.writeFileSync(path.join(sitesFolder, "passwords.scroll"), "", "utf8")
-fs.readFileSync(passwordsFile, "utf8")
-	.trim()
-	.split("\n")
-	.filter(l => l)
-	.forEach(line => {
-		const [folderName, password] = line.split(" ")
-		passwords[folderName] = password
-	})
-
-// Function to generate a password
-// 1 in 1T w rate limiting ok for now.
-const commonWords =
-	"the of and to in for is on that by this with you it not or be are from at as your all have new more an was we will home can us about if page my has search free but our one other do no information time they site he up may what which their news out use any there see only so his when contact here business who web also now help get pm view online first am been would how were me services some these click its like service than find price date back top people had list name just over state year day into email two health world".split(
-		" "
-	)
-const generatePassword = () => {
-	let password = []
-	for (let i = 0; i < 6; i++) {
-		password.push(commonWords[Math.floor(Math.random() * commonWords.length)])
-	}
-	return password.join("")
-}
-
-// Middleware to check password
-const checkPassword = (req, res, next) => {
-	const folderName = req.query.folderName || req.body.folderName
-	const password = req.query.password || req.body.password
-	if (!folderName) return res.status(400).send("Folder name is required")
-	if (!passwords[folderName]) return res.status(404).send("Folder not found")
-	if (passwords[folderName] !== password) return res.status(401).send(`Invalid password for ${folderName}`)
-	next()
-}
 
 // Rate limiting middleware
 const rateLimitSeconds = 0.1
@@ -121,12 +86,54 @@ const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, ""
 // Validate folder name
 const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
 
-let sitesPublished = fs.readdirSync(sitesFolder).length
-
 app.get("/sitesPublished", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
-	res.send(sitesPublished.toString())
+	res.send(allFolders.length.toString())
 })
+
+const getSites = () => {
+	const all = fs.readdirSync(sitesFolder).map(folder => {
+		const fullPath = path.join(sitesFolder, folder)
+		const stats = fs.statSync(fullPath)
+		if (!stats.isDirectory()) return null
+		const { ctime, mtime } = stats
+		return {
+			folder,
+			folderLink: folder + "/",
+			created: new Date(ctime).toLocaleString()
+		}
+	})
+	return all.filter(i => i)
+}
+
+let allFolders
+const updateList = () => {
+	allFolders = getSites()
+	const scroll = `import settings.scroll
+homeButton
+buildHtml
+metaTags
+gazetteCss
+title Folders
+
+<link rel="stylesheet" type="text/css" href="style.css" />
+
+mediumColumns 1
+${allFolders.length} published folders on this server
+
+table
+ printTable
+ data
+  ${new TreeNode(allFolders).asCsv.replace(/\n/g, "\n  ")}
+
+endColumns
+tableSearch
+scrollVersionLink`
+	fs.writeFileSync(path.join(__dirname, "list.scroll"), scroll, "utf8")
+	execSync(`scroll build`, { cwd: __dirname })
+}
+
+updateList()
 
 app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
 
@@ -170,21 +177,15 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		const stamp = stamps.bare
 		fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
 		execSync("scroll build; rm stamp.scroll; scroll format; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
-		sitesPublished++
-
-		// Generate and save password
-		const password = generatePassword()
-		fs.appendFileSync(passwordsFile, `${folderName} ${password}\n`)
-		passwords[folderName] = password
-
-		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll&password=${password}`)
+		updateList()
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("Sorry, an error occurred while creating the site:", error)
 	}
 })
 
-app.get("/ls", checkPassword, (req, res) => {
+app.get("/ls", (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(sitesFolder, folderName)
 
@@ -217,9 +218,9 @@ const runCommand = (req, res, command) => {
 	}
 }
 
-app.get("/build", checkPassword, (req, res) => runCommand(req, res, "build"))
-app.get("/format", checkPassword, (req, res) => runCommand(req, res, "format"))
-app.get("/test", checkPassword, (req, res) => runCommand(req, res, "test"))
+app.get("/build", (req, res) => runCommand(req, res, "build"))
+app.get("/format", (req, res) => runCommand(req, res, "format"))
+app.get("/test", (req, res) => runCommand(req, res, "test"))
 
 app.get("/git/:repo/*", (req, res) => {
 	const repo = req.params.repo
@@ -265,7 +266,7 @@ app.post("/git/:repo/*", (req, res) => {
 	req.pipe(handlers).pipe(res)
 })
 
-app.get("/read", checkPassword, (req, res) => {
+app.get("/read", (req, res) => {
 	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
@@ -282,7 +283,7 @@ app.get("/read", checkPassword, (req, res) => {
 	}
 })
 
-const writeFile = (res, filePath, content, password) => {
+const writeFile = (res, filePath, content) => {
 	filePath = path.join(sitesFolder, filePath)
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
@@ -300,15 +301,15 @@ const writeFile = (res, filePath, content, password) => {
 		// Run scroll build on the folder
 		execSync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
-		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}&password=${password}`)
+		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send(`An error occurred while writing the file or rebuilding the site:\n ${error.toString().replace(/</g, "&lt;")}`)
 	}
 }
 
-app.get("/write", checkPassword, (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content), req.query.password))
-app.post("/write", checkPassword, (req, res) => writeFile(res, req.body.filePath, req.body.content, req.body.password))
+app.get("/write", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
+app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.content))
 
 // Static file serving comes AFTER our routes, so if someone creates a site with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people

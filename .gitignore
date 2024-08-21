@@ -3,3 +3,6 @@ node_modules/
 package-lock.json
 sites/
 *.html
+list.scroll
+*.js
+*.css

@@ -1,7 +1,6 @@
 class EditorApp {
 	constructor() {
 		this.folderName = ""
-		this.password = ""
 		this.previewIFrame = null
 		this.fileList = null
 		const scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
@@ -21,18 +20,15 @@ class EditorApp {
 		const urlParams = new URLSearchParams(window.location.search)
 		this.folderName = urlParams.get("folderName")
 		this.fileName = urlParams.get("fileName")
-		this.password = urlParams.get("password")
 		this.fileList = document.getElementById("fileList")
 
 		this.updatePreviewIFrame()
 		if (!this.folderName) return this.showError("Folder name not provided in the query string")
-		if (!this.password) return this.showError("Need correct password in the query string")
 
 		this.fetchAndDisplayFileList()
 
 		this.fileEditor = document.getElementById("fileEditor")
 		document.getElementById("filePathInput").value = `${this.folderName}/${this.fileName}`
-		document.getElementById("password").value = this.password
 		document.getElementById("folderNameInput").value = this.folderName
 		this.loadFileContent()
 		return this
@@ -77,7 +73,7 @@ class EditorApp {
 	}
 
 	updateFileList(files) {
-		const fileLinks = files.map(file => `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}&password=${this.password}">${file}</a>`)
+		const fileLinks = files.map(file => `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`)
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
 
@@ -86,7 +82,7 @@ class EditorApp {
 		if (!fileName) return ""
 		const { folderName } = this
 		const filePath = `${folderName}/${fileName.replace(".scroll", "") + ".scroll"}`
-		window.location = `write?content=&folderName=${encodeURIComponent(folderName)}&password=${this.password}&filePath=${encodeURIComponent(filePath)}`
+		window.location = `write?content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
 	}
 
 	setFileContent(value) {
@@ -95,7 +91,7 @@ class EditorApp {
 	}
 
 	get auth() {
-		return `?folderName=${this.folderName}&password=${this.password}&`
+		return `?folderName=${this.folderName}&`
 	}
 
 	loadFileContent() {

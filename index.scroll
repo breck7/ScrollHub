@@ -27,9 +27,8 @@ title ScrollHub: Launch a new website in 1 second
  </script>
 </form>
 
-* 
- id sitesPublished
- class greyText
+center
+<a id="sitesPublished" class="greyText" href="list.html"></a>
 <script>
  fetch('/sitesPublished').then(response => response.text()).then(data => document.getElementById('sitesPublished').innerText = `${data} sites published`);
  </script>
