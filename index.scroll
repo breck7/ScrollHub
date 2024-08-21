@@ -28,7 +28,7 @@ title ScrollHub: Launch a new website in 1 second
 </form>
 
 center
-<a id="foldersPublished" class="greyText" href="list.html"></a>
+<a id="foldersPublished" class="greyText" href="list.html#order=1.desc"></a>
 <script>
  fetch('/foldersPublished').then(response => response.text()).then(data => document.getElementById('foldersPublished').innerText = `${data} published folders`);
  </script>

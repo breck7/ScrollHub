@@ -154,5 +154,5 @@ https://xania.org
 https://xkcd.com
 `.split("\n")
 
-const rootFolder = path.join(__dirname, "sites")
+const rootFolder = path.join(__dirname, "folders")
 cases.forEach(async url => new SiteImporter().importFromUrl(url, rootFolder))

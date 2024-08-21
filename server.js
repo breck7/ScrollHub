@@ -67,15 +67,15 @@ const port = 80
 // Middleware to parse URL-encoded bodies (form data)
 app.use(express.urlencoded({ extended: true }))
 
-const sitesFolder = path.join(__dirname, "sites")
-if (!fs.existsSync(sitesFolder)) fs.mkdirSync(sitesFolder)
+const rootFolder = path.join(__dirname, "folders")
+if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
 
 // Rate limiting middleware
 const rateLimitSeconds = 0.1
 const createLimiter = rateLimit({
 	windowMs: rateLimit * 1000, // 10 seconds
 	max: 1, // limit each IP to 1 request per windowMs
-	message: `Sorry, you exceeded 1 site every ${rateLimitSeconds} seconds`,
+	message: `Sorry, you exceeded 1 folder every ${rateLimitSeconds} seconds`,
 	standardHeaders: true,
 	legacyHeaders: false
 })
@@ -92,8 +92,8 @@ app.get("/foldersPublished", (req, res) => {
 })
 
 const getFolders = () => {
-	const all = fs.readdirSync(sitesFolder).map(folder => {
-		const fullPath = path.join(sitesFolder, folder)
+	const all = fs.readdirSync(rootFolder).map(folder => {
+		const fullPath = path.join(rootFolder, folder)
 		const stats = fs.statSync(fullPath)
 		if (!stats.isDirectory()) return null
 		const { ctime, mtime } = stats
@@ -153,7 +153,7 @@ const stamps = {
   import header.scroll
   title Hello world
   
-  Welcome to my website.
+  Welcome to my folder.
   
   scrollVersionLink
  .gitignore
@@ -166,7 +166,7 @@ const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSe
 
 app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
-	const folderPath = path.join(sitesFolder, folderName)
+	const folderPath = path.join(rootFolder, folderName)
 
 	if (!isValidFolderName(folderName)) return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z and pass a few other checks.`, folderName })
 
@@ -181,13 +181,13 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
 		console.error(error)
-		res.status(500).send("Sorry, an error occurred while creating the site:", error)
+		res.status(500).send("Sorry, an error occurred while creating the folder:", error)
 	}
 })
 
 app.get("/ls", (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
-	const folderPath = path.join(sitesFolder, folderName)
+	const folderPath = path.join(rootFolder, folderName)
 
 	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
 
@@ -205,7 +205,7 @@ app.get("/ls", (req, res) => {
 
 const runCommand = (req, res, command) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
-	const folderPath = path.join(sitesFolder, folderName)
+	const folderPath = path.join(rootFolder, folderName)
 
 	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
 
@@ -224,7 +224,7 @@ app.get("/test", (req, res) => runCommand(req, res, "test"))
 
 app.get("/git/:repo/*", (req, res) => {
 	const repo = req.params.repo
-	const repoPath = path.join(sitesFolder, repo)
+	const repoPath = path.join(rootFolder, repo)
 
 	req.url = "/" + req.url.split("/").slice(3).join("/")
 
@@ -243,7 +243,7 @@ app.get("/git/:repo/*", (req, res) => {
 // todo: check pw
 app.post("/git/:repo/*", (req, res) => {
 	const repo = req.params.repo
-	const repoPath = path.join(sitesFolder, repo)
+	const repoPath = path.join(rootFolder, repo)
 
 	req.url = "/" + req.url.split("/").slice(3).join("/")
 
@@ -267,7 +267,7 @@ app.post("/git/:repo/*", (req, res) => {
 })
 
 app.get("/read", (req, res) => {
-	const filePath = path.join(sitesFolder, decodeURIComponent(req.query.filePath))
+	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
@@ -284,7 +284,7 @@ app.get("/read", (req, res) => {
 })
 
 const writeFile = (res, filePath, content) => {
-	filePath = path.join(sitesFolder, filePath)
+	filePath = path.join(rootFolder, filePath)
 
 	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
 
@@ -292,7 +292,7 @@ const writeFile = (res, filePath, content) => {
 	if (!fs.existsSync(folderPath)) return res.status(400).send("Folder does not exist")
 
 	// Extract folder name and file name for the redirect
-	const folderName = path.relative(sitesFolder, folderPath)
+	const folderName = path.relative(rootFolder, folderPath)
 	const fileName = path.basename(filePath)
 
 	try {
@@ -304,14 +304,14 @@ const writeFile = (res, filePath, content) => {
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
 		console.error(error)
-		res.status(500).send(`An error occurred while writing the file or rebuilding the site:\n ${error.toString().replace(/</g, "&lt;")}`)
+		res.status(500).send(`An error occurred while writing the file or rebuilding the folder:\n ${error.toString().replace(/</g, "&lt;")}`)
 	}
 }
 
 app.get("/write", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
 app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.content))
 
-// Static file serving comes AFTER our routes, so if someone creates a site with a route name, our route name wont break.
+// Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
 // of what names are taken, for instant feedback.
 
@@ -319,15 +319,15 @@ app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.cont
 // This should come BEFORE the static file serving middleware
 app.use((req, res, next) => {
 	if (!req.url.endsWith(".scroll")) return next()
-	const filePath = path.join(sitesFolder, decodeURIComponent(req.url))
+	const filePath = path.join(rootFolder, decodeURIComponent(req.url))
 	if (fs.existsSync(filePath)) {
 		res.setHeader("Content-Type", "text/plain; charset=utf-8")
 		res.sendFile(filePath)
 	} else next()
 })
 
-// Serve the sites directory from the root URL
-app.use("/", express.static(sitesFolder))
+// Serve the folders directory from the root URL
+app.use("/", express.static(rootFolder))
 
 // Serve the root directory statically
 app.use(express.static(__dirname))
