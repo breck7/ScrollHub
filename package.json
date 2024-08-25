@@ -18,7 +18,7 @@
     "test": "scroll test",
     "local": "scroll build; node server.js",
     "ssh": "ssh root@hub.scroll.pub",
-    "up": "npm install scroll-cli@latest; cp ~/tryscroll/dist/constants.js ide/parsers.js",
+    "up": "npm install scroll-cli@latest; cp ~/tryscroll/dist/constants.js ide/parsers.js; cp ~/tryscroll/dist/libs.js ide/libs.js",
     "deploy": "ssh root@hub.scroll.pub 'cd ScrollHub && git pull && npm install . && npm install -g scroll-cli && pm2 restart server && npm run build'"
   },
   "prettier": {
