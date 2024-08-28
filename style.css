@@ -31,6 +31,11 @@ body {
   padding: 0.5rem;
 }
 
+.drag-over {
+  border: 2px dashed #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
 iframe {
   height: 600px;
   width: 600px;

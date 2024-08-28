@@ -31,7 +31,76 @@ class EditorApp {
 		document.getElementById("filePathInput").value = `${this.folderName}/${this.fileName}`
 		document.getElementById("folderNameInput").value = this.folderName
 		this.loadFileContent()
-		return this
+
+		// Add event listener for file drag and drop. If a file is dropped, upload it.
+
+		// Add event listeners for drag and drop
+		const dropZone = document.getElementById("editForm")
+		dropZone.addEventListener("dragover", this.handleDragOver.bind(this))
+		dropZone.addEventListener("dragleave", this.handleDragLeave.bind(this))
+		dropZone.addEventListener("drop", this.handleDrop.bind(this))
+	}
+
+	handleDragOver(event) {
+		event.preventDefault()
+		event.stopPropagation()
+		event.currentTarget.classList.add("drag-over")
+	}
+
+	handleDragLeave(event) {
+		event.preventDefault()
+		event.stopPropagation()
+		event.currentTarget.classList.remove("drag-over")
+	}
+
+	handleDrop(event) {
+		event.preventDefault()
+		event.stopPropagation()
+		event.currentTarget.classList.remove("drag-over")
+		const files = event.dataTransfer.files
+		if (files.length > 0) this.uploadFiles(files)
+	}
+
+	// New method to handle multiple file uploads
+	uploadFiles(files) {
+		const uploadPromises = Array.from(files).map(file => this.uploadFile(file))
+
+		Promise.all(uploadPromises)
+			.then(() => {
+				console.log("All files uploaded successfully")
+				this.fetchAndDisplayFileList()
+			})
+			.catch(error => {
+				console.error("Error uploading files:", error)
+				// todo: show error to user
+				alert("Error uploading files:" + error)
+			})
+	}
+
+	// Modified uploadFile method to return a Promise
+	async uploadFile(file) {
+		const formData = new FormData()
+		formData.append("file", file)
+		formData.append("folderName", this.folderName)
+
+		try {
+			const response = await fetch("/upload", {
+				method: "POST",
+				body: formData
+			})
+
+			if (!response.ok) {
+				const errorText = await response.text()
+				throw new Error(errorText || "Network response was not ok")
+			}
+
+			const data = await response.text()
+			console.log("File uploaded successfully:", data)
+			return data
+		} catch (error) {
+			console.error("Error uploading file:", error.message)
+			throw error // Re-throw the error if you want calling code to handle it
+		}
 	}
 
 	updatePreviewIFrame() {
@@ -59,7 +128,7 @@ class EditorApp {
 		fetch(`/ls${this.auth}`)
 			.then(response => {
 				if (!response.ok) {
-					throw new Error("Network response was not ok")
+					throw new Error(response.text())
 				}
 				return response.text()
 			})
@@ -73,7 +142,9 @@ class EditorApp {
 	}
 
 	updateFileList(files) {
-		const fileLinks = files.map(file => `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`)
+		const fileLinks = files.map(file =>
+			file.endsWith(".scroll") ? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>` : `<a target="preview" href="/${this.folderName}/${file}">${file}</a>`
+		)
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
 

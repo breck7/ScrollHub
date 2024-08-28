@@ -7,6 +7,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "express": "^4.19.2",
+    "express-fileupload": "^1.5.1",
     "express-rate-limit": "^7.3.1",
     "git-http-backend": "^1.1.2",
     "ky": "^1.4.0",

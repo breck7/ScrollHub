@@ -61,11 +61,20 @@ const httpBackend = require("git-http-backend")
 const { spawn } = require("child_process")
 const { TreeNode } = require("scrollsdk/products/TreeNode.js")
 
+const fileUpload = require("express-fileupload")
+
 const app = express()
 const port = 80
 
 // Middleware to parse URL-encoded bodies (form data)
 app.use(express.urlencoded({ extended: true }))
+
+// Add file upload middleware
+app.use(
+	fileUpload({
+		//limits: { fileSize: 1000 * 1024 } // 100KB limit
+	})
+)
 
 const rootFolder = path.join(__dirname, "folders")
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
@@ -185,6 +194,8 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	}
 })
 
+const allowedExtensions = "scroll jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
+
 app.get("/ls", (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)
@@ -192,9 +203,11 @@ app.get("/ls", (req, res) => {
 	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
 
 	try {
-		const output = execSync("ls *.scroll", { cwd: folderPath }).toString()
-		// Split the output into lines and filter out any empty lines
-		const files = output.split("\n").filter(file => file.trim() !== "")
+		const files = fs.readdirSync(folderPath).filter(file => {
+			const ext = path.extname(file).toLowerCase().slice(1)
+			return allowedExtensions.includes(ext)
+		})
+
 		res.setHeader("Content-Type", "text/plain")
 		res.send(files.join("\n"))
 	} catch (error) {
@@ -310,6 +323,55 @@ const writeFile = (res, filePath, content) => {
 
 app.get("/write", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
 app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.content))
+
+// Add a route for file uploads
+app.post("/upload", (req, res) => {
+	if (!req.files || Object.keys(req.files).length === 0) {
+		return res.status(400).send("No files were uploaded.")
+	}
+
+	const file = req.files.file
+	const folderName = req.body.folderName
+	const folderPath = path.join(rootFolder, sanitizeFolderName(folderName))
+
+	// Check if folder exists
+	if (!fs.existsSync(folderPath)) {
+		return res.status(404).send("Folder not found")
+	}
+
+	// Check file extension
+	const fileExtension = path.extname(file.name).toLowerCase().slice(1)
+	if (!allowedExtensions.includes(fileExtension)) {
+		return res.status(400).send(`Invalid file type. Only ${allowedExtensions.join(" ")} files are allowed.`)
+	}
+
+	const maxSize = 1000 * 1024
+	if (file.size > maxSize) {
+		return res.status(400).send("File size exceeds the maximum limit of 1MB.")
+	}
+
+	// Save file to disk
+	const fileName = sanitizeFolderName(path.basename(file.name, path.extname(file.name))) + "." + fileExtension
+	const filePath = path.join(folderPath, fileName)
+
+	file.mv(filePath, err => {
+		if (err) {
+			console.error(err)
+			return res.status(500).send("An error occurred while uploading the file.")
+		}
+
+		// Run scroll build on the folder
+		try {
+			execSync(`git add ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
+			res.send("File uploaded successfully")
+		} catch (error) {
+			console.error(error)
+			res.status(500).send("File uploaded, but an error occurred while rebuilding the folder.")
+		}
+	})
+})
+
+// Add a route to support the uploading of files of these kinds  jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps
 
 // Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
