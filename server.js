@@ -59,7 +59,7 @@ const path = require("path")
 const rateLimit = require("express-rate-limit")
 const httpBackend = require("git-http-backend")
 const { spawn } = require("child_process")
-const { TreeNode } = require("scrollsdk/products/TreeNode.js")
+const { Particle } = require("scrollsdk/products/Particle.js")
 
 const fileUpload = require("express-fileupload")
 
@@ -133,7 +133,7 @@ ${allFolders.length} published folders on this server
 table
  printTable
  data
-  ${new TreeNode(allFolders).asCsv.replace(/\n/g, "\n  ")}
+  ${new Particle(allFolders).asCsv.replace(/\n/g, "\n  ")}
 
 endColumns
 tableSearch

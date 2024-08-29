@@ -10765,7 +10765,7 @@ class Utils {
     return str
   }
   // todo: add seed!
-  static makeRandomTree(lines = 1000, seed = Date.now()) {
+  static makeRandomParticles(lines = 1000, seed = Date.now()) {
     let str = ""
     let letters = " 123abc".split("")
     const randFn = Utils._getPseudoRandom0to1FloatGenerator(seed)
@@ -10847,33 +10847,33 @@ class Utils {
   static makeSortByFn(accessorOrAccessors) {
     const arrayOfFns = Array.isArray(accessorOrAccessors) ? accessorOrAccessors : [accessorOrAccessors]
     return (objectA, objectB) => {
-      const nodeAFirst = -1
-      const nodeBFirst = 1
+      const particleAFirst = -1
+      const particleBFirst = 1
       const accessor = arrayOfFns[0] // todo: handle accessors
       const av = accessor(objectA)
       const bv = accessor(objectB)
-      let result = av < bv ? nodeAFirst : av > bv ? nodeBFirst : 0
-      if (av === undefined && bv !== undefined) result = nodeAFirst
-      else if (bv === undefined && av !== undefined) result = nodeBFirst
+      let result = av < bv ? particleAFirst : av > bv ? particleBFirst : 0
+      if (av === undefined && bv !== undefined) result = particleAFirst
+      else if (bv === undefined && av !== undefined) result = particleBFirst
       return result
     }
   }
   static _makeGraphSortFunctionFromGraph(idAccessor, graph) {
-    return (nodeA, nodeB) => {
-      const nodeAFirst = -1
-      const nodeBFirst = 1
-      const nodeAUniqueId = idAccessor(nodeA)
-      const nodeBUniqueId = idAccessor(nodeB)
-      const nodeAExtendsNodeB = graph[nodeAUniqueId].has(nodeBUniqueId)
-      const nodeBExtendsNodeA = graph[nodeBUniqueId].has(nodeAUniqueId)
-      if (nodeAExtendsNodeB) return nodeBFirst
-      else if (nodeBExtendsNodeA) return nodeAFirst
-      const nodeAExtendsSomething = graph[nodeAUniqueId].size > 1
-      const nodeBExtendsSomething = graph[nodeBUniqueId].size > 1
-      if (!nodeAExtendsSomething && nodeBExtendsSomething) return nodeAFirst
-      else if (!nodeBExtendsSomething && nodeAExtendsSomething) return nodeBFirst
-      if (nodeAUniqueId > nodeBUniqueId) return nodeBFirst
-      else if (nodeAUniqueId < nodeBUniqueId) return nodeAFirst
+    return (particleA, particleB) => {
+      const particleAFirst = -1
+      const particleBFirst = 1
+      const particleAUniqueId = idAccessor(particleA)
+      const particleBUniqueId = idAccessor(particleB)
+      const particleAExtendsParticleB = graph[particleAUniqueId].has(particleBUniqueId)
+      const particleBExtendsParticleA = graph[particleBUniqueId].has(particleAUniqueId)
+      if (particleAExtendsParticleB) return particleBFirst
+      else if (particleBExtendsParticleA) return particleAFirst
+      const particleAExtendsSomething = graph[particleAUniqueId].size > 1
+      const particleBExtendsSomething = graph[particleBUniqueId].size > 1
+      if (!particleAExtendsSomething && particleBExtendsSomething) return particleAFirst
+      else if (!particleBExtendsSomething && particleAExtendsSomething) return particleBFirst
+      if (particleAUniqueId > particleBUniqueId) return particleBFirst
+      else if (particleAUniqueId < particleBUniqueId) return particleAFirst
       return 0
     }
   }
@@ -10881,34 +10881,34 @@ class Utils {
     return str.split(needle).join("")
   }
   static _makeGraphSortFunction(idAccessor, extendsIdAccessor) {
-    return (nodeA, nodeB) => {
+    return (particleA, particleB) => {
       // -1 === a before b
-      const nodeAUniqueId = idAccessor(nodeA)
-      const nodeAExtends = extendsIdAccessor(nodeA)
-      const nodeBUniqueId = idAccessor(nodeB)
-      const nodeBExtends = extendsIdAccessor(nodeB)
-      const nodeAExtendsNodeB = nodeAExtends === nodeBUniqueId
-      const nodeBExtendsNodeA = nodeBExtends === nodeAUniqueId
-      const nodeAFirst = -1
-      const nodeBFirst = 1
-      if (!nodeAExtends && !nodeBExtends) {
+      const particleAUniqueId = idAccessor(particleA)
+      const particleAExtends = extendsIdAccessor(particleA)
+      const particleBUniqueId = idAccessor(particleB)
+      const particleBExtends = extendsIdAccessor(particleB)
+      const particleAExtendsParticleB = particleAExtends === particleBUniqueId
+      const particleBExtendsParticleA = particleBExtends === particleAUniqueId
+      const particleAFirst = -1
+      const particleBFirst = 1
+      if (!particleAExtends && !particleBExtends) {
         // If neither extends, sort by firstWord
-        if (nodeAUniqueId > nodeBUniqueId) return nodeBFirst
-        else if (nodeAUniqueId < nodeBUniqueId) return nodeAFirst
+        if (particleAUniqueId > particleBUniqueId) return particleBFirst
+        else if (particleAUniqueId < particleBUniqueId) return particleAFirst
         return 0
       }
       // If only one extends, the other comes first
-      else if (!nodeAExtends) return nodeAFirst
-      else if (!nodeBExtends) return nodeBFirst
+      else if (!particleAExtends) return particleAFirst
+      else if (!particleBExtends) return particleBFirst
       // If A extends B, B should come first
-      if (nodeAExtendsNodeB) return nodeBFirst
-      else if (nodeBExtendsNodeA) return nodeAFirst
+      if (particleAExtendsParticleB) return particleBFirst
+      else if (particleBExtendsParticleA) return particleAFirst
       // Sort by what they extend
-      if (nodeAExtends > nodeBExtends) return nodeBFirst
-      else if (nodeAExtends < nodeBExtends) return nodeAFirst
+      if (particleAExtends > particleBExtends) return particleBFirst
+      else if (particleAExtends < particleBExtends) return particleAFirst
       // Finally sort by firstWord
-      if (nodeAUniqueId > nodeBUniqueId) return nodeBFirst
-      else if (nodeAUniqueId < nodeBUniqueId) return nodeAFirst
+      if (particleAUniqueId > particleBUniqueId) return particleBFirst
+      else if (particleAUniqueId < particleBUniqueId) return particleAFirst
       // Should never hit this, unless we have a duplicate line.
       return 0
     }
@@ -10959,7 +10959,7 @@ window.Utils = Utils
 
 let _scrollsdkLatestTime = 0
 let _scrollsdkMinTimeIncrement = 0.000000000001
-class AbstractNode {
+class AbstractParticle {
   _getProcessTimeInMilliseconds() {
     // We add this loop to restore monotonically increasing .now():
     // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now
@@ -10978,33 +10978,33 @@ var FileFormat
 ;(function (FileFormat) {
   FileFormat["csv"] = "csv"
   FileFormat["tsv"] = "tsv"
-  FileFormat["tree"] = "tree"
+  FileFormat["particles"] = "particles"
 })(FileFormat || (FileFormat = {}))
 const TN_WORD_BREAK_SYMBOL = " "
 const TN_EDGE_SYMBOL = " "
 const TN_NODE_BREAK_SYMBOL = "\n"
-class AbstractTreeEvent {
-  constructor(targetNode) {
-    this.targetNode = targetNode
+class AbstractParticleEvent {
+  constructor(targetParticle) {
+    this.targetParticle = targetParticle
   }
 }
-class ChildAddedTreeEvent extends AbstractTreeEvent {}
-class ChildRemovedTreeEvent extends AbstractTreeEvent {}
-class DescendantChangedTreeEvent extends AbstractTreeEvent {}
-class LineChangedTreeEvent extends AbstractTreeEvent {}
-class TreeWord {
-  constructor(node, cellIndex) {
-    this._node = node
+class ChildAddedParticleEvent extends AbstractParticleEvent {}
+class ChildRemovedParticleEvent extends AbstractParticleEvent {}
+class DescendantChangedParticleEvent extends AbstractParticleEvent {}
+class LineChangedParticleEvent extends AbstractParticleEvent {}
+class ParticleWord {
+  constructor(particle, cellIndex) {
+    this._particle = particle
     this._cellIndex = cellIndex
   }
   replace(newWord) {
-    this._node.setWord(this._cellIndex, newWord)
+    this._particle.setWord(this._cellIndex, newWord)
   }
   get word() {
-    return this._node.getWord(this._cellIndex)
+    return this._particle.getWord(this._cellIndex)
   }
 }
-const TreeEvents = { ChildAddedTreeEvent, ChildRemovedTreeEvent, DescendantChangedTreeEvent, LineChangedTreeEvent }
+const ParticleEvents = { ChildAddedParticleEvent, ChildRemovedParticleEvent, DescendantChangedParticleEvent, LineChangedParticleEvent }
 var WhereOperators
 ;(function (WhereOperators) {
   WhereOperators["equal"] = "="
@@ -11046,14 +11046,14 @@ class ParserCombinator {
     }
     return obj
   }
-  _getParser(line, contextNode, wordBreakSymbol = TN_WORD_BREAK_SYMBOL) {
-    return this._getFirstWordMap().get(this._getFirstWord(line, wordBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextNode)
+  _getParser(line, contextParticle, wordBreakSymbol = TN_WORD_BREAK_SYMBOL) {
+    return this._getFirstWordMap().get(this._getFirstWord(line, wordBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
   }
-  _getCatchAllParser(contextNode) {
+  _getCatchAllParser(contextParticle) {
     if (this._catchAllParser) return this._catchAllParser
-    const parent = contextNode.parent
+    const parent = contextParticle.parent
     if (parent) return parent._getParser()._getCatchAllParser(parent)
-    return contextNode.constructor
+    return contextParticle.constructor
   }
   _getParserFromRegexTests(line) {
     if (!this._regexTests) return undefined
@@ -11066,11 +11066,11 @@ class ParserCombinator {
     return line.substr(0, firstBreak > -1 ? firstBreak : undefined)
   }
 }
-class TreeNode extends AbstractNode {
+class Particle extends AbstractParticle {
   constructor(children, line, parent) {
     super()
     // BEGIN MUTABLE METHODS BELOw
-    this._nodeCreationTime = this._getProcessTimeInMilliseconds()
+    this._particleCreationTime = this._getProcessTimeInMilliseconds()
     this._parent = parent
     this._setLine(line)
     this._setChildren(children)
@@ -11078,7 +11078,7 @@ class TreeNode extends AbstractNode {
   execute() {}
   async loadRequirements(context) {
     // todo: remove
-    await Promise.all(this.map(node => node.loadRequirements(context)))
+    await Promise.all(this.map(particle => particle.loadRequirements(context)))
   }
   getErrors() {
     return []
@@ -11107,10 +11107,10 @@ class TreeNode extends AbstractNode {
   }
   getSiblings() {
     if (this.isRoot()) return []
-    return this.parent.filter(node => node !== this)
+    return this.parent.filter(particle => particle !== this)
   }
   _getUid() {
-    if (!this._uid) this._uid = TreeNode._makeUniqueId()
+    if (!this._uid) this._uid = Particle._makeUniqueId()
     return this._uid
   }
   // todo: rename getMother? grandMother et cetera?
@@ -11142,32 +11142,32 @@ class TreeNode extends AbstractNode {
       yield* child.getTopDownArrayIterator()
     }
   }
-  nodeAtLine(lineNumber) {
+  particleAtLine(lineNumber) {
     let index = 0
-    for (let node of this.getTopDownArrayIterator()) {
-      if (lineNumber === index) return node
+    for (let particle of this.getTopDownArrayIterator()) {
+      if (lineNumber === index) return particle
       index++
     }
   }
   get numberOfLines() {
     let lineCount = 0
-    for (let node of this.getTopDownArrayIterator()) {
+    for (let particle of this.getTopDownArrayIterator()) {
       lineCount++
     }
     return lineCount
   }
   _getMaxUnitsOnALine() {
     let max = 0
-    for (let node of this.getTopDownArrayIterator()) {
-      const count = node.words.length + node.getIndentLevel()
+    for (let particle of this.getTopDownArrayIterator()) {
+      const count = particle.words.length + particle.getIndentLevel()
       if (count > max) max = count
     }
     return max
   }
   get numberOfWords() {
     let wordCount = 0
-    for (let node of this.getTopDownArrayIterator()) {
-      wordCount += node.words.length
+    for (let particle of this.getTopDownArrayIterator()) {
+      wordCount += particle.words.length
     }
     return wordCount
   }
@@ -11177,8 +11177,8 @@ class TreeNode extends AbstractNode {
   _getLineNumber(target = this) {
     if (this._cachedLineNumber) return this._cachedLineNumber
     let lineNumber = 1
-    for (let node of this.root.getTopDownArrayIterator()) {
-      if (node === target) return lineNumber
+    for (let particle of this.root.getTopDownArrayIterator()) {
+      if (particle === target) return lineNumber
       lineNumber++
     }
     return lineNumber
@@ -11201,15 +11201,15 @@ class TreeNode extends AbstractNode {
     return relativeTo === this || !this.parent
   }
   get root() {
-    return this._getRootNode()
+    return this._getRootParticle()
   }
-  _getRootNode(relativeTo) {
+  _getRootParticle(relativeTo) {
     if (this.isRoot(relativeTo)) return this
-    return this.parent._getRootNode(relativeTo)
+    return this.parent._getRootParticle(relativeTo)
   }
   toString(indentCount = 0, language = this) {
     if (this.isRoot()) return this._childrenToString(indentCount, language)
-    return language.edgeSymbol.repeat(indentCount) + this.getLine(language) + (this.length ? language.nodeBreakSymbol + this._childrenToString(indentCount + 1, language) : "")
+    return language.edgeSymbol.repeat(indentCount) + this.getLine(language) + (this.length ? language.particleBreakSymbol + this._childrenToString(indentCount + 1, language) : "")
   }
   get asString() {
     return this.toString()
@@ -11243,16 +11243,16 @@ class TreeNode extends AbstractNode {
   _toHtml(indentCount) {
     const path = this.getPathVector().join(" ")
     const classes = {
-      nodeLine: "nodeLine",
+      particleLine: "particleLine",
       edgeSymbol: "edgeSymbol",
-      nodeBreakSymbol: "nodeBreakSymbol",
-      nodeChildren: "nodeChildren"
+      particleBreakSymbol: "particleBreakSymbol",
+      particleChildren: "particleChildren"
     }
     const edge = this.edgeSymbol.repeat(indentCount)
-    // Set up the firstWord part of the node
-    const edgeHtml = `<span class="${classes.nodeLine}" data-pathVector="${path}"><span class="${classes.edgeSymbol}">${edge}</span>`
+    // Set up the firstWord part of the particle
+    const edgeHtml = `<span class="${classes.particleLine}" data-pathVector="${path}"><span class="${classes.edgeSymbol}">${edge}</span>`
     const lineHtml = this._getLineHtml()
-    const childrenHtml = this.length ? `<span class="${classes.nodeBreakSymbol}">${this.nodeBreakSymbol}</span>` + `<span class="${classes.nodeChildren}">${this._childrenToHtml(indentCount + 1)}</span>` : ""
+    const childrenHtml = this.length ? `<span class="${classes.particleBreakSymbol}">${this.particleBreakSymbol}</span>` + `<span class="${classes.particleChildren}">${this._childrenToHtml(indentCount + 1)}</span>` : ""
     return `${edgeHtml}${lineHtml}${childrenHtml}</span>`
   }
   _getWords(startFrom) {
@@ -11288,7 +11288,7 @@ class TreeNode extends AbstractNode {
     else this.getRunTimePhaseErrors()[phase] = errorObject
     return this
   }
-  _getJavascriptPrototypeChainUpTo(stopAtClassName = "TreeNode") {
+  _getJavascriptPrototypeChainUpTo(stopAtClassName = "Particle") {
     // todo: cross browser test this
     let constructor = this.constructor
     const chain = []
@@ -11302,39 +11302,39 @@ class TreeNode extends AbstractNode {
   _getProjectRootDir() {
     return this.isRoot() ? "" : this.root._getProjectRootDir()
   }
-  // Concat 2 trees amd return a new true, but replace any nodes
-  // in this tree that start with the same node from the first tree with
+  // Concat 2 particles amd return a new particle, but replace any particles
+  // in this particle that start with the same particle from the first particle with
   // that patched version. Does not recurse.
   patch(two) {
     const copy = this.clone()
-    two.forEach(node => {
-      const hit = copy.getNode(node.getWord(0))
+    two.forEach(particle => {
+      const hit = copy.getParticle(particle.getWord(0))
       if (hit) hit.destroy()
     })
     copy.concat(two)
     return copy
   }
   getSparsity() {
-    const nodes = this.getChildren()
+    const particles = this.getChildren()
     const fields = this._getUnionNames()
     let count = 0
-    this.getChildren().forEach(node => {
+    this.getChildren().forEach(particle => {
       fields.forEach(field => {
-        if (node.has(field)) count++
+        if (particle.has(field)) count++
       })
     })
-    return 1 - count / (nodes.length * fields.length)
+    return 1 - count / (particles.length * fields.length)
   }
   // todo: rename. what is the proper term from set/cat theory?
-  getBiDirectionalMaps(propertyNameOrFn, propertyNameOrFn2 = node => node.getWord(0)) {
+  getBiDirectionalMaps(propertyNameOrFn, propertyNameOrFn2 = particle => particle.getWord(0)) {
     const oneToTwo = {}
     const twoToOne = {}
     const is1Str = typeof propertyNameOrFn === "string"
     const is2Str = typeof propertyNameOrFn2 === "string"
     const children = this.getChildren()
-    this.forEach((node, index) => {
-      const value1 = is1Str ? node.get(propertyNameOrFn) : propertyNameOrFn(node, index, children)
-      const value2 = is2Str ? node.get(propertyNameOrFn2) : propertyNameOrFn2(node, index, children)
+    this.forEach((particle, index) => {
+      const value1 = is1Str ? particle.get(propertyNameOrFn) : propertyNameOrFn(particle, index, children)
+      const value2 = is2Str ? particle.get(propertyNameOrFn2) : propertyNameOrFn2(particle, index, children)
       if (value1 !== undefined) {
         if (!oneToTwo[value1]) oneToTwo[value1] = []
         oneToTwo[value1].push(value2)
@@ -11353,16 +11353,16 @@ class TreeNode extends AbstractNode {
     if (wordIndex < 1) return xiLength * (numIndents + wordIndex)
     return indentPosition + this.words.slice(0, wordIndex).join(this.wordBreakSymbol).length + this.wordBreakSymbol.length
   }
-  getNodeInScopeAtCharIndex(charIndex) {
+  getParticleInScopeAtCharIndex(charIndex) {
     if (this.isRoot()) return this
     let wordIndex = this.getWordIndexAtCharacterIndex(charIndex)
     if (wordIndex > 0) return this
-    let node = this
+    let particle = this
     while (wordIndex < 1) {
-      node = node.parent
+      particle = particle.parent
       wordIndex++
     }
-    return node
+    return particle
   }
   getWordProperties(wordIndex) {
     const start = this._getWordIndexCharacterStartPosition(wordIndex)
@@ -11382,8 +11382,8 @@ class TreeNode extends AbstractNode {
   getAllWordBoundaryCoordinates() {
     const coordinates = []
     let lineIndex = 0
-    for (let node of this.getTopDownArrayIterator()) {
-      node.getWordBoundaryCharIndices().forEach((charIndex, wordIndex) => {
+    for (let particle of this.getTopDownArrayIterator()) {
+      particle.getWordBoundaryCharIndices().forEach((charIndex, wordIndex) => {
         coordinates.push({
           lineIndex: lineIndex,
           charIndex: charIndex,
@@ -11424,21 +11424,21 @@ class TreeNode extends AbstractNode {
   // Note: This currently does not return any errors resulting from "required" or "single"
   getAllErrors(lineStartsAt = 1) {
     const errors = []
-    for (let node of this.topDownArray) {
-      node._cachedLineNumber = lineStartsAt // todo: cleanup
-      const errs = node.getErrors()
+    for (let particle of this.topDownArray) {
+      particle._cachedLineNumber = lineStartsAt // todo: cleanup
+      const errs = particle.getErrors()
       errs.forEach(err => errors.push(err))
-      // delete node._cachedLineNumber
+      // delete particle._cachedLineNumber
       lineStartsAt++
     }
     return errors
   }
   *getAllErrorsIterator() {
     let line = 1
-    for (let node of this.getTopDownArrayIterator()) {
-      node._cachedLineNumber = line
-      const errs = node.getErrors()
-      // delete node._cachedLineNumber
+    for (let particle of this.getTopDownArrayIterator()) {
+      particle._cachedLineNumber = line
+      const errs = particle.getErrors()
+      // delete particle._cachedLineNumber
       if (errs.length) yield errs
       line++
     }
@@ -11453,10 +11453,10 @@ class TreeNode extends AbstractNode {
   get contentWithChildren() {
     // todo: deprecate
     const content = this.content
-    return (content ? content : "") + (this.length ? this.nodeBreakSymbol + this._childrenToString() : "")
+    return (content ? content : "") + (this.length ? this.particleBreakSymbol + this._childrenToString() : "")
   }
-  getFirstNode() {
-    return this.nodeAt(0)
+  getFirstParticle() {
+    return this.particleAt(0)
   }
   getStack() {
     return this._getStack()
@@ -11469,8 +11469,8 @@ class TreeNode extends AbstractNode {
   }
   getStackString() {
     return this._getStack()
-      .map((node, index) => this.edgeSymbol.repeat(index) + node.getLine())
-      .join(this.nodeBreakSymbol)
+      .map((particle, index) => this.edgeSymbol.repeat(index) + particle.getLine())
+      .join(this.particleBreakSymbol)
   }
   getLine(language) {
     if (!this._words && !language) return this._getLine() // todo: how does this interact with "language" param?
@@ -11482,11 +11482,11 @@ class TreeNode extends AbstractNode {
   getOneHot(column) {
     const clone = this.clone()
     const cols = Array.from(new Set(clone.getColumn(column)))
-    clone.forEach(node => {
-      const val = node.get(column)
-      node.delete(column)
+    clone.forEach(particle => {
+      const val = particle.get(column)
+      particle.delete(column)
       cols.forEach(col => {
-        node.set(column + "_" + col, val === col ? "1" : "0")
+        particle.set(column + "_" + col, val === col ? "1" : "0")
       })
     })
     return clone
@@ -11516,7 +11516,7 @@ class TreeNode extends AbstractNode {
     return path
   }
   getIndex() {
-    return this.parent._indexOfNode(this)
+    return this.parent._indexOfParticle(this)
   }
   isTerminal() {
     return !this.length
@@ -11538,15 +11538,15 @@ class TreeNode extends AbstractNode {
     const length = this.length
     const hasChildrenNoContent = content === undefined && length
     const hasContentAndHasChildren = content !== undefined && length
-    // If the node has a content and a subtree return it as a string, as
-    // Javascript object values can't be both a leaf and a tree.
+    // If the particle has a content and a subparticle return it as a string, as
+    // Javascript object values can't be both a leaf and a particle.
     const tupleValue = hasChildrenNoContent ? this.toObject() : hasContentAndHasChildren ? this.contentWithChildren : content
     return [this.firstWord, tupleValue]
   }
-  _indexOfNode(needleNode) {
+  _indexOfParticle(needleParticle) {
     let result = -1
-    this.find((node, index) => {
-      if (node === needleNode) {
+    this.find((particle, index) => {
+      if (particle === needleParticle) {
         result = index
         return true
       }
@@ -11555,14 +11555,14 @@ class TreeNode extends AbstractNode {
   }
   getMaxLineWidth() {
     let maxWidth = 0
-    for (let node of this.getTopDownArrayIterator()) {
-      const lineWidth = node.getLine().length
+    for (let particle of this.getTopDownArrayIterator()) {
+      const lineWidth = particle.getLine().length
       if (lineWidth > maxWidth) maxWidth = lineWidth
     }
     return maxWidth
   }
-  toTreeNode() {
-    return new TreeNode(this.toString())
+  toParticle() {
+    return new Particle(this.toString())
   }
   _rightPad(newWidth, padCharacter) {
     const line = this.getLine()
@@ -11571,7 +11571,7 @@ class TreeNode extends AbstractNode {
   }
   rightPad(padCharacter = " ") {
     const newWidth = this.getMaxLineWidth()
-    this.topDownArray.forEach(node => node._rightPad(newWidth, padCharacter))
+    this.topDownArray.forEach(particle => particle._rightPad(newWidth, padCharacter))
     return this
   }
   lengthen(numberOfLines) {
@@ -11582,45 +11582,45 @@ class TreeNode extends AbstractNode {
     }
     return this
   }
-  toSideBySide(treesOrStrings, delimiter = " ") {
-    treesOrStrings = treesOrStrings.map(tree => (tree instanceof TreeNode ? tree : new TreeNode(tree)))
-    const clone = this.toTreeNode()
-    const nodeBreakSymbol = "\n"
+  toSideBySide(particlesOrStrings, delimiter = " ") {
+    particlesOrStrings = particlesOrStrings.map(particle => (particle instanceof Particle ? particle : new Particle(particle)))
+    const clone = this.toParticle()
+    const particleBreakSymbol = "\n"
     let next
-    while ((next = treesOrStrings.shift())) {
+    while ((next = particlesOrStrings.shift())) {
       clone.lengthen(next.numberOfLines)
       clone.rightPad()
       next
         .toString()
-        .split(nodeBreakSymbol)
+        .split(particleBreakSymbol)
         .forEach((line, index) => {
-          const node = clone.nodeAtLine(index)
-          node.setLine(node.getLine() + delimiter + line)
+          const particle = clone.particleAtLine(index)
+          particle.setLine(particle.getLine() + delimiter + line)
         })
     }
     return clone
   }
-  toComparison(treeNode) {
-    const nodeBreakSymbol = "\n"
-    const lines = treeNode.toString().split(nodeBreakSymbol)
-    return new TreeNode(
+  toComparison(particle) {
+    const particleBreakSymbol = "\n"
+    const lines = particle.toString().split(particleBreakSymbol)
+    return new Particle(
       this.toString()
-        .split(nodeBreakSymbol)
+        .split(particleBreakSymbol)
         .map((line, index) => (lines[index] === line ? "" : "x"))
-        .join(nodeBreakSymbol)
+        .join(particleBreakSymbol)
     )
   }
-  toBraid(treesOrStrings) {
-    treesOrStrings.unshift(this)
-    const nodeDelimiter = this.nodeBreakSymbol
-    return new TreeNode(
-      Utils.interweave(treesOrStrings.map(tree => tree.toString().split(nodeDelimiter)))
+  toBraid(particlesOrStrings) {
+    particlesOrStrings.unshift(this)
+    const particleDelimiter = this.particleBreakSymbol
+    return new Particle(
+      Utils.interweave(particlesOrStrings.map(particle => particle.toString().split(particleDelimiter)))
         .map(line => (line === undefined ? "" : line))
-        .join(nodeDelimiter)
+        .join(particleDelimiter)
     )
   }
   getSlice(startIndexInclusive, stopIndexExclusive) {
-    return new TreeNode(
+    return new Particle(
       this.slice(startIndexInclusive, stopIndexExclusive)
         .map(child => child.toString())
         .join("\n")
@@ -11633,38 +11633,38 @@ class TreeNode extends AbstractNode {
   hasWord(index, word) {
     return this.getWord(index) === word
   }
-  getNodeByColumns(...columns) {
-    return this.topDownArray.find(node => node._hasColumns(columns))
+  getParticleByColumns(...columns) {
+    return this.topDownArray.find(particle => particle._hasColumns(columns))
   }
-  getNodeByColumn(index, name) {
-    return this.find(node => node.getWord(index) === name)
+  getParticleByColumn(index, name) {
+    return this.find(particle => particle.getWord(index) === name)
   }
-  _getNodesByColumn(index, name) {
-    return this.filter(node => node.getWord(index) === name)
+  _getParticlesByColumn(index, name) {
+    return this.filter(particle => particle.getWord(index) === name)
   }
   // todo: preserve subclasses!
   select(columnNames) {
     columnNames = Array.isArray(columnNames) ? columnNames : [columnNames]
-    const result = new TreeNode()
-    this.forEach(node => {
-      const tree = result.appendLine(node.getLine())
+    const result = new Particle()
+    this.forEach(particle => {
+      const newParticle = result.appendLine(particle.getLine())
       columnNames.forEach(name => {
-        const valueNode = node.getNode(name)
-        if (valueNode) tree.appendNode(valueNode)
+        const valueParticle = particle.getParticle(name)
+        if (valueParticle) newParticle.appendParticle(valueParticle)
       })
     })
     return result
   }
   selectionToString() {
-    return this.getSelectedNodes()
-      .map(node => node.toString())
+    return this.getSelectedParticles()
+      .map(particle => particle.toString())
       .join("\n")
   }
-  getSelectedNodes() {
-    return this.topDownArray.filter(node => node.isSelected())
+  getSelectedParticles() {
+    return this.topDownArray.filter(particle => particle.isSelected())
   }
   clearSelection() {
-    this.getSelectedNodes().forEach(node => node.unselectNode())
+    this.getSelectedParticles().forEach(particle => particle.unselectParticle())
   }
   // Note: this is for debugging select chains
   print(message = "") {
@@ -11679,8 +11679,8 @@ class TreeNode extends AbstractNode {
     const valueType = isArray ? typeof fixedValue[0] : typeof fixedValue
     let parser
     if (valueType === "number") parser = parseFloat
-    const fn = node => {
-      const cell = node.get(columnName)
+    const fn = particle => {
+      const cell = particle.get(columnName)
       const typedCell = parser ? parser(cell) : cell
       if (operator === WhereOperators.equal) return fixedValue === typedCell
       else if (operator === WhereOperators.notEqual) return fixedValue !== typedCell
@@ -11690,22 +11690,22 @@ class TreeNode extends AbstractNode {
       else if (operator === WhereOperators.lessThan) return typedCell < fixedValue
       else if (operator === WhereOperators.greaterThanOrEqual) return typedCell >= fixedValue
       else if (operator === WhereOperators.lessThanOrEqual) return typedCell <= fixedValue
-      else if (operator === WhereOperators.empty) return !node.has(columnName)
-      else if (operator === WhereOperators.notEmpty) return node.has(columnName) || (cell !== "" && cell !== undefined)
+      else if (operator === WhereOperators.empty) return !particle.has(columnName)
+      else if (operator === WhereOperators.notEmpty) return particle.has(columnName) || (cell !== "" && cell !== undefined)
       else if (operator === WhereOperators.in && isArray) return fixedValue.includes(typedCell)
       else if (operator === WhereOperators.notIn && isArray) return !fixedValue.includes(typedCell)
     }
-    const result = new TreeNode()
-    this.filter(fn).forEach(node => {
-      result.appendNode(node)
+    const result = new Particle()
+    this.filter(fn).forEach(particle => {
+      result.appendParticle(particle)
     })
     return result
   }
   with(firstWord) {
-    return this.filter(node => node.has(firstWord))
+    return this.filter(particle => particle.has(firstWord))
   }
   without(firstWord) {
-    return this.filter(node => !node.has(firstWord))
+    return this.filter(particle => !particle.has(firstWord))
   }
   first(quantity = 1) {
     return this.limit(quantity, 0)
@@ -11715,11 +11715,11 @@ class TreeNode extends AbstractNode {
   }
   // todo: preserve subclasses!
   limit(quantity, offset = 0) {
-    const result = new TreeNode()
+    const result = new Particle()
     this.getChildren()
       .slice(offset, quantity + offset)
-      .forEach(node => {
-        result.appendNode(node)
+      .forEach(particle => {
+        result.appendParticle(particle)
       })
     return result
   }
@@ -11747,10 +11747,10 @@ class TreeNode extends AbstractNode {
   }
   _getLevels() {
     const levels = {}
-    this.topDownArray.forEach(node => {
-      const level = node._getIndentLevel()
+    this.topDownArray.forEach(particle => {
+      const level = particle._getIndentLevel()
       if (!levels[level]) levels[level] = []
-      levels[level].push(node)
+      levels[level].push(particle)
     })
     return levels
   }
@@ -11759,7 +11759,7 @@ class TreeNode extends AbstractNode {
     return this._children
   }
   getLines() {
-    return this.map(node => node.getLine())
+    return this.map(particle => particle.getLine())
   }
   getChildren() {
     return this._getChildrenArray().slice(0)
@@ -11767,28 +11767,28 @@ class TreeNode extends AbstractNode {
   get length() {
     return this._getChildrenArray().length
   }
-  _nodeAt(index) {
+  _particleAt(index) {
     if (index < 0) index = this.length + index
     return this._getChildrenArray()[index]
   }
-  nodeAt(indexOrIndexArray) {
-    if (typeof indexOrIndexArray === "number") return this._nodeAt(indexOrIndexArray)
-    if (indexOrIndexArray.length === 1) return this._nodeAt(indexOrIndexArray[0])
+  particleAt(indexOrIndexArray) {
+    if (typeof indexOrIndexArray === "number") return this._particleAt(indexOrIndexArray)
+    if (indexOrIndexArray.length === 1) return this._particleAt(indexOrIndexArray[0])
     const first = indexOrIndexArray[0]
-    const node = this._nodeAt(first)
-    if (!node) return undefined
-    return node.nodeAt(indexOrIndexArray.slice(1))
+    const particle = this._particleAt(first)
+    if (!particle) return undefined
+    return particle.particleAt(indexOrIndexArray.slice(1))
   }
-  // Flatten a tree node into an object like {twitter:"pldb", "twitter.followers":123}.
+  // Flatten a particle into an object like {twitter:"pldb", "twitter.followers":123}.
   // Assumes you have a nested key/value list with no multiline strings.
   toFlatObject(delimiter = ".") {
     let newObject = {}
     const { edgeSymbolRegex } = this
     this.forEach((child, index) => {
       newObject[child.getWord(0)] = child.content
-      child.topDownArray.forEach(node => {
-        const newColumnName = node.getFirstWordPathRelativeTo(this).replace(edgeSymbolRegex, delimiter)
-        const value = node.content
+      child.topDownArray.forEach(particle => {
+        const newColumnName = particle.getFirstWordPathRelativeTo(this).replace(edgeSymbolRegex, delimiter)
+        const value = particle.content
         newObject[newColumnName] = value
       })
     })
@@ -11796,8 +11796,8 @@ class TreeNode extends AbstractNode {
   }
   _toObject() {
     const obj = {}
-    this.forEach(node => {
-      const tuple = node._toObjectTuple()
+    this.forEach(particle => {
+      const tuple = particle._toObjectTuple()
       obj[tuple[0]] = tuple[1]
     })
     return obj
@@ -11816,14 +11816,14 @@ class TreeNode extends AbstractNode {
     return this.map((plane, planeIndex) => plane.topDownArray.map((line, lineIndex) => line._toHtmlCubeLine(line.getIndentLevel() - 2, lineIndex, planeIndex)).join("")).join("")
   }
   _getHtmlJoinByCharacter() {
-    return `<span class="nodeBreakSymbol">${this.nodeBreakSymbol}</span>`
+    return `<span class="particleBreakSymbol">${this.particleBreakSymbol}</span>`
   }
   _childrenToHtml(indentCount) {
     const joinBy = this._getHtmlJoinByCharacter()
-    return this.map(node => node._toHtml(indentCount)).join(joinBy)
+    return this.map(particle => particle._toHtml(indentCount)).join(joinBy)
   }
   _childrenToString(indentCount, language = this) {
-    return this.map(node => node.toString(indentCount, language)).join(language.nodeBreakSymbol)
+    return this.map(particle => particle.toString(indentCount, language)).join(language.particleBreakSymbol)
   }
   childrenToString(indentCount = 0) {
     return this._childrenToString(indentCount)
@@ -11844,11 +11844,11 @@ class TreeNode extends AbstractNode {
   }
   toDisk(path) {
     if (!this.isNodeJs()) throw new Error("This method only works in Node.js")
-    const format = TreeNode._getFileFormat(path)
+    const format = Particle._getFileFormat(path)
     const formats = {
-      tree: tree => tree.toString(),
-      csv: tree => tree.asCsv,
-      tsv: tree => tree.asTsv
+      particles: particle => particle.toString(),
+      csv: particle => particle.asCsv,
+      tsv: particle => particle.asTsv
     }
     this.require("fs").writeFileSync(path, formats[format](this), "utf8")
     return this
@@ -11885,7 +11885,7 @@ class TreeNode extends AbstractNode {
     }
   }
   _childrenToYamlList(indentLevel) {
-    return this.map(node => node._toYamlListElement(indentLevel + 2))
+    return this.map(particle => particle._toYamlListElement(indentLevel + 2))
   }
   _toYamlAssociativeArrayElement(indentLevel) {
     const children = this._childrenToYaml(indentLevel + 1)
@@ -11893,7 +11893,7 @@ class TreeNode extends AbstractNode {
     return children.join("\n")
   }
   _childrenToYamlAssociativeArray(indentLevel) {
-    return this.map(node => node._toYamlAssociativeArrayElement(indentLevel))
+    return this.map(particle => particle._toYamlAssociativeArrayElement(indentLevel))
   }
   get asJsonSubset() {
     return JSON.stringify(this.toObject(), null, " ")
@@ -11914,19 +11914,19 @@ class TreeNode extends AbstractNode {
   get asGrid() {
     const WordBreakSymbol = this.wordBreakSymbol
     return this.toString()
-      .split(this.nodeBreakSymbol)
+      .split(this.particleBreakSymbol)
       .map(line => line.split(WordBreakSymbol))
   }
   get asGridJson() {
     return JSON.stringify(this.asGrid, null, 2)
   }
-  findNodes(firstWordPath) {
+  findParticles(firstWordPath) {
     // todo: can easily speed this up
     const map = {}
     if (!Array.isArray(firstWordPath)) firstWordPath = [firstWordPath]
     firstWordPath.forEach(path => (map[path] = true))
-    return this.topDownArray.filter(node => {
-      if (map[node._getFirstWordPath(this)]) return true
+    return this.topDownArray.filter(particle => {
+      if (map[particle._getFirstWordPath(this)]) return true
       return false
     })
   }
@@ -11938,27 +11938,27 @@ class TreeNode extends AbstractNode {
     console.log(message)
   }
   getColumn(path) {
-    return this.map(node => node.get(path))
+    return this.map(particle => particle.get(path))
   }
   getFiltered(fn) {
     const clone = this.clone()
     clone
-      .filter((node, index) => !fn(node, index))
-      .forEach(node => {
-        node.destroy()
+      .filter((particle, index) => !fn(particle, index))
+      .forEach(particle => {
+        particle.destroy()
       })
     return clone
   }
-  getNode(firstWordPath) {
-    return this._getNodeByPath(firstWordPath)
+  getParticle(firstWordPath) {
+    return this._getParticleByPath(firstWordPath)
   }
   getFrom(prefix) {
-    const hit = this.filter(node => node.getLine().startsWith(prefix))[0]
+    const hit = this.filter(particle => particle.getLine().startsWith(prefix))[0]
     if (hit) return hit.getLine().substr((prefix + this.wordBreakSymbol).length)
   }
   get(firstWordPath) {
-    const node = this._getNodeByPath(firstWordPath)
-    return node === undefined ? undefined : node.content
+    const particle = this._getParticleByPath(firstWordPath)
+    return particle === undefined ? undefined : particle.content
   }
   getOneOf(keys) {
     for (let i = 0; i < keys.length; i++) {
@@ -11967,43 +11967,42 @@ class TreeNode extends AbstractNode {
     }
     return ""
   }
-  // move to treenode
   pick(fields) {
-    const newTree = new TreeNode(this.toString()) // todo: why not clone?
+    const newParticle = new Particle(this.toString()) // todo: why not clone?
     const map = Utils.arrayToMap(fields)
-    newTree.nodeAt(0).forEach(node => {
-      if (!map[node.getWord(0)]) node.destroy()
+    newParticle.particleAt(0).forEach(particle => {
+      if (!map[particle.getWord(0)]) particle.destroy()
     })
-    return newTree
+    return newParticle
   }
-  getNodesByGlobPath(query) {
-    return this._getNodesByGlobPath(query)
+  getParticlesByGlobPath(query) {
+    return this._getParticlesByGlobPath(query)
   }
-  _getNodesByGlobPath(globPath) {
+  _getParticlesByGlobPath(globPath) {
     const edgeSymbol = this.edgeSymbol
     if (!globPath.includes(edgeSymbol)) {
       if (globPath === "*") return this.getChildren()
-      return this.filter(node => node.firstWord === globPath)
+      return this.filter(particle => particle.firstWord === globPath)
     }
     const parts = globPath.split(edgeSymbol)
     const current = parts.shift()
     const rest = parts.join(edgeSymbol)
-    const matchingNodes = current === "*" ? this.getChildren() : this.filter(child => child.firstWord === current)
+    const matchingParticles = current === "*" ? this.getChildren() : this.filter(child => child.firstWord === current)
     return [].concat.apply(
       [],
-      matchingNodes.map(node => node._getNodesByGlobPath(rest))
+      matchingParticles.map(particle => particle._getParticlesByGlobPath(rest))
     )
   }
-  _getNodeByPath(firstWordPath) {
+  _getParticleByPath(firstWordPath) {
     const edgeSymbol = this.edgeSymbol
     if (!firstWordPath.includes(edgeSymbol)) {
       const index = this.indexOfLast(firstWordPath)
-      return index === -1 ? undefined : this._nodeAt(index)
+      return index === -1 ? undefined : this._particleAt(index)
     }
     const parts = firstWordPath.split(edgeSymbol)
     const current = parts.shift()
-    const currentNode = this._getChildrenArray()[this._getIndex()[current]]
-    return currentNode ? currentNode._getNodeByPath(parts.join(edgeSymbol)) : undefined
+    const currentParticle = this._getChildrenArray()[this._getIndex()[current]]
+    return currentParticle ? currentParticle._getParticleByPath(parts.join(edgeSymbol)) : undefined
   }
   get next() {
     if (this.isRoot()) return this
@@ -12024,54 +12023,54 @@ class TreeNode extends AbstractNode {
   _getUnionNames() {
     if (!this.length) return []
     const obj = {}
-    this.forEach(node => {
-      if (!node.length) return undefined
-      node.forEach(node => {
-        obj[node.firstWord] = 1
+    this.forEach(particle => {
+      if (!particle.length) return undefined
+      particle.forEach(particle => {
+        obj[particle.firstWord] = 1
       })
     })
     return Object.keys(obj)
   }
-  getAncestorNodesByInheritanceViaExtendsKeyword(key) {
-    const ancestorNodes = this._getAncestorNodes(
-      (node, id) => node._getNodesByColumn(0, id),
-      node => node.get(key),
+  getAncestorParticlesByInheritanceViaExtendsKeyword(key) {
+    const ancestorParticles = this._getAncestorParticles(
+      (particle, id) => particle._getParticlesByColumn(0, id),
+      particle => particle.get(key),
       this
     )
-    ancestorNodes.push(this)
-    return ancestorNodes
+    ancestorParticles.push(this)
+    return ancestorParticles
   }
   // Note: as you can probably tell by the name of this method, I don't recommend using this as it will likely be replaced by something better.
-  getAncestorNodesByInheritanceViaColumnIndices(thisColumnNumber, extendsColumnNumber) {
-    const ancestorNodes = this._getAncestorNodes(
-      (node, id) => node._getNodesByColumn(thisColumnNumber, id),
-      node => node.getWord(extendsColumnNumber),
+  getAncestorParticlesByInheritanceViaColumnIndices(thisColumnNumber, extendsColumnNumber) {
+    const ancestorParticles = this._getAncestorParticles(
+      (particle, id) => particle._getParticlesByColumn(thisColumnNumber, id),
+      particle => particle.getWord(extendsColumnNumber),
       this
     )
-    ancestorNodes.push(this)
-    return ancestorNodes
+    ancestorParticles.push(this)
+    return ancestorParticles
   }
-  _getAncestorNodes(getPotentialParentNodesByIdFn, getParentIdFn, cannotContainNode) {
+  _getAncestorParticles(getPotentialParentParticlesByIdFn, getParentIdFn, cannotContainParticle) {
     const parentId = getParentIdFn(this)
     if (!parentId) return []
-    const potentialParentNodes = getPotentialParentNodesByIdFn(this.parent, parentId)
-    if (!potentialParentNodes.length) throw new Error(`"${this.getLine()} tried to extend "${parentId}" but "${parentId}" not found.`)
-    if (potentialParentNodes.length > 1) throw new Error(`Invalid inheritance family tree. Multiple unique ids found for "${parentId}"`)
-    const parentNode = potentialParentNodes[0]
+    const potentialParentParticles = getPotentialParentParticlesByIdFn(this.parent, parentId)
+    if (!potentialParentParticles.length) throw new Error(`"${this.getLine()} tried to extend "${parentId}" but "${parentId}" not found.`)
+    if (potentialParentParticles.length > 1) throw new Error(`Invalid inheritance paths. Multiple unique ids found for "${parentId}"`)
+    const parentParticle = potentialParentParticles[0]
     // todo: detect loops
-    if (parentNode === cannotContainNode) throw new Error(`Loop detected between '${this.getLine()}' and '${parentNode.getLine()}'`)
-    const ancestorNodes = parentNode._getAncestorNodes(getPotentialParentNodesByIdFn, getParentIdFn, cannotContainNode)
-    ancestorNodes.push(parentNode)
-    return ancestorNodes
+    if (parentParticle === cannotContainParticle) throw new Error(`Loop detected between '${this.getLine()}' and '${parentParticle.getLine()}'`)
+    const ancestorParticles = parentParticle._getAncestorParticles(getPotentialParentParticlesByIdFn, getParentIdFn, cannotContainParticle)
+    ancestorParticles.push(parentParticle)
+    return ancestorParticles
   }
   pathVectorToFirstWordPath(pathVector) {
     const path = pathVector.slice() // copy array
     const names = []
-    let node = this
+    let particle = this
     while (path.length) {
-      if (!node) return names
-      names.push(node.nodeAt(path[0]).firstWord)
-      node = node.nodeAt(path.shift())
+      if (!particle) return names
+      names.push(particle.particleAt(path[0]).firstWord)
+      particle = particle.particleAt(path.shift())
     }
     return names
   }
@@ -12133,10 +12132,10 @@ class TreeNode extends AbstractNode {
   _toArrays(columnNames, cellFn) {
     const skipHeaderRow = 1
     const header = columnNames.map((columnName, index) => cellFn(columnName, 0, index))
-    const rows = this.map((node, rowNumber) =>
+    const rows = this.map((particle, rowNumber) =>
       columnNames.map((columnName, columnIndex) => {
-        const childNode = node.getNode(columnName)
-        const content = childNode ? childNode.contentWithChildren : ""
+        const childParticle = particle.getParticle(columnName)
+        const content = childParticle ? childParticle.contentWithChildren : ""
         return cellFn(content, rowNumber + skipHeaderRow, columnIndex)
       })
     )
@@ -12161,10 +12160,10 @@ class TreeNode extends AbstractNode {
     // Set initial column widths
     const widths = header.map(col => (col.length > maxCharactersPerColumn ? maxCharactersPerColumn : col.length))
     // Expand column widths if needed
-    this.forEach(node => {
-      if (!node.length) return true
+    this.forEach(particle => {
+      if (!particle.length) return true
       header.forEach((col, index) => {
-        const cellValue = node.get(col)
+        const cellValue = particle.get(col)
         if (!cellValue) return true
         const length = cellValue.toString().length
         if (length > widths[index]) widths[index] = length > maxCharactersPerColumn ? maxCharactersPerColumn : length
@@ -12185,17 +12184,17 @@ class TreeNode extends AbstractNode {
     return this.toDelimited(" ")
   }
   get asOutline() {
-    return this._toOutline(node => node.getLine())
+    return this._toOutline(particle => particle.getLine())
   }
-  toMappedOutline(nodeFn) {
-    return this._toOutline(nodeFn)
+  toMappedOutline(particleFn) {
+    return this._toOutline(particleFn)
   }
   // Adapted from: https://github.com/notatestuser/treeify.js
-  _toOutline(nodeFn) {
-    const growBranch = (outlineTreeNode, last, lastStates, nodeFn, callback) => {
+  _toOutline(particleFn) {
+    const growBranch = (outlineParticle, last, lastStates, particleFn, callback) => {
       let lastStatesCopy = lastStates.slice(0)
-      const node = outlineTreeNode.node
-      if (lastStatesCopy.push([outlineTreeNode, last]) && lastStates.length > 0) {
+      const particle = outlineParticle.particle
+      if (lastStatesCopy.push([outlineParticle, last]) && lastStates.length > 0) {
         let line = ""
         // firstWordd on the "was last element" states of whatever we're nested within,
         // we need to append either blankness or a branch to our line
@@ -12205,33 +12204,33 @@ class TreeNode extends AbstractNode {
         // the prefix varies firstWordd on whether the key contains something to show and
         // whether we're dealing with the last element in this collection
         // the extra "-" just makes things stand out more.
-        line += (last ? "└" : "├") + nodeFn(node)
+        line += (last ? "└" : "├") + particleFn(particle)
         callback(line)
       }
-      if (!node) return
-      const length = node.length
+      if (!particle) return
+      const length = particle.length
       let index = 0
-      node.forEach(node => {
+      particle.forEach(particle => {
         let lastKey = ++index === length
-        growBranch({ node: node }, lastKey, lastStatesCopy, nodeFn, callback)
+        growBranch({ particle: particle }, lastKey, lastStatesCopy, particleFn, callback)
       })
     }
     let output = ""
-    growBranch({ node: this }, false, [], nodeFn, line => (output += line + "\n"))
+    growBranch({ particle: this }, false, [], particleFn, line => (output += line + "\n"))
     return output
   }
-  copyTo(node, index) {
-    return node._insertLineAndChildren(this.getLine(), this.childrenToString(), index)
+  copyTo(particle, index) {
+    return particle._insertLineAndChildren(this.getLine(), this.childrenToString(), index)
   }
   // Note: Splits using a positive lookahead
   // this.split("foo").join("\n") === this.toString()
   split(firstWord) {
     const constructor = this.constructor
-    const NodeBreakSymbol = this.nodeBreakSymbol
+    const ParticleBreakSymbol = this.particleBreakSymbol
     const WordBreakSymbol = this.wordBreakSymbol
     // todo: cleanup. the escaping is wierd.
     return this.toString()
-      .split(new RegExp(`\\${NodeBreakSymbol}(?=${firstWord}(?:${WordBreakSymbol}|\\${NodeBreakSymbol}))`, "g"))
+      .split(new RegExp(`\\${ParticleBreakSymbol}(?=${firstWord}(?:${WordBreakSymbol}|\\${ParticleBreakSymbol}))`, "g"))
       .map(str => new constructor(str))
   }
   get asMarkdownTable() {
@@ -12251,7 +12250,7 @@ class TreeNode extends AbstractNode {
   get asTsv() {
     return this.toDelimited("\t")
   }
-  get nodeBreakSymbol() {
+  get particleBreakSymbol() {
     return TN_NODE_BREAK_SYMBOL
   }
   get wordBreakSymbol() {
@@ -12260,21 +12259,21 @@ class TreeNode extends AbstractNode {
   get edgeSymbolRegex() {
     return new RegExp(this.edgeSymbol, "g")
   }
-  get nodeBreakSymbolRegex() {
-    return new RegExp(this.nodeBreakSymbol, "g")
+  get particleBreakSymbolRegex() {
+    return new RegExp(this.particleBreakSymbol, "g")
   }
   get edgeSymbol() {
     return TN_EDGE_SYMBOL
   }
   _textToContentAndChildrenTuple(text) {
-    const lines = text.split(this.nodeBreakSymbolRegex)
+    const lines = text.split(this.particleBreakSymbolRegex)
     const firstLine = lines.shift()
     const children = !lines.length
       ? undefined
       : lines
           .map(line => (line.substr(0, 1) === this.edgeSymbol ? line : this.edgeSymbol + line))
           .map(line => line.substr(1))
-          .join(this.nodeBreakSymbol)
+          .join(this.particleBreakSymbol)
     return [firstLine, children]
   }
   _getLine() {
@@ -12298,9 +12297,9 @@ class TreeNode extends AbstractNode {
       this._appendChildrenFromString(content)
       return this
     }
-    // set from tree object
-    if (content instanceof TreeNode) {
-      content.forEach(node => this._insertLineAndChildren(node.getLine(), node.childrenToString()))
+    // set from particle
+    if (content instanceof Particle) {
+      content.forEach(particle => this._insertLineAndChildren(particle.getLine(), particle.childrenToString()))
       return this
     }
     // If we set from object, create an array of inserted objects to avoid circular loops
@@ -12329,14 +12328,14 @@ class TreeNode extends AbstractNode {
     } else if (type === "function") line = firstWord + " " + content.toString()
     else if (type !== "object") line = firstWord + " " + content
     else if (content instanceof Date) line = firstWord + " " + content.getTime().toString()
-    else if (content instanceof TreeNode) {
+    else if (content instanceof Particle) {
       line = firstWord
-      children = new TreeNode(content.childrenToString(), content.getLine())
+      children = new Particle(content.childrenToString(), content.getLine())
     } else if (circularCheckArray.indexOf(content) === -1) {
       circularCheckArray.push(content)
       line = firstWord
       const length = content instanceof Array ? content.length : Object.keys(content).length
-      if (length) children = new TreeNode()._setChildren(content, circularCheckArray)
+      if (length) children = new Particle()._setChildren(content, circularCheckArray)
     } else {
       // iirc this is return early from circular
       return
@@ -12345,23 +12344,23 @@ class TreeNode extends AbstractNode {
   }
   _insertLineAndChildren(line, children, index = this.length) {
     const parser = this._getParser()._getParser(line, this)
-    const newNode = new parser(children, line, this)
+    const newParticle = new parser(children, line, this)
     const adjustedIndex = index < 0 ? this.length + index : index
-    this._getChildrenArray().splice(adjustedIndex, 0, newNode)
+    this._getChildrenArray().splice(adjustedIndex, 0, newParticle)
     if (this._index) this._makeIndex(adjustedIndex)
     this.clearQuickCache()
-    return newNode
+    return newParticle
   }
   _appendChildrenFromString(str) {
-    const lines = str.split(this.nodeBreakSymbolRegex)
+    const lines = str.split(this.particleBreakSymbolRegex)
     const parentStack = []
     let currentIndentCount = -1
-    let lastNode = this
+    let lastParticle = this
     lines.forEach(line => {
       const indentCount = this._getIndentCount(line)
       if (indentCount > currentIndentCount) {
         currentIndentCount++
-        parentStack.push(lastNode)
+        parentStack.push(lastParticle)
       } else if (indentCount < currentIndentCount) {
         // pop things off stack
         while (indentCount < currentIndentCount) {
@@ -12372,8 +12371,8 @@ class TreeNode extends AbstractNode {
       const lineContent = line.substr(currentIndentCount)
       const parent = parentStack[parentStack.length - 1]
       const parser = parent._getParser()._getParser(lineContent, parent)
-      lastNode = new parser(undefined, lineContent, parent)
-      parent._getChildrenArray().push(lastNode)
+      lastParticle = new parser(undefined, lineContent, parent)
+      parent._getChildrenArray().push(lastParticle)
     })
   }
   _getIndex() {
@@ -12383,7 +12382,7 @@ class TreeNode extends AbstractNode {
     return this._index || this._makeIndex()
   }
   getContentsArray() {
-    return this.map(node => node.content)
+    return this.map(particle => particle.content)
   }
   getChildrenByParser(parser) {
     return this.filter(child => child instanceof parser)
@@ -12394,7 +12393,7 @@ class TreeNode extends AbstractNode {
     const parent = this.parent
     return parent instanceof parser ? parent : parent.getAncestorByParser(parser)
   }
-  getNodeByParser(parser) {
+  getParticleByParser(parser) {
     return this.find(child => child instanceof parser)
   }
   indexOfLast(firstWord) {
@@ -12405,9 +12404,9 @@ class TreeNode extends AbstractNode {
   indexOf(firstWord) {
     if (!this.has(firstWord)) return -1
     const length = this.length
-    const nodes = this._getChildrenArray()
+    const particles = this._getChildrenArray()
     for (let index = 0; index < length; index++) {
-      if (nodes[index].firstWord === firstWord) return index
+      if (particles[index].firstWord === firstWord) return index
     }
   }
   // todo: rename this. it is a particular type of object.
@@ -12415,20 +12414,20 @@ class TreeNode extends AbstractNode {
     return this._toObject()
   }
   getFirstWords() {
-    return this.map(node => node.firstWord)
+    return this.map(particle => particle.firstWord)
   }
   _makeIndex(startAt = 0) {
     if (!this._index || !startAt) this._index = {}
-    const nodes = this._getChildrenArray()
+    const particles = this._getChildrenArray()
     const newIndex = this._index
-    const length = nodes.length
+    const length = particles.length
     for (let index = startAt; index < length; index++) {
-      newIndex[nodes[index].firstWord] = index
+      newIndex[particles[index].firstWord] = index
     }
     return newIndex
   }
   _childrenToXml(indentCount) {
-    return this.map(node => node._toXml(indentCount)).join("")
+    return this.map(particle => particle._toXml(indentCount)).join("")
   }
   _getIndentCount(str) {
     let level = 0
@@ -12448,13 +12447,13 @@ class TreeNode extends AbstractNode {
     const edgeSymbol = this.edgeSymbol
     if (!firstWordPath.includes(edgeSymbol)) return this.hasFirstWord(firstWordPath)
     const parts = firstWordPath.split(edgeSymbol)
-    const next = this.getNode(parts.shift())
+    const next = this.getParticle(parts.shift())
     if (!next) return false
     return next.has(parts.join(edgeSymbol))
   }
-  hasNode(node) {
-    const needle = node.toString()
-    return this.getChildren().some(node => node.toString() === needle)
+  hasParticle(particle) {
+    const needle = particle.toString()
+    return this.getChildren().some(particle => particle.toString() === needle)
   }
   _hasFirstWord(firstWord) {
     return this._getIndex()[firstWord] !== undefined
@@ -12473,8 +12472,8 @@ class TreeNode extends AbstractNode {
   }
   every(fn) {
     let index = 0
-    for (let node of this.getTopDownArrayIterator()) {
-      if (!fn(node, index)) return false
+    for (let particle of this.getTopDownArrayIterator()) {
+      if (!fn(particle, index)) return false
       index++
     }
     return true
@@ -12485,8 +12484,8 @@ class TreeNode extends AbstractNode {
   }
   // Recurse if predicate passes
   deepVisit(predicate) {
-    this.forEach(node => {
-      if (predicate(node) !== false) node.deepVisit(predicate)
+    this.forEach(particle => {
+      if (predicate(particle) !== false) particle.deepVisit(predicate)
     })
   }
   get quickCache() {
@@ -12518,15 +12517,15 @@ class TreeNode extends AbstractNode {
     return this.getChildren().slice(start, end)
   }
   // todo: make 0 and 1 a param
-  getInheritanceTree() {
+  getInheritanceParticles() {
     const paths = {}
-    const result = new TreeNode()
-    this.forEach(node => {
-      const key = node.getWord(0)
-      const parentKey = node.getWord(1)
+    const result = new Particle()
+    this.forEach(particle => {
+      const key = particle.getWord(0)
+      const parentKey = particle.getWord(1)
       const parentPath = paths[parentKey]
       paths[key] = parentPath ? [parentPath, key].join(" ") : key
-      result.touchNode(paths[key])
+      result.touchParticle(paths[key])
     })
     return result
   }
@@ -12534,8 +12533,8 @@ class TreeNode extends AbstractNode {
     return this.isRoot() || this.parent.isRoot() ? undefined : this.parent.parent
   }
   _getParser() {
-    if (!TreeNode._parserCombinators.has(this.constructor)) TreeNode._parserCombinators.set(this.constructor, this.createParserCombinator())
-    return TreeNode._parserCombinators.get(this.constructor)
+    if (!Particle._parserCombinators.has(this.constructor)) Particle._parserCombinators.set(this.constructor, this.createParserCombinator())
+    return Particle._parserCombinators.get(this.constructor)
   }
   createParserCombinator() {
     return new ParserCombinator(this.constructor)
@@ -12547,13 +12546,13 @@ class TreeNode extends AbstractNode {
   }
   static _getFileFormat(path) {
     const format = path.split(".").pop()
-    return FileFormat[format] ? format : FileFormat.tree
+    return FileFormat[format] ? format : FileFormat.particles
   }
   getLineModifiedTime() {
-    return this._lineModifiedTime || this._nodeCreationTime
+    return this._lineModifiedTime || this._particleCreationTime
   }
   getChildArrayModifiedTime() {
-    return this._childArrayModifiedTime || this._nodeCreationTime
+    return this._childArrayModifiedTime || this._particleCreationTime
   }
   _setChildArrayMofifiedTime(value) {
     this._childArrayModifiedTime = value
@@ -12569,43 +12568,43 @@ class TreeNode extends AbstractNode {
       )
     )
   }
-  _setVirtualParentTree(tree) {
-    this._virtualParentTree = tree
+  _setVirtualParentParticle(particle) {
+    this._virtualParentParticle = particle
     return this
   }
-  _getVirtualParentTreeNode() {
-    return this._virtualParentTree
+  _getVirtualParentParticle() {
+    return this._virtualParentParticle
   }
-  _setVirtualAncestorNodesByInheritanceViaColumnIndicesAndThenExpand(nodes, thisIdColumnNumber, extendsIdColumnNumber) {
+  _setVirtualAncestorParticlesByInheritanceViaColumnIndicesAndThenExpand(particles, thisIdColumnNumber, extendsIdColumnNumber) {
     const map = {}
-    for (let node of nodes) {
-      const nodeId = node.getWord(thisIdColumnNumber)
-      if (map[nodeId]) throw new Error(`Tried to define a node with id "${nodeId}" but one is already defined.`)
-      map[nodeId] = {
-        nodeId: nodeId,
-        node: node,
-        parentId: node.getWord(extendsIdColumnNumber)
+    for (let particle of particles) {
+      const particleId = particle.getWord(thisIdColumnNumber)
+      if (map[particleId]) throw new Error(`Tried to define a particle with id "${particleId}" but one is already defined.`)
+      map[particleId] = {
+        particleId: particleId,
+        particle: particle,
+        parentId: particle.getWord(extendsIdColumnNumber)
       }
     }
-    // Add parent Nodes
-    Object.values(map).forEach(nodeInfo => {
-      const parentId = nodeInfo.parentId
-      const parentNode = map[parentId]
-      if (parentId && !parentNode) throw new Error(`Node "${nodeInfo.nodeId}" tried to extend "${parentId}" but "${parentId}" not found.`)
-      if (parentId) nodeInfo.node._setVirtualParentTree(parentNode.node)
+    // Add parent Particles
+    Object.values(map).forEach(particleInfo => {
+      const parentId = particleInfo.parentId
+      const parentParticle = map[parentId]
+      if (parentId && !parentParticle) throw new Error(`Particle "${particleInfo.particleId}" tried to extend "${parentId}" but "${parentId}" not found.`)
+      if (parentId) particleInfo.particle._setVirtualParentParticle(parentParticle.particle)
     })
-    nodes.forEach(node => node._expandFromVirtualParentTree())
+    particles.forEach(particle => particle._expandFromVirtualParentParticle())
     return this
   }
-  _expandFromVirtualParentTree() {
+  _expandFromVirtualParentParticle() {
     if (this._isVirtualExpanded) return this
     this._isExpanding = true
-    let parentNode = this._getVirtualParentTreeNode()
-    if (parentNode) {
-      if (parentNode._isExpanding) throw new Error(`Loop detected: '${this.getLine()}' is the ancestor of one of its ancestors.`)
-      parentNode._expandFromVirtualParentTree()
+    let parentParticle = this._getVirtualParentParticle()
+    if (parentParticle) {
+      if (parentParticle._isExpanding) throw new Error(`Loop detected: '${this.getLine()}' is the ancestor of one of its ancestors.`)
+      parentParticle._expandFromVirtualParentParticle()
       const clone = this.clone()
-      this._setChildren(parentNode.childrenToString())
+      this._setChildren(parentParticle.childrenToString())
       this.extend(clone)
     }
     this._isExpanding = false
@@ -12613,67 +12612,67 @@ class TreeNode extends AbstractNode {
   }
   // todo: solve issue related to whether extend should overwrite or append.
   _expandChildren(thisIdColumnNumber, extendsIdColumnNumber, childrenThatNeedExpanding = this.getChildren()) {
-    return this._setVirtualAncestorNodesByInheritanceViaColumnIndicesAndThenExpand(childrenThatNeedExpanding, thisIdColumnNumber, extendsIdColumnNumber)
+    return this._setVirtualAncestorParticlesByInheritanceViaColumnIndicesAndThenExpand(childrenThatNeedExpanding, thisIdColumnNumber, extendsIdColumnNumber)
   }
   // todo: add more testing.
   // todo: solve issue with where extend should overwrite or append
   // todo: should take a parsers? to decide whether to overwrite or append.
   // todo: this is slow.
-  extend(nodeOrStr) {
-    const node = nodeOrStr instanceof TreeNode ? nodeOrStr : new TreeNode(nodeOrStr)
+  extend(particleOrStr) {
+    const particle = particleOrStr instanceof Particle ? particleOrStr : new Particle(particleOrStr)
     const usedFirstWords = new Set()
-    node.forEach(sourceNode => {
-      const firstWord = sourceNode.firstWord
-      let targetNode
+    particle.forEach(sourceParticle => {
+      const firstWord = sourceParticle.firstWord
+      let targetParticle
       const isAnArrayNotMap = usedFirstWords.has(firstWord)
       if (!this.has(firstWord)) {
         usedFirstWords.add(firstWord)
-        this.appendLineAndChildren(sourceNode.getLine(), sourceNode.childrenToString())
+        this.appendLineAndChildren(sourceParticle.getLine(), sourceParticle.childrenToString())
         return true
       }
-      if (isAnArrayNotMap) targetNode = this.appendLine(sourceNode.getLine())
+      if (isAnArrayNotMap) targetParticle = this.appendLine(sourceParticle.getLine())
       else {
-        targetNode = this.touchNode(firstWord).setContent(sourceNode.content)
+        targetParticle = this.touchParticle(firstWord).setContent(sourceParticle.content)
         usedFirstWords.add(firstWord)
       }
-      if (sourceNode.length) targetNode.extend(sourceNode)
+      if (sourceParticle.length) targetParticle.extend(sourceParticle)
     })
     return this
   }
-  lastNode() {
+  lastParticle() {
     return this.getChildren()[this.length - 1]
   }
   expandLastFromTopMatter() {
     const clone = this.clone()
     const map = new Map()
-    const lastNode = clone.lastNode()
-    lastNode.getOlderSiblings().forEach(node => map.set(node.getWord(0), node))
-    lastNode.topDownArray.forEach(node => {
-      const replacement = map.get(node.getWord(0))
+    const lastParticle = clone.lastParticle()
+    lastParticle.getOlderSiblings().forEach(particle => map.set(particle.getWord(0), particle))
+    lastParticle.topDownArray.forEach(particle => {
+      const replacement = map.get(particle.getWord(0))
       if (!replacement) return
-      node.replaceNode(str => replacement.toString())
+      particle.replaceParticle(str => replacement.toString())
     })
-    return lastNode
+    return lastParticle
   }
   macroExpand(macroDefinitionWord, macroUsageWord) {
     const clone = this.clone()
-    const defs = clone.findNodes(macroDefinitionWord)
-    const allUses = clone.findNodes(macroUsageWord)
+    const defs = clone.findParticles(macroDefinitionWord)
+    const allUses = clone.findParticles(macroUsageWord)
     const wordBreakSymbol = clone.wordBreakSymbol
     defs.forEach(def => {
       const macroName = def.getWord(1)
-      const uses = allUses.filter(node => node.hasWord(1, macroName))
+      const uses = allUses.filter(particle => particle.hasWord(1, macroName))
       const params = def.getWordsFrom(2)
       const replaceFn = str => {
         const paramValues = str.split(wordBreakSymbol).slice(2)
-        let newTree = def.childrenToString()
+        let newParticle = def.childrenToString()
         params.forEach((param, index) => {
-          newTree = newTree.replace(new RegExp(param, "g"), paramValues[index])
+          newParticle = newParticle.replace(new RegExp(param, "g"), paramValues[index])
         })
-        return newTree
+        return newParticle
       }
-      uses.forEach(node => {
-        node.replaceNode(replaceFn)
+      uses.forEach(particle => {
+        particle.replaceParticle(replaceFn)
       })
       def.destroy()
     })
@@ -12694,9 +12693,9 @@ class TreeNode extends AbstractNode {
   }
   deleteDuplicates() {
     const set = new Set()
-    this.topDownArray.forEach(node => {
-      const str = node.toString()
-      if (set.has(str)) node.destroy()
+    this.topDownArray.forEach(particle => {
+      const str = particle.toString()
+      if (set.has(str)) particle.destroy()
       else set.add(str)
     })
     return this
@@ -12716,7 +12715,7 @@ class TreeNode extends AbstractNode {
     const newArray = [this.firstWord]
     if (content !== undefined) {
       content = content.toString()
-      if (content.match(this.nodeBreakSymbol)) return this.setContentWithChildren(content)
+      if (content.match(this.particleBreakSymbol)) return this.setContentWithChildren(content)
       newArray.push(content)
     }
     this._setLine(newArray.join(this.wordBreakSymbol))
@@ -12731,16 +12730,16 @@ class TreeNode extends AbstractNode {
   }
   setContentWithChildren(text) {
     // todo: deprecate
-    if (!text.includes(this.nodeBreakSymbol)) {
+    if (!text.includes(this.particleBreakSymbol)) {
       this._clearChildren()
       return this.setContent(text)
     }
-    const lines = text.split(this.nodeBreakSymbolRegex)
+    const lines = text.split(this.particleBreakSymbolRegex)
     const firstLine = lines.shift()
     this.setContent(firstLine)
     // tood: cleanup.
-    const remainingString = lines.join(this.nodeBreakSymbol)
-    const children = new TreeNode(remainingString)
+    const remainingString = lines.join(this.particleBreakSymbol)
+    const children = new Particle(remainingString)
     if (!remainingString) children.appendLine("")
     this.setChildren(children)
     return this
@@ -12765,10 +12764,10 @@ class TreeNode extends AbstractNode {
     return this
   }
   destroy() {
-    this.parent._deleteNode(this)
+    this.parent._deleteParticle(this)
   }
   set(firstWordPath, text) {
-    return this.touchNode(firstWordPath).setContentWithChildren(text)
+    return this.touchParticle(firstWordPath).setContentWithChildren(text)
   }
   setFromText(text) {
     if (this.toString() === text) return this
@@ -12778,17 +12777,17 @@ class TreeNode extends AbstractNode {
   }
   setPropertyIfMissing(prop, value) {
     if (this.has(prop)) return true
-    return this.touchNode(prop).setContent(value)
+    return this.touchParticle(prop).setContent(value)
   }
   setProperties(propMap) {
     const props = Object.keys(propMap)
     const values = Object.values(propMap)
-    // todo: is there a built in tree method to do this?
+    // todo: is there a built in particle method to do this?
     props.forEach((prop, index) => {
       const value = values[index]
       if (!value) return true
       if (this.get(prop) === value) return true
-      this.touchNode(prop).setContent(value)
+      this.touchParticle(prop).setContent(value)
     })
     return this
   }
@@ -12803,45 +12802,45 @@ class TreeNode extends AbstractNode {
   appendLineAndChildren(line, children) {
     return this._insertLineAndChildren(line, children)
   }
-  getNodesByRegex(regex) {
+  getParticlesByRegex(regex) {
     const matches = []
     regex = regex instanceof RegExp ? [regex] : regex
-    this._getNodesByLineRegex(matches, regex)
+    this._getParticlesByLineRegex(matches, regex)
     return matches
   }
   // todo: remove?
-  getNodesByLinePrefixes(columns) {
+  getParticlesByLinePrefixes(columns) {
     const matches = []
-    this._getNodesByLineRegex(
+    this._getParticlesByLineRegex(
       matches,
       columns.map(str => new RegExp("^" + str))
     )
     return matches
   }
-  nodesThatStartWith(prefix) {
-    return this.filter(node => node.getLine().startsWith(prefix))
+  particlesThatStartWith(prefix) {
+    return this.filter(particle => particle.getLine().startsWith(prefix))
   }
-  _getNodesByLineRegex(matches, regs) {
+  _getParticlesByLineRegex(matches, regs) {
     const rgs = regs.slice(0)
     const reg = rgs.shift()
     const candidates = this.filter(child => child.getLine().match(reg))
     if (!rgs.length) return candidates.forEach(cand => matches.push(cand))
-    candidates.forEach(cand => cand._getNodesByLineRegex(matches, rgs))
+    candidates.forEach(cand => cand._getParticlesByLineRegex(matches, rgs))
   }
-  concat(node) {
-    if (typeof node === "string") node = new TreeNode(node)
-    return node.map(node => this._insertLineAndChildren(node.getLine(), node.childrenToString()))
+  concat(particle) {
+    if (typeof particle === "string") particle = new Particle(particle)
+    return particle.map(particle => this._insertLineAndChildren(particle.getLine(), particle.childrenToString()))
   }
   _deleteByIndexes(indexesToDelete) {
     if (!indexesToDelete.length) return this
     this._clearIndex()
     // note: assumes indexesToDelete is in ascending order
-    const deletedNodes = indexesToDelete.reverse().map(index => this._getChildrenArray().splice(index, 1)[0])
+    const deletedParticles = indexesToDelete.reverse().map(index => this._getChildrenArray().splice(index, 1)[0])
     this._setChildArrayMofifiedTime(this._getProcessTimeInMilliseconds())
     return this
   }
-  _deleteNode(node) {
-    const index = this._indexOfNode(node)
+  _deleteParticle(particle) {
+    const index = this._indexOfParticle(particle)
     return index > -1 ? this._deleteByIndexes([index]) : 0
   }
   reverse() {
@@ -12851,8 +12850,8 @@ class TreeNode extends AbstractNode {
   }
   shift() {
     if (!this.length) return null
-    const node = this._getChildrenArray().shift()
-    return node.copyTo(new this.constructor(), 0)
+    const particle = this._getChildrenArray().shift()
+    return particle.copyTo(new this.constructor(), 0)
   }
   sort(fn) {
     this._getChildrenArray().sort(fn)
@@ -12860,22 +12859,22 @@ class TreeNode extends AbstractNode {
     return this
   }
   invert() {
-    this.forEach(node => node.words.reverse())
+    this.forEach(particle => particle.words.reverse())
     return this
   }
   _rename(oldFirstWord, newFirstWord) {
     const index = this.indexOf(oldFirstWord)
     if (index === -1) return this
-    const node = this._getChildrenArray()[index]
-    node.setFirstWord(newFirstWord)
+    const particle = this._getChildrenArray()[index]
+    particle.setFirstWord(newFirstWord)
     this._clearIndex()
     return this
   }
   // Does not recurse.
   remap(map) {
-    this.forEach(node => {
-      const firstWord = node.firstWord
-      if (map[firstWord] !== undefined) node.setFirstWord(map[firstWord])
+    this.forEach(particle => {
+      const firstWord = particle.firstWord
+      if (map[firstWord] !== undefined) particle.setFirstWord(map[firstWord])
     })
     return this
   }
@@ -12884,46 +12883,46 @@ class TreeNode extends AbstractNode {
     return this
   }
   renameAll(oldName, newName) {
-    this.findNodes(oldName).forEach(node => node.setFirstWord(newName))
+    this.findParticles(oldName).forEach(particle => particle.setFirstWord(newName))
     return this
   }
-  _deleteAllChildNodesWithFirstWord(firstWord) {
+  _deleteAllChildParticlesWithFirstWord(firstWord) {
     if (!this.has(firstWord)) return this
-    const allNodes = this._getChildrenArray()
+    const allParticles = this._getChildrenArray()
     const indexesToDelete = []
-    allNodes.forEach((node, index) => {
-      if (node.firstWord === firstWord) indexesToDelete.push(index)
+    allParticles.forEach((particle, index) => {
+      if (particle.firstWord === firstWord) indexesToDelete.push(index)
     })
     return this._deleteByIndexes(indexesToDelete)
   }
   delete(path = "") {
     const edgeSymbol = this.edgeSymbol
-    if (!path.includes(edgeSymbol)) return this._deleteAllChildNodesWithFirstWord(path)
+    if (!path.includes(edgeSymbol)) return this._deleteAllChildParticlesWithFirstWord(path)
     const parts = path.split(edgeSymbol)
     const nextFirstWord = parts.pop()
-    const targetNode = this.getNode(parts.join(edgeSymbol))
-    return targetNode ? targetNode._deleteAllChildNodesWithFirstWord(nextFirstWord) : 0
+    const targetParticle = this.getParticle(parts.join(edgeSymbol))
+    return targetParticle ? targetParticle._deleteAllChildParticlesWithFirstWord(nextFirstWord) : 0
   }
   deleteColumn(firstWord = "") {
-    this.forEach(node => node.delete(firstWord))
+    this.forEach(particle => particle.delete(firstWord))
     return this
   }
   _getNonMaps() {
-    const results = this.topDownArray.filter(node => node.hasDuplicateFirstWords())
+    const results = this.topDownArray.filter(particle => particle.hasDuplicateFirstWords())
     if (this.hasDuplicateFirstWords()) results.unshift(this)
     return results
   }
-  replaceNode(fn) {
+  replaceParticle(fn) {
     const parent = this.parent
     const index = this.getIndex()
-    const newNodes = new TreeNode(fn(this.toString()))
-    const returnedNodes = []
-    newNodes.forEach((child, childIndex) => {
-      const newNode = parent.insertLineAndChildren(child.getLine(), child.childrenToString(), index + childIndex)
-      returnedNodes.push(newNode)
+    const newParticles = new Particle(fn(this.toString()))
+    const returnedParticles = []
+    newParticles.forEach((child, childIndex) => {
+      const newParticle = parent.insertLineAndChildren(child.getLine(), child.childrenToString(), index + childIndex)
+      returnedParticles.push(newParticle)
     })
     this.destroy()
-    return returnedNodes
+    return returnedParticles
   }
   insertLineAndChildren(line, children, index) {
     return this._insertLineAndChildren(line, children, index)
@@ -12944,11 +12943,11 @@ class TreeNode extends AbstractNode {
   }
   deleteBlanks() {
     this.getChildren()
-      .filter(node => node.isBlankLine())
-      .forEach(node => node.destroy())
+      .filter(particle => particle.isBlankLine())
+      .forEach(particle => particle.destroy())
     return this
   }
-  // todo: add "globalReplace" method? Which runs a global regex or string replace on the Tree doc as a string?
+  // todo: add "globalReplace" method? Which runs a global regex or string replace on the Particle as a string?
   firstWordSort(firstWordOrder) {
     return this._firstWordSort(firstWordOrder)
   }
@@ -12975,16 +12974,16 @@ class TreeNode extends AbstractNode {
     parent.triggerAncestors(event)
   }
   onLineChanged(eventHandler) {
-    return this._addEventListener(LineChangedTreeEvent, eventHandler)
+    return this._addEventListener(LineChangedParticleEvent, eventHandler)
   }
   onDescendantChanged(eventHandler) {
-    return this._addEventListener(DescendantChangedTreeEvent, eventHandler)
+    return this._addEventListener(DescendantChangedParticleEvent, eventHandler)
   }
   onChildAdded(eventHandler) {
-    return this._addEventListener(ChildAddedTreeEvent, eventHandler)
+    return this._addEventListener(ChildAddedParticleEvent, eventHandler)
   }
   onChildRemoved(eventHandler) {
-    return this._addEventListener(ChildRemovedTreeEvent, eventHandler)
+    return this._addEventListener(ChildRemovedParticleEvent, eventHandler)
   }
   _addEventListener(eventClass, eventHandler) {
     if (!this._listeners) this._listeners = new Map()
@@ -13005,49 +13004,49 @@ class TreeNode extends AbstractNode {
     return this.setWords(words)
   }
   _firstWordSort(firstWordOrder, secondarySortFn) {
-    const nodeAFirst = -1
-    const nodeBFirst = 1
+    const particleAFirst = -1
+    const particleBFirst = 1
     const map = {}
     firstWordOrder.forEach((word, index) => {
       map[word] = index
     })
-    this.sort((nodeA, nodeB) => {
-      const valA = map[nodeA.firstWord]
-      const valB = map[nodeB.firstWord]
-      if (valA > valB) return nodeBFirst
-      if (valA < valB) return nodeAFirst
-      return secondarySortFn ? secondarySortFn(nodeA, nodeB) : 0
+    this.sort((particleA, particleB) => {
+      const valA = map[particleA.firstWord]
+      const valB = map[particleB.firstWord]
+      if (valA > valB) return particleBFirst
+      if (valA < valB) return particleAFirst
+      return secondarySortFn ? secondarySortFn(particleA, particleB) : 0
     })
     return this
   }
-  _touchNode(firstWordPathArray) {
-    let contextNode = this
+  _touchParticle(firstWordPathArray) {
+    let contextParticle = this
     firstWordPathArray.forEach(firstWord => {
-      contextNode = contextNode.getNode(firstWord) || contextNode.appendLine(firstWord)
+      contextParticle = contextParticle.getParticle(firstWord) || contextParticle.appendLine(firstWord)
     })
-    return contextNode
+    return contextParticle
   }
-  _touchNodeByString(str) {
-    str = str.replace(this.nodeBreakSymbolRegex, "") // todo: do we want to do this sanitization?
-    return this._touchNode(str.split(this.wordBreakSymbol))
+  _touchParticleByString(str) {
+    str = str.replace(this.particleBreakSymbolRegex, "") // todo: do we want to do this sanitization?
+    return this._touchParticle(str.split(this.wordBreakSymbol))
   }
-  touchNode(str) {
-    return this._touchNodeByString(str)
+  touchParticle(str) {
+    return this._touchParticleByString(str)
   }
-  appendNode(node) {
-    return this.appendLineAndChildren(node.getLine(), node.childrenToString())
+  appendParticle(particle) {
+    return this.appendLineAndChildren(particle.getLine(), particle.childrenToString())
   }
   hasLine(line) {
-    return this.getChildren().some(node => node.getLine() === line)
+    return this.getChildren().some(particle => particle.getLine() === line)
   }
   findLine(line) {
-    return this.getChildren().find(node => node.getLine() === line)
+    return this.getChildren().find(particle => particle.getLine() === line)
   }
-  getNodesByLine(line) {
-    return this.filter(node => node.getLine() === line)
+  getParticlesByLine(line) {
+    return this.filter(particle => particle.getLine() === line)
   }
   toggleLine(line) {
-    const lines = this.getNodesByLine(line)
+    const lines = this.getParticlesByLine(line)
     if (lines.length) {
       lines.map(line => line.destroy())
       return this
@@ -13058,9 +13057,9 @@ class TreeNode extends AbstractNode {
   sortByColumns(indexOrIndices) {
     const indices = indexOrIndices instanceof Array ? indexOrIndices : [indexOrIndices]
     const length = indices.length
-    this.sort((nodeA, nodeB) => {
-      const wordsA = nodeA.words
-      const wordsB = nodeB.words
+    this.sort((particleA, particleB) => {
+      const wordsA = particleA.words
+      const wordsB = particleB.words
       for (let index = 0; index < length; index++) {
         const col = indices[index]
         const av = wordsA[col]
@@ -13082,7 +13081,7 @@ class TreeNode extends AbstractNode {
     return this.appendWord(word)
   }
   // todo: check to ensure identical objects
-  addObjectsAsDelimited(arrayOfObjects, delimiter = Utils._chooseDelimiter(new TreeNode(arrayOfObjects).toString())) {
+  addObjectsAsDelimited(arrayOfObjects, delimiter = Utils._chooseDelimiter(new Particle(arrayOfObjects).toString())) {
     const header = Object.keys(arrayOfObjects[0])
       .join(delimiter)
       .replace(/[\n\r]/g, "")
@@ -13093,9 +13092,9 @@ class TreeNode extends AbstractNode {
     )
     return this.addUniqueRowsToNestedDelimited(header, rows)
   }
-  setChildrenAsDelimited(tree, delimiter = Utils._chooseDelimiter(tree.toString())) {
-    tree = tree instanceof TreeNode ? tree : new TreeNode(tree)
-    return this.setChildren(tree.toDelimited(delimiter))
+  setChildrenAsDelimited(particle, delimiter = Utils._chooseDelimiter(particle.toString())) {
+    particle = particle instanceof Particle ? particle : new Particle(particle)
+    return this.setChildren(particle.toDelimited(delimiter))
   }
   convertChildrenToDelimited(delimiter = Utils._chooseDelimiter(this.childrenToString())) {
     // todo: handle newlines!!!
@@ -13113,22 +13112,22 @@ class TreeNode extends AbstractNode {
     const grandParent = this._getGrandParent()
     if (!grandParent) return this
     const parentIndex = this.parent.getIndex()
-    const newNode = grandParent.insertLineAndChildren(this.getLine(), this.length ? this.childrenToString() : undefined, parentIndex + 1)
+    const newParticle = grandParent.insertLineAndChildren(this.getLine(), this.length ? this.childrenToString() : undefined, parentIndex + 1)
     this.destroy()
-    return newNode
+    return newParticle
   }
   pasteText(text) {
     const parent = this.parent
     const index = this.getIndex()
-    const newNodes = new TreeNode(text)
-    const firstNode = newNodes.nodeAt(0)
-    if (firstNode) {
-      this.setLine(firstNode.getLine())
-      if (firstNode.length) this.setChildren(firstNode.childrenToString())
+    const newParticles = new Particle(text)
+    const firstParticle = newParticles.particleAt(0)
+    if (firstParticle) {
+      this.setLine(firstParticle.getLine())
+      if (firstParticle.length) this.setChildren(firstParticle.childrenToString())
     } else {
       this.setLine("")
     }
-    newNodes.forEach((child, childIndex) => {
+    newParticles.forEach((child, childIndex) => {
       if (!childIndex)
         // skip first
         return true
@@ -13138,40 +13137,40 @@ class TreeNode extends AbstractNode {
   }
   templateToString(obj) {
     // todo: compile/cache for perf?
-    const tree = this.clone()
-    tree.topDownArray.forEach(node => {
-      const line = node.getLine().replace(/{([^\}]+)}/g, (match, path) => {
+    const particle = this.clone()
+    particle.topDownArray.forEach(particle => {
+      const line = particle.getLine().replace(/{([^\}]+)}/g, (match, path) => {
         const replacement = obj[path]
-        if (replacement === undefined) throw new Error(`In string template no match found on line "${node.getLine()}"`)
+        if (replacement === undefined) throw new Error(`In string template no match found on line "${particle.getLine()}"`)
         return replacement
       })
-      node.pasteText(line)
+      particle.pasteText(line)
     })
-    return tree.toString()
+    return particle.toString()
   }
   shiftRight() {
     const olderSibling = this._getClosestOlderSibling()
     if (!olderSibling) return this
-    const newNode = olderSibling.appendLineAndChildren(this.getLine(), this.length ? this.childrenToString() : undefined)
+    const newParticle = olderSibling.appendLineAndChildren(this.getLine(), this.length ? this.childrenToString() : undefined)
     this.destroy()
-    return newNode
+    return newParticle
   }
   shiftYoungerSibsRight() {
-    const nodes = this.getYoungerSiblings()
-    nodes.forEach(node => node.shiftRight())
+    const particles = this.getYoungerSiblings()
+    particles.forEach(particle => particle.shiftRight())
     return this
   }
   sortBy(nameOrNames) {
     const names = nameOrNames instanceof Array ? nameOrNames : [nameOrNames]
     const length = names.length
-    this.sort((nodeA, nodeB) => {
-      if (!nodeB.length && !nodeA.length) return 0
-      else if (!nodeA.length) return -1
-      else if (!nodeB.length) return 1
+    this.sort((particleA, particleB) => {
+      if (!particleB.length && !particleA.length) return 0
+      else if (!particleA.length) return -1
+      else if (!particleB.length) return 1
       for (let index = 0; index < length; index++) {
         const firstWord = names[index]
-        const av = nodeA.get(firstWord)
-        const bv = nodeB.get(firstWord)
+        const av = particleA.get(firstWord)
+        const bv = particleB.get(firstWord)
         if (av > bv) return 1
         else if (av < bv) return -1
       }
@@ -13179,10 +13178,10 @@ class TreeNode extends AbstractNode {
     })
     return this
   }
-  selectNode() {
+  selectParticle() {
     this._selected = true
   }
-  unselectNode() {
+  unselectParticle() {
     delete this._selected
   }
   isSelected() {
@@ -13251,29 +13250,29 @@ class TreeNode extends AbstractNode {
   }
   // todo: jeez i think we can come up with a better name than "JsonSubset"
   static fromJsonSubset(str) {
-    return new TreeNode(JSON.parse(str))
+    return new Particle(JSON.parse(str))
   }
-  static serializedTreeNodeToTree(treeNode) {
-    const language = new TreeNode()
+  static serializedParticleToParticle(particle) {
+    const language = new Particle()
     const cellDelimiter = language.wordBreakSymbol
-    const nodeDelimiter = language.nodeBreakSymbol
-    const line = treeNode.cells ? treeNode.cells.join(cellDelimiter) : undefined
-    const tree = new TreeNode(undefined, line)
-    if (treeNode.children)
-      treeNode.children.forEach(child => {
-        tree.appendNode(this.serializedTreeNodeToTree(child))
+    const particleDelimiter = language.particleBreakSymbol
+    const line = particle.cells ? particle.cells.join(cellDelimiter) : undefined
+    const newParticle = new Particle(undefined, line)
+    if (particle.children)
+      particle.children.forEach(child => {
+        newParticle.appendParticle(this.serializedParticleToParticle(child))
       })
-    return tree
+    return newParticle
   }
   static fromJson(str) {
-    return this.serializedTreeNodeToTree(JSON.parse(str))
+    return this.serializedParticleToParticle(JSON.parse(str))
   }
   static fromGridJson(str) {
     const lines = JSON.parse(str)
-    const language = new TreeNode()
+    const language = new Particle()
     const cellDelimiter = language.wordBreakSymbol
-    const nodeDelimiter = language.nodeBreakSymbol
-    return new TreeNode(lines.map(line => line.join(cellDelimiter)).join(nodeDelimiter))
+    const particleDelimiter = language.particleBreakSymbol
+    return new Particle(lines.map(line => line.join(cellDelimiter)).join(particleDelimiter))
   }
   static fromSsv(str) {
     return this.fromDelimited(str, " ", '"')
@@ -13284,7 +13283,7 @@ class TreeNode extends AbstractNode {
   static fromDelimited(str, delimiter, quoteChar = '"') {
     str = str.replace(/\r/g, "") // remove windows newlines if present
     const rows = this._getEscapedRows(str, delimiter, quoteChar)
-    return this._rowsToTreeNode(rows, delimiter, true)
+    return this._rowsToParticle(rows, delimiter, true)
   }
   static _getEscapedRows(str, delimiter, quoteChar) {
     return str.includes(quoteChar) ? this._strToRows(str, delimiter, quoteChar) : str.split("\n").map(line => line.split(delimiter))
@@ -13292,7 +13291,7 @@ class TreeNode extends AbstractNode {
   static fromDelimitedNoHeaders(str, delimiter, quoteChar) {
     str = str.replace(/\r/g, "") // remove windows newlines if present
     const rows = this._getEscapedRows(str, delimiter, quoteChar)
-    return this._rowsToTreeNode(rows, delimiter, false)
+    return this._rowsToParticle(rows, delimiter, false)
   }
   static _strToRows(str, delimiter, quoteChar, newLineChar = "\n") {
     const rows = [[]]
@@ -13346,17 +13345,17 @@ class TreeNode extends AbstractNode {
     }
     return rows
   }
-  static multiply(nodeA, nodeB) {
-    const productNode = nodeA.clone()
-    productNode.forEach((node, index) => {
-      node.setChildren(node.length ? this.multiply(node, nodeB) : nodeB.clone())
+  static multiply(particleA, particleB) {
+    const productParticle = particleA.clone()
+    productParticle.forEach((particle, index) => {
+      particle.setChildren(particle.length ? this.multiply(particle, particleB) : particleB.clone())
     })
-    return productNode
+    return productParticle
   }
-  // Given an array return a tree
-  static _rowsToTreeNode(rows, delimiter, hasHeaders) {
+  // Given an array return a particle
+  static _rowsToParticle(rows, delimiter, hasHeaders) {
     const numberOfColumns = rows[0].length
-    const treeNode = new TreeNode()
+    const particle = new Particle()
     const names = this._getHeader(rows, hasHeaders)
     const rowCount = rows.length
     for (let rowIndex = hasHeaders ? 1 : 0; rowIndex < rowCount; rowIndex++) {
@@ -13377,9 +13376,9 @@ class TreeNode extends AbstractNode {
       row.forEach((cellValue, index) => {
         obj[names[index]] = cellValue
       })
-      treeNode.pushContentAndChildren(undefined, obj)
+      particle.pushContentAndChildren(undefined, obj)
     }
-    return treeNode
+    return particle
   }
   static _initializeXmlParser() {
     if (this._xmlParser) return
@@ -13398,9 +13397,9 @@ class TreeNode extends AbstractNode {
     this._initializeXmlParser()
     const xml = this._xmlParser(str)
     try {
-      return this._treeNodeFromXml(xml).getNode("children")
+      return this._particleFromXml(xml).getParticle("children")
     } catch (err) {
-      return this._treeNodeFromXml(this._parseXml2(str)).getNode("children")
+      return this._particleFromXml(this._parseXml2(str)).getParticle("children")
     }
   }
   static _zipObject(keys, values) {
@@ -13408,19 +13407,19 @@ class TreeNode extends AbstractNode {
     keys.forEach((key, index) => (obj[key] = values[index]))
     return obj
   }
-  static fromShape(shapeArr, rootNode = new TreeNode()) {
+  static fromShape(shapeArr, rootParticle = new Particle()) {
     const part = shapeArr.shift()
     if (part !== undefined) {
       for (let index = 0; index < part; index++) {
-        rootNode.appendLine(index.toString())
+        rootParticle.appendLine(index.toString())
       }
     }
-    if (shapeArr.length) rootNode.forEach(node => TreeNode.fromShape(shapeArr.slice(0), node))
-    return rootNode
+    if (shapeArr.length) rootParticle.forEach(particle => Particle.fromShape(shapeArr.slice(0), particle))
+    return rootParticle
   }
   static fromDataTable(table) {
     const header = table.shift()
-    return new TreeNode(table.map(row => this._zipObject(header, row)))
+    return new Particle(table.map(row => this._zipObject(header, row)))
   }
   static _parseXml2(str) {
     const el = document.createElement("div")
@@ -13428,9 +13427,9 @@ class TreeNode extends AbstractNode {
     return el
   }
   // todo: cleanup typings
-  static _treeNodeFromXml(xml) {
-    const result = new TreeNode()
-    const children = new TreeNode()
+  static _particleFromXml(xml) {
+    const result = new Particle()
+    const children = new Particle()
     // Set attributes
     if (xml.attributes) {
       for (let index = 0; index < xml.attributes.length; index++) {
@@ -13443,7 +13442,7 @@ class TreeNode extends AbstractNode {
       for (let index = 0; index < xml.childNodes.length; index++) {
         const child = xml.childNodes[index]
         if (child.tagName && child.tagName.match(/parsererror/i)) throw new Error("Parse Error")
-        if (child.childNodes.length > 0 && child.tagName) children.appendLineAndChildren(child.tagName, this._treeNodeFromXml(child))
+        if (child.childNodes.length > 0 && child.tagName) children.appendLineAndChildren(child.tagName, this._particleFromXml(child))
         else if (child.tagName) children.appendLine(child.tagName)
         else if (child.data) {
           const data = child.data.trim()
@@ -13451,7 +13450,7 @@ class TreeNode extends AbstractNode {
         }
       }
     }
-    if (children.length > 0) result.touchNode("children").setChildren(children)
+    if (children.length > 0) result.touchParticle("children").setChildren(children)
     return result
   }
   static _getHeader(rows, hasHeaders) {
@@ -13474,36 +13473,37 @@ class TreeNode extends AbstractNode {
     return headerRow
   }
   static nest(str, xValue) {
-    const NodeBreakSymbol = TN_NODE_BREAK_SYMBOL
+    const ParticleBreakSymbol = TN_NODE_BREAK_SYMBOL
     const WordBreakSymbol = TN_WORD_BREAK_SYMBOL
-    const indent = NodeBreakSymbol + WordBreakSymbol.repeat(xValue)
+    const indent = ParticleBreakSymbol + WordBreakSymbol.repeat(xValue)
     return str ? indent + str.replace(/\n/g, indent) : ""
   }
   static fromDisk(path) {
     const format = this._getFileFormat(path)
     const content = require("fs").readFileSync(path, "utf8")
     const methods = {
-      tree: content => new TreeNode(content),
+      particles: content => new Particle(content),
       csv: content => this.fromCsv(content),
       tsv: content => this.fromTsv(content)
     }
+    if (!methods[format]) throw new Error(`No support for '${format}'`)
     return methods[format](content)
   }
   static fromFolder(folderPath, filepathPredicate = filepath => filepath !== ".DS_Store") {
     const path = require("path")
     const fs = require("fs")
-    const tree = new TreeNode()
+    const particle = new Particle()
     const files = fs
       .readdirSync(folderPath)
       .map(filename => path.join(folderPath, filename))
       .filter(filepath => !fs.statSync(filepath).isDirectory() && filepathPredicate(filepath))
-      .forEach(filePath => tree.appendLineAndChildren(filePath, fs.readFileSync(filePath, "utf8")))
-    return tree
+      .forEach(filePath => particle.appendLineAndChildren(filePath, fs.readFileSync(filePath, "utf8")))
+    return particle
   }
 }
-TreeNode._parserCombinators = new Map()
-TreeNode.ParserCombinator = ParserCombinator
-TreeNode.iris = `sepal_length,sepal_width,petal_length,petal_width,species
+Particle._parserCombinators = new Map()
+Particle.ParserCombinator = ParserCombinator
+Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 6.1,3,4.9,1.8,virginica
 5.6,2.7,4.2,1.3,versicolor
 5.6,2.8,4.9,2,virginica
@@ -13514,38 +13514,38 @@ TreeNode.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-TreeNode.getVersion = () => "83.1.0"
-class AbstractExtendibleTreeNode extends TreeNode {
+Particle.getVersion = () => "84.0.0"
+class AbstractExtendibleParticle extends Particle {
   _getFromExtended(firstWordPath) {
-    const hit = this._getNodeFromExtended(firstWordPath)
+    const hit = this._getParticleFromExtended(firstWordPath)
     return hit ? hit.get(firstWordPath) : undefined
   }
-  _getFamilyTree() {
-    const tree = new TreeNode()
-    this.forEach(node => {
-      const path = node._getAncestorsArray().map(node => node.id)
+  _getLineage() {
+    const newParticle = new Particle()
+    this.forEach(particle => {
+      const path = particle._getAncestorsArray().map(particle => particle.id)
       path.reverse()
-      tree.touchNode(path.join(TN_EDGE_SYMBOL))
+      newParticle.touchParticle(path.join(TN_EDGE_SYMBOL))
     })
-    return tree
+    return newParticle
   }
   // todo: be more specific with the param
   _getChildrenByParserInExtended(parser) {
-    return Utils.flatten(this._getAncestorsArray().map(node => node.getChildrenByParser(parser)))
+    return Utils.flatten(this._getAncestorsArray().map(particle => particle.getChildrenByParser(parser)))
   }
   _getExtendedParent() {
     return this._getAncestorsArray()[1]
   }
   _hasFromExtended(firstWordPath) {
-    return !!this._getNodeFromExtended(firstWordPath)
+    return !!this._getParticleFromExtended(firstWordPath)
   }
-  _getNodeFromExtended(firstWordPath) {
-    return this._getAncestorsArray().find(node => node.has(firstWordPath))
+  _getParticleFromExtended(firstWordPath) {
+    return this._getAncestorsArray().find(particle => particle.has(firstWordPath))
   }
   _getConcatBlockStringFromExtended(firstWordPath) {
     return this._getAncestorsArray()
-      .filter(node => node.has(firstWordPath))
-      .map(node => node.getNode(firstWordPath).childrenToString())
+      .filter(particle => particle.has(firstWordPath))
+      .map(particle => particle.getParticle(firstWordPath).childrenToString())
       .reverse()
       .join("\n")
   }
@@ -13557,55 +13557,55 @@ class AbstractExtendibleTreeNode extends TreeNode {
     return this._cache_ancestorSet
   }
   // Note: the order is: [this, parent, grandParent, ...]
-  _getAncestorsArray(cannotContainNodes) {
-    this._initAncestorsArrayCache(cannotContainNodes)
+  _getAncestorsArray(cannotContainParticles) {
+    this._initAncestorsArrayCache(cannotContainParticles)
     return this._cache_ancestorsArray
   }
   get idThatThisExtends() {
     return this.get(ScrollNotationConstants.extends)
   }
-  _initAncestorsArrayCache(cannotContainNodes) {
+  _initAncestorsArrayCache(cannotContainParticles) {
     if (this._cache_ancestorsArray) return undefined
-    if (cannotContainNodes && cannotContainNodes.includes(this)) throw new Error(`Loop detected: '${this.getLine()}' is the ancestor of one of its ancestors.`)
-    cannotContainNodes = cannotContainNodes || [this]
+    if (cannotContainParticles && cannotContainParticles.includes(this)) throw new Error(`Loop detected: '${this.getLine()}' is the ancestor of one of its ancestors.`)
+    cannotContainParticles = cannotContainParticles || [this]
     let ancestors = [this]
     const extendedId = this.idThatThisExtends
     if (extendedId) {
-      const parentNode = this.idToNodeMap[extendedId]
-      if (!parentNode) throw new Error(`${extendedId} not found`)
-      ancestors = ancestors.concat(parentNode._getAncestorsArray(cannotContainNodes))
+      const parentParticle = this.idToParticleMap[extendedId]
+      if (!parentParticle) throw new Error(`${extendedId} not found`)
+      ancestors = ancestors.concat(parentParticle._getAncestorsArray(cannotContainParticles))
     }
     this._cache_ancestorsArray = ancestors
   }
 }
-class ExtendibleTreeNode extends AbstractExtendibleTreeNode {
-  get idToNodeMap() {
-    if (!this.isRoot()) return this.root.idToNodeMap
-    if (!this._nodeMapCache) {
-      this._nodeMapCache = {}
+class ExtendibleParticle extends AbstractExtendibleParticle {
+  get idToParticleMap() {
+    if (!this.isRoot()) return this.root.idToParticleMap
+    if (!this._particleMapCache) {
+      this._particleMapCache = {}
       this.forEach(child => {
-        this._nodeMapCache[child.id] = child
+        this._particleMapCache[child.id] = child
       })
     }
-    return this._nodeMapCache
+    return this._particleMapCache
   }
   get id() {
     return this.getWord(0)
   }
 }
-window.TreeNode = TreeNode
-window.ExtendibleTreeNode = ExtendibleTreeNode
-window.AbstractExtendibleTreeNode = AbstractExtendibleTreeNode
-window.TreeEvents = TreeEvents
-window.TreeWord = TreeWord
+window.Particle = Particle
+window.ExtendibleParticle = ExtendibleParticle
+window.AbstractExtendibleParticle = AbstractExtendibleParticle
+window.ParticleEvents = ParticleEvents
+window.ParticleWord = ParticleWord
 
 
 // Compiled language parsers will include these files:
 const GlobalNamespaceAdditions = {
   Utils: "Utils.js",
-  TreeNode: "TreeNode.js",
+  Particle: "Particle.js",
   HandParsersProgram: "Parsers.js",
-  ParserBackedNode: "Parsers.js"
+  ParserBackedParticle: "Parsers.js"
 }
 var ParsersConstantsCompiler
 ;(function (ParsersConstantsCompiler) {
@@ -13654,7 +13654,7 @@ var ParsersCellParser
 })(ParsersCellParser || (ParsersCellParser = {}))
 var ParsersConstants
 ;(function (ParsersConstants) {
-  // node types
+  // particle types
   ParsersConstants["extensions"] = "extensions"
   ParsersConstants["comment"] = "//"
   ParsersConstants["parser"] = "parser"
@@ -13710,9 +13710,9 @@ var ParsersConstants
   ParsersConstants["popularity"] = "popularity"
   ParsersConstants["paint"] = "paint"
 })(ParsersConstants || (ParsersConstants = {}))
-class TypedWord extends TreeWord {
-  constructor(node, cellIndex, type) {
-    super(node, cellIndex)
+class TypedWord extends ParticleWord {
+  constructor(particle, cellIndex, type) {
+    super(particle, cellIndex)
     this._type = type
   }
   get type() {
@@ -13722,14 +13722,14 @@ class TypedWord extends TreeWord {
     return this.word + ":" + this.type
   }
 }
-// todo: can we merge these methods into base TreeNode and ditch this class?
-class ParserBackedNode extends TreeNode {
+// todo: can we merge these methods into base Particle and ditch this class?
+class ParserBackedParticle extends Particle {
   get definition() {
     if (this._definition) return this._definition
     this._definition = this.isRoot() ? this.handParsersProgram : this.parent.definition.getParserDefinitionByParserId(this.constructor.name)
     return this._definition
   }
-  get rootParsersTree() {
+  get rootParsersParticles() {
     return this.definition.root
   }
   getAutocompleteResults(partialWord, cellIndex) {
@@ -13738,36 +13738,36 @@ class ParserBackedNode extends TreeNode {
   makeError(message) {
     return new ParserDefinedError(this, message)
   }
-  get nodeIndex() {
+  get particleIndex() {
     // StringMap<int> {firstWord: index}
     // When there are multiple tails with the same firstWord, _index stores the last content.
     // todo: change the above behavior: when a collision occurs, create an array.
-    return this._nodeIndex || this._makeNodeIndex()
+    return this._particleIndex || this._makeParticleIndex()
   }
   _clearIndex() {
-    delete this._nodeIndex
+    delete this._particleIndex
     return super._clearIndex()
   }
   _makeIndex(startAt = 0) {
-    if (this._nodeIndex) this._makeNodeIndex(startAt)
+    if (this._particleIndex) this._makeParticleIndex(startAt)
     return super._makeIndex(startAt)
   }
-  _makeNodeIndex(startAt = 0) {
-    if (!this._nodeIndex || !startAt) this._nodeIndex = {}
-    const nodes = this._getChildrenArray()
-    const newIndex = this._nodeIndex
-    const length = nodes.length
+  _makeParticleIndex(startAt = 0) {
+    if (!this._particleIndex || !startAt) this._particleIndex = {}
+    const particles = this._getChildrenArray()
+    const newIndex = this._particleIndex
+    const length = particles.length
     for (let index = startAt; index < length; index++) {
-      const node = nodes[index]
-      const ancestors = Array.from(node.definition._getAncestorSet()).forEach(id => {
+      const particle = particles[index]
+      const ancestors = Array.from(particle.definition._getAncestorSet()).forEach(id => {
         if (!newIndex[id]) newIndex[id] = []
-        newIndex[id].push(node)
+        newIndex[id].push(particle)
       })
     }
     return newIndex
   }
   getChildInstancesOfParserId(parserId) {
-    return this.nodeIndex[parserId] || []
+    return this.particleIndex[parserId] || []
   }
   doesExtend(parserId) {
     return this.definition._doesExtend(parserId)
@@ -13799,10 +13799,10 @@ class ParserBackedNode extends TreeNode {
     const cell = this.parsedCells[cellIndex]
     return cell ? cell.getAutoCompleteWords(partialWord) : []
   }
-  // note: this is overwritten by the root node of a runtime parsers program.
+  // note: this is overwritten by the root particle of a runtime parsers program.
   // some of the magic that makes this all work. but maybe there's a better way.
   get handParsersProgram() {
-    if (this.isRoot()) throw new Error(`Root node without getHandParsersProgram defined.`)
+    if (this.isRoot()) throw new Error(`Root particle without getHandParsersProgram defined.`)
     return this.root.handParsersProgram
   }
   getRunTimeEnumOptions(cell) {
@@ -13811,26 +13811,26 @@ class ParserBackedNode extends TreeNode {
   getRunTimeEnumOptionsForValidation(cell) {
     return this.getRunTimeEnumOptions(cell)
   }
-  _sortNodesByInScopeOrder() {
+  _sortParticlesByInScopeOrder() {
     const parserOrder = this.definition._getMyInScopeParserIds()
     if (!parserOrder.length) return this
     const orderMap = {}
     parserOrder.forEach((word, index) => (orderMap[word] = index))
-    this.sort(Utils.makeSortByFn(runtimeNode => orderMap[runtimeNode.definition.parserIdFromDefinition]))
+    this.sort(Utils.makeSortByFn(runtimeParticle => orderMap[runtimeParticle.definition.parserIdFromDefinition]))
     return this
   }
-  get requiredNodeErrors() {
+  get requiredParticleErrors() {
     const errors = []
     Object.values(this.definition.firstWordMapWithDefinitions).forEach(def => {
-      if (def.isRequired() && !this.nodeIndex[def.id]) errors.push(new MissingRequiredParserError(this, def.id))
+      if (def.isRequired() && !this.particleIndex[def.id]) errors.push(new MissingRequiredParserError(this, def.id))
     })
     return errors
   }
   get programAsCells() {
     // todo: what is this?
-    return this.topDownArray.map(node => {
-      const cells = node.parsedCells
-      let indents = node.getIndentLevel() - 1
+    return this.topDownArray.map(particle => {
+      const cells = particle.parsedCells
+      let indents = particle.getIndentLevel() - 1
       while (indents) {
         cells.unshift(undefined)
         indents--
@@ -13843,30 +13843,30 @@ class ParserBackedNode extends TreeNode {
   }
   get allTypedWords() {
     const words = []
-    this.topDownArray.forEach(node => node.wordTypes.forEach((cell, index) => words.push(new TypedWord(node, index, cell.cellTypeId))))
+    this.topDownArray.forEach(particle => particle.wordTypes.forEach((cell, index) => words.push(new TypedWord(particle, index, cell.cellTypeId))))
     return words
   }
   findAllWordsWithCellType(cellTypeId) {
     return this.allTypedWords.filter(typedWord => typedWord.type === cellTypeId)
   }
-  findAllNodesWithParser(parserId) {
-    return this.topDownArray.filter(node => node.definition.parserIdFromDefinition === parserId)
+  findAllParticlesWithParser(parserId) {
+    return this.topDownArray.filter(particle => particle.definition.parserIdFromDefinition === parserId)
   }
-  toCellTypeTree() {
+  toCellTypeParticles() {
     return this.topDownArray.map(child => child.indentation + child.lineCellTypes).join("\n")
   }
   getParseTable(maxColumnWidth = 40) {
-    const tree = new TreeNode(this.toCellTypeTree())
-    return new TreeNode(
-      tree.topDownArray.map((node, lineNumber) => {
-        const sourceNode = this.nodeAtLine(lineNumber)
-        const errs = sourceNode.getErrors()
+    const particle = new Particle(this.toCellTypeParticles())
+    return new Particle(
+      particle.topDownArray.map((particle, lineNumber) => {
+        const sourceParticle = this.particleAtLine(lineNumber)
+        const errs = sourceParticle.getErrors()
         const errorCount = errs.length
         const obj = {
           lineNumber: lineNumber,
-          source: sourceNode.indentation + sourceNode.getLine(),
-          parser: sourceNode.constructor.name,
-          cellTypes: node.content,
+          source: sourceParticle.indentation + sourceParticle.getLine(),
+          parser: sourceParticle.constructor.name,
+          cellTypes: particle.content,
           errorCount: errorCount
         }
         if (errorCount) obj.errorMessages = errs.map(err => err.message).join(";")
@@ -13880,7 +13880,7 @@ class ParserBackedNode extends TreeNode {
       new Set(
         this.getAllErrors()
           .filter(err => err instanceof UnknownParserError)
-          .map(err => err.getNode().firstWord)
+          .map(err => err.getParticle().firstWord)
       )
     )
   }
@@ -13897,111 +13897,109 @@ class ParserBackedNode extends TreeNode {
     })
   }
   toAutoCompleteCube(fillChar = "") {
-    const trees = [this.clone()]
+    const particles = [this.clone()]
     const filled = this.clone().fill(fillChar)
     this._getAllAutoCompleteWords().forEach(hole => {
       hole.suggestions.forEach((suggestion, index) => {
-        if (!trees[index + 1]) trees[index + 1] = filled.clone()
-        trees[index + 1].nodeAtLine(hole.lineIndex).setWord(hole.wordIndex, suggestion.text)
+        if (!particles[index + 1]) particles[index + 1] = filled.clone()
+        particles[index + 1].particleAtLine(hole.lineIndex).setWord(hole.wordIndex, suggestion.text)
       })
     })
-    return new TreeNode(trees)
+    return new Particle(particles)
   }
   toAutoCompleteTable() {
-    return new TreeNode(
+    return new Particle(
       this._getAllAutoCompleteWords().map(result => {
-        result.suggestions = result.suggestions.map(node => node.text).join(" ")
+        result.suggestions = result.suggestions.map(particle => particle.text).join(" ")
         return result
       })
     ).asTable
   }
   getAutocompleteResultsAt(lineIndex, charIndex) {
-    const lineNode = this.nodeAtLine(lineIndex) || this
-    const nodeInScope = lineNode.getNodeInScopeAtCharIndex(charIndex)
+    const lineParticle = this.particleAtLine(lineIndex) || this
+    const particleInScope = lineParticle.getParticleInScopeAtCharIndex(charIndex)
     // todo: add more tests
     // todo: second param this.childrenToString()
     // todo: change to getAutocomplete definitions
-    const wordIndex = lineNode.getWordIndexAtCharacterIndex(charIndex)
-    const wordProperties = lineNode.getWordProperties(wordIndex)
+    const wordIndex = lineParticle.getWordIndexAtCharacterIndex(charIndex)
+    const wordProperties = lineParticle.getWordProperties(wordIndex)
     return {
       startCharIndex: wordProperties.startCharIndex,
       endCharIndex: wordProperties.endCharIndex,
       word: wordProperties.word,
-      matches: nodeInScope.getAutocompleteResults(wordProperties.word, wordIndex)
+      matches: particleInScope.getAutocompleteResults(wordProperties.word, wordIndex)
     }
   }
   _sortWithParentParsersUpTop() {
-    const familyTree = new HandParsersProgram(this.toString()).parserFamilyTree
+    const lineage = new HandParsersProgram(this.toString()).parserLineage
     const rank = {}
-    familyTree.topDownArray.forEach((node, index) => {
-      rank[node.getWord(0)] = index
+    lineage.topDownArray.forEach((particle, index) => {
+      rank[particle.getWord(0)] = index
     })
-    const nodeAFirst = -1
-    const nodeBFirst = 1
-    this.sort((nodeA, nodeB) => {
-      const nodeARank = rank[nodeA.getWord(0)]
-      const nodeBRank = rank[nodeB.getWord(0)]
-      return nodeARank < nodeBRank ? nodeAFirst : nodeBFirst
+    const particleAFirst = -1
+    const particleBFirst = 1
+    this.sort((particleA, particleB) => {
+      const particleARank = rank[particleA.getWord(0)]
+      const particleBRank = rank[particleB.getWord(0)]
+      return particleARank < particleBRank ? particleAFirst : particleBFirst
     })
     return this
   }
   format() {
     if (this.isRoot()) {
-      this._sortNodesByInScopeOrder()
+      this._sortParticlesByInScopeOrder()
       try {
         this._sortWithParentParsersUpTop()
       } catch (err) {
         console.log(`Warning: ${err}`)
       }
     }
-    this.topDownArray.forEach(child => {
-      child.format()
-    })
+    this.topDownArray.forEach(child => child.format())
     return this
   }
   getParserUsage(filepath = "") {
     // returns a report on what parsers from its language the program uses
-    const usage = new TreeNode()
+    const usage = new Particle()
     const handParsersProgram = this.handParsersProgram
     handParsersProgram.validConcreteAndAbstractParserDefinitions.forEach(def => {
       const requiredCellTypeIds = def.cellParser.getRequiredCellTypeIds()
       usage.appendLine([def.parserIdFromDefinition, "line-id", "parser", requiredCellTypeIds.join(" ")].join(" "))
     })
-    this.topDownArray.forEach((node, lineNumber) => {
-      const stats = usage.getNode(node.parserId)
-      stats.appendLine([filepath + "-" + lineNumber, node.words.join(" ")].join(" "))
+    this.topDownArray.forEach((particle, lineNumber) => {
+      const stats = usage.getParticle(particle.parserId)
+      stats.appendLine([filepath + "-" + lineNumber, particle.words.join(" ")].join(" "))
     })
     return usage
   }
-  toPaintTree() {
+  toPaintParticles() {
     return this.topDownArray.map(child => child.indentation + child.getLinePaints()).join("\n")
   }
-  toDefinitionLineNumberTree() {
+  toDefinitionLineNumberParticles() {
     return this.topDownArray.map(child => child.definition.lineNumber + " " + child.indentation + child.cellDefinitionLineNumbers.join(" ")).join("\n")
   }
-  get asCellTypeTreeWithParserIds() {
+  get asCellTypeParticlesWithParserIds() {
     return this.topDownArray.map(child => child.constructor.name + this.wordBreakSymbol + child.indentation + child.lineCellTypes).join("\n")
   }
-  toPreludeCellTypeTreeWithParserIds() {
+  toPreludeCellTypeParticlesWithParserIds() {
     return this.topDownArray.map(child => child.constructor.name + this.wordBreakSymbol + child.indentation + child.getLineCellPreludeTypes()).join("\n")
   }
-  get asTreeWithParsers() {
+  get asParticlesWithParsers() {
     return this.topDownArray.map(child => child.constructor.name + this.wordBreakSymbol + child.indentation + child.getLine()).join("\n")
   }
   getCellPaintAtPosition(lineIndex, wordIndex) {
     this._initCellTypeCache()
-    const typeNode = this._cache_paintTree.topDownArray[lineIndex - 1]
-    return typeNode ? typeNode.getWord(wordIndex - 1) : undefined
+    const typeParticle = this._cache_paintParticles.topDownArray[lineIndex - 1]
+    return typeParticle ? typeParticle.getWord(wordIndex - 1) : undefined
   }
   _initCellTypeCache() {
-    const treeMTime = this.getLineOrChildrenModifiedTime()
-    if (this._cache_programCellTypeStringMTime === treeMTime) return undefined
-    this._cache_typeTree = new TreeNode(this.toCellTypeTree())
-    this._cache_paintTree = new TreeNode(this.toPaintTree())
-    this._cache_programCellTypeStringMTime = treeMTime
+    const particleMTime = this.getLineOrChildrenModifiedTime()
+    if (this._cache_programCellTypeStringMTime === particleMTime) return undefined
+    this._cache_typeParticles = new Particle(this.toCellTypeParticles())
+    this._cache_paintParticles = new Particle(this.toPaintParticles())
+    this._cache_programCellTypeStringMTime = particleMTime
   }
   createParserCombinator() {
-    return this.isRoot() ? new TreeNode.ParserCombinator(BlobParser) : new TreeNode.ParserCombinator(this.parent._getParser()._getCatchAllParser(this.parent), {})
+    return this.isRoot() ? new Particle.ParserCombinator(BlobParser) : new Particle.ParserCombinator(this.parent._getParser()._getCatchAllParser(this.parent), {})
   }
   get parserId() {
     return this.definition.parserIdFromDefinition
@@ -14019,8 +14017,8 @@ class ParserBackedNode extends TreeNode {
     const parent = this.parent
     const hits = parent.getChildInstancesOfParserId(this.definition.id)
     if (hits.length > 1)
-      hits.forEach((node, index) => {
-        if (node === this) errors.push(new ParserUsedMultipleTimesError(node))
+      hits.forEach((particle, index) => {
+        if (particle === this) errors.push(new ParserUsedMultipleTimesError(particle))
       })
     return errors
   }
@@ -14030,9 +14028,9 @@ class ParserBackedNode extends TreeNode {
     const hits = parent.getChildInstancesOfParserId(this.definition.id)
     if (hits.length > 1) {
       const set = new Set()
-      hits.forEach((node, index) => {
-        const line = node.getLine()
-        if (set.has(line)) errors.push(new ParserUsedMultipleTimesError(node))
+      hits.forEach((particle, index) => {
+        const line = particle.getLine()
+        if (set.has(line)) errors.push(new ParserUsedMultipleTimesError(particle))
         set.add(line)
       })
     }
@@ -14043,8 +14041,8 @@ class ParserBackedNode extends TreeNode {
     const def = this.definition
     if (def.isSingle) errors = errors.concat(this.singleParserUsedTwiceErrors) // todo: speedup. takes ~1s on pldb.
     if (def.isUniqueLine) errors = errors.concat(this.uniqueLineAppearsTwiceErrors) // todo: speedup. takes ~1s on pldb.
-    const { requiredNodeErrors } = this // todo: speedup. takes ~1.5s on pldb.
-    if (requiredNodeErrors.length) errors = errors.concat(requiredNodeErrors)
+    const { requiredParticleErrors } = this // todo: speedup. takes ~1.5s on pldb.
+    if (requiredParticleErrors.length) errors = errors.concat(requiredParticleErrors)
     return errors
   }
   getErrors() {
@@ -14053,7 +14051,7 @@ class ParserBackedNode extends TreeNode {
   get parsedCells() {
     return this.definition.cellParser.getCellArray(this)
   }
-  // todo: just make a fn that computes proper spacing and then is given a node to print
+  // todo: just make a fn that computes proper spacing and then is given a particle to print
   get lineCellTypes() {
     return this.parsedCells.map(slot => slot.cellTypeId).join(" ")
   }
@@ -14080,9 +14078,9 @@ class ParserBackedNode extends TreeNode {
   _getFields() {
     // fields are like cells
     const fields = {}
-    this.forEach(node => {
-      const def = node.definition
-      if (def.isRequired() || def.isSingle) fields[node.getWord(0)] = node.content
+    this.forEach(particle => {
+      const def = particle.definition
+      if (def.isRequired() || def.isSingle) fields[particle.getWord(0)] = particle.content
     })
     return fields
   }
@@ -14111,7 +14109,7 @@ class ParserBackedNode extends TreeNode {
     return this.listDelimiter ? this.content.split(this.listDelimiter) : super.list
   }
   get typedContent() {
-    // todo: probably a better way to do this, perhaps by defining a cellDelimiter at the node level
+    // todo: probably a better way to do this, perhaps by defining a cellDelimiter at the particle level
     // todo: this currently parse anything other than string types
     if (this.listDelimiter) return this.content.split(this.listDelimiter)
     const cells = this.parsedCells
@@ -14137,8 +14135,8 @@ class ParserBackedNode extends TreeNode {
     if (shouldReturnValueAsObject) return [key, this.typedMap]
     const hasChildrenAndContent = typedContent !== undefined && hasChildren
     const shouldReturnValueAsContentPlusChildren = hasChildrenAndContent
-    // If the node has a content and a subtree return it as a string, as
-    // Javascript object values can't be both a leaf and a tree.
+    // If the particle has a content and a subparticle return it as a string, as
+    // Javascript object values can't be both a leaf and a particle.
     if (shouldReturnValueAsContentPlusChildren) return [key, this.contentWithChildren]
     return [key, typedContent]
   }
@@ -14148,10 +14146,10 @@ class ParserBackedNode extends TreeNode {
   }
   get typedMap() {
     const obj = {}
-    this.forEach(node => {
-      if (!node._shouldSerialize) return true
-      const tuple = node.typedTuple
-      if (!node.isArrayElement) obj[tuple[0]] = tuple[1]
+    this.forEach(particle => {
+      if (!particle._shouldSerialize) return true
+      const tuple = particle.typedTuple
+      if (!particle.isArrayElement) obj[tuple[0]] = tuple[1]
       else {
         if (!obj[tuple[0]]) obj[tuple[0]] = []
         obj[tuple[0]].push(tuple[1])
@@ -14189,18 +14187,18 @@ ${indent}${closeChildrenString}`
     return cells
   }
 }
-class BlobParser extends ParserBackedNode {
+class BlobParser extends ParserBackedParticle {
   createParserCombinator() {
-    return new TreeNode.ParserCombinator(BlobParser, {})
+    return new Particle.ParserCombinator(BlobParser, {})
   }
   getErrors() {
     return []
   }
 }
 // todo: can we remove this? hard to extend.
-class UnknownParserNode extends ParserBackedNode {
+class UnknownParserParticle extends ParserBackedParticle {
   createParserCombinator() {
-    return new TreeNode.ParserCombinator(UnknownParserNode, {})
+    return new Particle.ParserCombinator(UnknownParserParticle, {})
   }
   getErrors() {
     return [new UnknownParserError(this)]
@@ -14210,16 +14208,16 @@ class UnknownParserNode extends ParserBackedNode {
 A cell contains a word but also the type information for that word.
 */
 class AbstractParsersBackedCell {
-  constructor(node, index, typeDef, cellTypeId, isCatchAll, parserDefinitionParser) {
+  constructor(particle, index, typeDef, cellTypeId, isCatchAll, parserDefinitionParser) {
     this._typeDef = typeDef
-    this._node = node
+    this._particle = particle
     this._isCatchAll = isCatchAll
     this._index = index
     this._cellTypeId = cellTypeId
     this._parserDefinitionParser = parserDefinitionParser
   }
   getWord() {
-    return this._node.getWord(this._index)
+    return this._particle.getWord(this._index)
   }
   get definitionLineNumber() {
     return this._typeDef.lineNumber
@@ -14227,8 +14225,8 @@ class AbstractParsersBackedCell {
   get cellTypeId() {
     return this._cellTypeId
   }
-  getNode() {
-    return this._node
+  getParticle() {
+    return this._particle
   }
   get cellIndex() {
     return this._index
@@ -14251,8 +14249,8 @@ class AbstractParsersBackedCell {
   }
   getAutoCompleteWords(partialWord = "") {
     const cellDef = this.cellTypeDefinition
-    let words = cellDef ? cellDef._getAutocompleteWordOptions(this.getNode().root) : []
-    const runTimeOptions = this.getNode().getRunTimeEnumOptions(this)
+    let words = cellDef ? cellDef._getAutocompleteWordOptions(this.getParticle().root) : []
+    const runTimeOptions = this.getParticle().getRunTimeEnumOptions(this)
     if (runTimeOptions) words = runTimeOptions.concat(words)
     if (partialWord) words = words.filter(word => word.includes(partialWord))
     return words.map(word => {
@@ -14273,7 +14271,7 @@ class AbstractParsersBackedCell {
     const cellDef = this.cellTypeDefinition
     const enumOptions = cellDef._getFromExtended(ParsersConstants.enum)
     if (!enumOptions) return undefined
-    const options = new TreeNode(
+    const options = new Particle(
       enumOptions
         .split(" ")
         .map(option => `option ${option}`)
@@ -14296,13 +14294,13 @@ ${options.toString(1)}`
     return this._typeDef
   }
   _getErrorContext() {
-    return this.getNode().getLine().split(" ")[0] // todo: WordBreakSymbol
+    return this.getParticle().getLine().split(" ")[0] // todo: WordBreakSymbol
   }
   isValid() {
-    const runTimeOptions = this.getNode().getRunTimeEnumOptionsForValidation(this)
+    const runTimeOptions = this.getParticle().getRunTimeEnumOptionsForValidation(this)
     const word = this.getWord()
     if (runTimeOptions) return runTimeOptions.includes(word)
-    return this.cellTypeDefinition.isValid(word, this.getNode().root) && this._isValid()
+    return this.cellTypeDefinition.isValid(word, this.getParticle().root) && this._isValid()
   }
   getErrorIfAny() {
     const word = this.getWord()
@@ -14463,21 +14461,21 @@ class ParsersUnknownCellTypeCell extends AbstractParsersBackedCell {
     return new UnknownCellTypeError(this)
   }
 }
-class AbstractTreeError {
-  constructor(node) {
-    this._node = node
+class AbstractParticleError {
+  constructor(particle) {
+    this._particle = particle
   }
   getLineIndex() {
     return this.lineNumber - 1
   }
   get lineNumber() {
-    return this.getNode()._getLineNumber() // todo: handle sourcemaps
+    return this.getParticle()._getLineNumber() // todo: handle sourcemaps
   }
   isCursorOnWord(lineIndex, characterIndex) {
     return lineIndex === this.getLineIndex() && this._doesCharacterIndexFallOnWord(characterIndex)
   }
   _doesCharacterIndexFallOnWord(characterIndex) {
-    return this.cellIndex === this.getNode().getWordIndexAtCharacterIndex(characterIndex)
+    return this.cellIndex === this.getParticle().getWordIndexAtCharacterIndex(characterIndex)
   }
   // convenience method. may be removed.
   isBlankLineError() {
@@ -14488,7 +14486,7 @@ class AbstractTreeError {
     return false
   }
   getIndent() {
-    return this.getNode().indentation
+    return this.getParticle().indentation
   }
   getCodeMirrorLineWidgetElement(onApplySuggestionCallBack = () => {}) {
     const suggestion = this.suggestionMessage
@@ -14497,11 +14495,11 @@ class AbstractTreeError {
     return this._getCodeMirrorLineWidgetElementWithoutSuggestion()
   }
   get parserId() {
-    return this.getNode().definition.parserIdFromDefinition
+    return this.getParticle().definition.parserIdFromDefinition
   }
   _getCodeMirrorLineWidgetElementCellTypeHints() {
     const el = document.createElement("div")
-    el.appendChild(document.createTextNode(this.getIndent() + this.getNode().definition.lineHints))
+    el.appendChild(document.createTextNode(this.getIndent() + this.getParticle().definition.lineHints))
     el.className = "LintCellTypeHints"
     return el
   }
@@ -14522,13 +14520,13 @@ class AbstractTreeError {
     return el
   }
   getLine() {
-    return this.getNode().getLine()
+    return this.getParticle().getLine()
   }
   getExtension() {
-    return this.getNode().handParsersProgram.extensionName
+    return this.getParticle().handParsersProgram.extensionName
   }
-  getNode() {
-    return this._node
+  getParticle() {
+    return this._particle
   }
   get errorTypeName() {
     return this.constructor.name.replace("Error", "")
@@ -14542,7 +14540,7 @@ class AbstractTreeError {
       line: this.lineNumber,
       cell: this.cellIndex,
       suggestion: this.suggestionMessage,
-      path: this.getNode().getFirstWordPath(),
+      path: this.getParticle().getFirstWordPath(),
       message: this.message
     }
   }
@@ -14560,9 +14558,9 @@ class AbstractTreeError {
     return `${this.errorTypeName} at line ${this.lineNumber} cell ${this.cellIndex}.`
   }
 }
-class AbstractCellError extends AbstractTreeError {
+class AbstractCellError extends AbstractParticleError {
   constructor(cell) {
-    super(cell.getNode())
+    super(cell.getParticle())
     this._cell = cell
   }
   get cell() {
@@ -14578,37 +14576,37 @@ class AbstractCellError extends AbstractTreeError {
     )
   }
 }
-class UnknownParserError extends AbstractTreeError {
+class UnknownParserError extends AbstractParticleError {
   get message() {
-    const node = this.getNode()
-    const parentNode = node.parent
-    const options = parentNode._getParser().getFirstWordOptions()
-    return super.message + ` Invalid parser "${node.firstWord}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
+    const particle = this.getParticle()
+    const parentParticle = particle.parent
+    const options = parentParticle._getParser().getFirstWordOptions()
+    return super.message + ` Invalid parser "${particle.firstWord}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
   }
   get wordSuggestion() {
-    const node = this.getNode()
-    const parentNode = node.parent
+    const particle = this.getParticle()
+    const parentParticle = particle.parent
     return Utils.didYouMean(
-      node.firstWord,
-      parentNode.getAutocompleteResults("", 0).map(option => option.text)
+      particle.firstWord,
+      parentParticle.getAutocompleteResults("", 0).map(option => option.text)
     )
   }
   get suggestionMessage() {
     const suggestion = this.wordSuggestion
-    const node = this.getNode()
-    if (suggestion) return `Change "${node.firstWord}" to "${suggestion}"`
+    const particle = this.getParticle()
+    if (suggestion) return `Change "${particle.firstWord}" to "${suggestion}"`
     return ""
   }
   applySuggestion() {
     const suggestion = this.wordSuggestion
-    if (suggestion) this.getNode().setWord(this.cellIndex, suggestion)
+    if (suggestion) this.getParticle().setWord(this.cellIndex, suggestion)
     return this
   }
 }
-class ParserDefinedError extends AbstractTreeError {
-  constructor(node, message) {
+class ParserDefinedError extends AbstractParticleError {
+  constructor(particle, message) {
     super()
-    this._node = node
+    this._particle = particle
     this._message = message
   }
   get message() {
@@ -14617,7 +14615,7 @@ class ParserDefinedError extends AbstractTreeError {
 }
 class BlankLineError extends UnknownParserError {
   get message() {
-    return super.message + ` Line: "${this.getNode().getLine()}". Blank lines are errors.`
+    return super.message + ` Line: "${this.getParticle().getLine()}". Blank lines are errors.`
   }
   // convenience method
   isBlankLineError() {
@@ -14627,39 +14625,39 @@ class BlankLineError extends UnknownParserError {
     return `Delete line ${this.lineNumber}`
   }
   applySuggestion() {
-    this.getNode().destroy()
+    this.getParticle().destroy()
     return this
   }
 }
-class MissingRequiredParserError extends AbstractTreeError {
-  constructor(node, missingParserId) {
-    super(node)
+class MissingRequiredParserError extends AbstractParticleError {
+  constructor(particle, missingParserId) {
+    super(particle)
     this._missingParserId = missingParserId
   }
   get message() {
     return super.message + ` A "${this._missingParserId}" is required.`
   }
 }
-class ParserUsedMultipleTimesError extends AbstractTreeError {
+class ParserUsedMultipleTimesError extends AbstractParticleError {
   get message() {
-    return super.message + ` Multiple "${this.getNode().firstWord}" found.`
+    return super.message + ` Multiple "${this.getParticle().firstWord}" found.`
   }
   get suggestionMessage() {
     return `Delete line ${this.lineNumber}`
   }
   applySuggestion() {
-    return this.getNode().destroy()
+    return this.getParticle().destroy()
   }
 }
-class LineAppearsMultipleTimesError extends AbstractTreeError {
+class LineAppearsMultipleTimesError extends AbstractParticleError {
   get message() {
-    return super.message + ` "${this.getNode().getLine()}" appears multiple times.`
+    return super.message + ` "${this.getParticle().getLine()}" appears multiple times.`
   }
   get suggestionMessage() {
     return `Delete line ${this.lineNumber}`
   }
   applySuggestion() {
-    return this.getNode().destroy()
+    return this.getParticle().destroy()
   }
 }
 class UnknownCellTypeError extends AbstractCellError {
@@ -14678,7 +14676,7 @@ class InvalidWordError extends AbstractCellError {
   }
   applySuggestion() {
     const suggestion = this.wordSuggestion
-    if (suggestion) this.getNode().setWord(this.cellIndex, suggestion)
+    if (suggestion) this.getParticle().setWord(this.cellIndex, suggestion)
     return this
   }
 }
@@ -14690,7 +14688,7 @@ class ExtraWordError extends AbstractCellError {
     return `Delete word "${this.cell.getWord()}" at cell ${this.cellIndex}`
   }
   applySuggestion() {
-    return this.getNode().deleteWordAt(this.cellIndex)
+    return this.getParticle().deleteWordAt(this.cellIndex)
   }
 }
 class MissingWordError extends AbstractCellError {
@@ -14703,7 +14701,7 @@ class MissingWordError extends AbstractCellError {
   }
 }
 // todo: add standard types, enum types, from disk types
-class AbstractParsersWordTestParser extends TreeNode {}
+class AbstractParsersWordTestParser extends Particle {}
 class ParsersRegexTestParser extends AbstractParsersWordTestParser {
   isValid(str) {
     if (!this._regex) this._regex = new RegExp("^" + this.content + "$")
@@ -14718,30 +14716,30 @@ class ParsersReservedWordsTestParser extends AbstractParsersWordTestParser {
 }
 // todo: remove in favor of custom word type constructors
 class EnumFromCellTypesTestParser extends AbstractParsersWordTestParser {
-  _getEnumFromCellTypes(programRootNode) {
+  _getEnumFromCellTypes(programRootParticle) {
     const cellTypeIds = this.getWordsFrom(1)
     const enumGroup = cellTypeIds.join(" ")
     // note: hack where we store it on the program. otherwise has global effects.
-    if (!programRootNode._enumMaps) programRootNode._enumMaps = {}
-    if (programRootNode._enumMaps[enumGroup]) return programRootNode._enumMaps[enumGroup]
+    if (!programRootParticle._enumMaps) programRootParticle._enumMaps = {}
+    if (programRootParticle._enumMaps[enumGroup]) return programRootParticle._enumMaps[enumGroup]
     const wordIndex = 1
     const map = {}
     const cellTypeMap = {}
     cellTypeIds.forEach(typeId => (cellTypeMap[typeId] = true))
-    programRootNode.allTypedWords
+    programRootParticle.allTypedWords
       .filter(typedWord => cellTypeMap[typedWord.type])
       .forEach(typedWord => {
         map[typedWord.word] = true
       })
-    programRootNode._enumMaps[enumGroup] = map
+    programRootParticle._enumMaps[enumGroup] = map
     return map
   }
   // todo: remove
-  isValid(str, programRootNode) {
-    return this._getEnumFromCellTypes(programRootNode)[str] === true
+  isValid(str, programRootParticle) {
+    return this._getEnumFromCellTypes(programRootParticle)[str] === true
   }
 }
-class ParsersEnumTestNode extends AbstractParsersWordTestParser {
+class ParsersEnumTestParticle extends AbstractParsersWordTestParser {
   isValid(str) {
     // enum c c++ java
     return !!this.getOptions()[str]
@@ -14751,26 +14749,26 @@ class ParsersEnumTestNode extends AbstractParsersWordTestParser {
     return this._map
   }
 }
-class cellTypeDefinitionParser extends AbstractExtendibleTreeNode {
+class cellTypeDefinitionParser extends AbstractExtendibleParticle {
   createParserCombinator() {
     const types = {}
     types[ParsersConstants.regex] = ParsersRegexTestParser
     types[ParsersConstants.reservedWords] = ParsersReservedWordsTestParser
     types[ParsersConstants.enumFromCellTypes] = EnumFromCellTypesTestParser
-    types[ParsersConstants.enum] = ParsersEnumTestNode
-    types[ParsersConstants.paint] = TreeNode
-    types[ParsersConstants.comment] = TreeNode
-    types[ParsersConstants.examples] = TreeNode
-    types[ParsersConstants.min] = TreeNode
-    types[ParsersConstants.max] = TreeNode
-    types[ParsersConstants.description] = TreeNode
-    types[ParsersConstants.extends] = TreeNode
-    return new TreeNode.ParserCombinator(undefined, types)
+    types[ParsersConstants.enum] = ParsersEnumTestParticle
+    types[ParsersConstants.paint] = Particle
+    types[ParsersConstants.comment] = Particle
+    types[ParsersConstants.examples] = Particle
+    types[ParsersConstants.min] = Particle
+    types[ParsersConstants.max] = Particle
+    types[ParsersConstants.description] = Particle
+    types[ParsersConstants.extends] = Particle
+    return new Particle.ParserCombinator(undefined, types)
   }
   get id() {
     return this.getWord(0)
   }
-  get idToNodeMap() {
+  get idToParticleMap() {
     return this.parent.cellTypeDefinitions
   }
   getGetter(wordIndex) {
@@ -14809,16 +14807,16 @@ class cellTypeDefinitionParser extends AbstractExtendibleTreeNode {
     if (preludeKind) return preludeKind.defaultPaint
   }
   _getEnumOptions() {
-    const enumNode = this._getNodeFromExtended(ParsersConstants.enum)
-    if (!enumNode) return undefined
+    const enumParticle = this._getParticleFromExtended(ParsersConstants.enum)
+    if (!enumParticle) return undefined
     // we sort by longest first to capture longest match first. todo: add test
-    const options = Object.keys(enumNode.getNode(ParsersConstants.enum).getOptions())
+    const options = Object.keys(enumParticle.getParticle(ParsersConstants.enum).getOptions())
     options.sort((a, b) => b.length - a.length)
     return options
   }
   _getEnumFromCellTypeOptions(program) {
-    const node = this._getNodeFromExtended(ParsersConstants.enumFromCellTypes)
-    return node ? Object.keys(node.getNode(ParsersConstants.enumFromCellTypes)._getEnumFromCellTypes(program)) : undefined
+    const particle = this._getParticleFromExtended(ParsersConstants.enumFromCellTypes)
+    return particle ? Object.keys(particle.getParticle(ParsersConstants.enumFromCellTypes)._getEnumFromCellTypes(program)) : undefined
   }
   _getAutocompleteWordOptions(program) {
     return this._getEnumOptions() || this._getEnumFromCellTypeOptions(program) || []
@@ -14831,8 +14829,8 @@ class cellTypeDefinitionParser extends AbstractExtendibleTreeNode {
   _getAllTests() {
     return this._getChildrenByParserInExtended(AbstractParsersWordTestParser)
   }
-  isValid(str, programRootNode) {
-    return this._getAllTests().every(node => node.isValid(str, programRootNode))
+  isValid(str, programRootParticle) {
+    return this._getAllTests().every(particle => particle.isValid(str, programRootParticle))
   }
   get cellTypeId() {
     return this.getWord(0)
@@ -14864,8 +14862,8 @@ class AbstractCellParser {
   _isCatchAllCell(cellIndex, numberOfRequiredCells, totalWordCount) {
     return cellIndex >= numberOfRequiredCells
   }
-  getCellArray(node = undefined) {
-    const wordCount = node ? node.words.length : 0
+  getCellArray(particle = undefined) {
+    const wordCount = particle ? particle.words.length : 0
     const def = this._definition
     const parsersProgram = def.languageDefinitionProgram
     const requiredCellTypeIds = this.getRequiredCellTypeIds()
@@ -14886,7 +14884,7 @@ class AbstractCellParser {
         cellTypeDefinition = parsersProgram.getCellTypeDefinitionById(cellTypeId)
       }
       const anyCellConstructor = cellConstructor
-      cells[cellIndex] = new anyCellConstructor(node, cellIndex, cellTypeDefinition, cellTypeId, isCatchAll, def)
+      cells[cellIndex] = new anyCellConstructor(particle, cellIndex, cellTypeDefinition, cellTypeId, isCatchAll, def)
     }
     return cells
   }
@@ -14902,12 +14900,12 @@ class PostfixCellParser extends AbstractCellParser {
   }
 }
 class OmnifixCellParser extends AbstractCellParser {
-  getCellArray(node = undefined) {
+  getCellArray(particle = undefined) {
     const cells = []
     const def = this._definition
-    const program = node ? node.root : undefined
+    const program = particle ? particle.root : undefined
     const parsersProgram = def.languageDefinitionProgram
-    const words = node ? node.words : []
+    const words = particle ? particle.words : []
     const requiredCellTypeDefs = this.getRequiredCellTypeIds().map(cellTypeId => parsersProgram.getCellTypeDefinitionById(cellTypeId))
     const catchAllCellTypeId = this.catchAllCellTypeId
     const catchAllCellTypeDef = catchAllCellTypeId && parsersProgram.getCellTypeDefinitionById(catchAllCellTypeId)
@@ -14918,28 +14916,28 @@ class OmnifixCellParser extends AbstractCellParser {
         if (cellTypeDefinition.isValid(word, program)) {
           // todo: cleanup cellIndex/wordIndex stuff
           cellConstructor = cellTypeDefinition.getCellConstructor()
-          cells.push(new cellConstructor(node, wordIndex, cellTypeDefinition, cellTypeDefinition.id, false, def))
+          cells.push(new cellConstructor(particle, wordIndex, cellTypeDefinition, cellTypeDefinition.id, false, def))
           requiredCellTypeDefs.splice(index, 1)
           return true
         }
       }
       if (catchAllCellTypeDef && catchAllCellTypeDef.isValid(word, program)) {
         cellConstructor = catchAllCellTypeDef.getCellConstructor()
-        cells.push(new cellConstructor(node, wordIndex, catchAllCellTypeDef, catchAllCellTypeId, true, def))
+        cells.push(new cellConstructor(particle, wordIndex, catchAllCellTypeDef, catchAllCellTypeId, true, def))
         return true
       }
-      cells.push(new ParsersUnknownCellTypeCell(node, wordIndex, undefined, undefined, false, def))
+      cells.push(new ParsersUnknownCellTypeCell(particle, wordIndex, undefined, undefined, false, def))
     })
     const wordCount = words.length
     requiredCellTypeDefs.forEach((cellTypeDef, index) => {
       let cellConstructor = cellTypeDef.getCellConstructor()
-      cells.push(new cellConstructor(node, wordCount + index, cellTypeDef, cellTypeDef.id, false, def))
+      cells.push(new cellConstructor(particle, wordCount + index, cellTypeDef, cellTypeDef.id, false, def))
     })
     return cells
   }
 }
-class ParsersExampleParser extends TreeNode {}
-class ParsersCompilerParser extends TreeNode {
+class ParsersExampleParser extends Particle {}
+class ParsersCompilerParser extends Particle {
   createParserCombinator() {
     const types = [
       ParsersConstantsCompiler.stringTemplate,
@@ -14951,12 +14949,12 @@ class ParsersCompilerParser extends TreeNode {
     ]
     const map = {}
     types.forEach(type => {
-      map[type] = TreeNode
+      map[type] = Particle
     })
-    return new TreeNode.ParserCombinator(undefined, map)
+    return new Particle.ParserCombinator(undefined, map)
   }
 }
-class AbstractParserConstantParser extends TreeNode {
+class AbstractParserConstantParser extends Particle {
   constructor(children, line, parent) {
     super(children, line, parent)
     parent[this.identifier] = this.constantValue
@@ -14986,9 +14984,9 @@ class ParsersParserConstantString extends AbstractParserConstantParser {
 }
 class ParsersParserConstantFloat extends AbstractParserConstantParser {}
 class ParsersParserConstantBoolean extends AbstractParserConstantParser {}
-class AbstractParserDefinitionParser extends AbstractExtendibleTreeNode {
+class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
   createParserCombinator() {
-    // todo: some of these should just be on nonRootNodes
+    // todo: some of these should just be on nonRootParticles
     const types = [
       ParsersConstants.popularity,
       ParsersConstants.inScope,
@@ -15020,7 +15018,7 @@ class AbstractParserDefinitionParser extends AbstractExtendibleTreeNode {
     ]
     const map = {}
     types.forEach(type => {
-      map[type] = TreeNode
+      map[type] = Particle
     })
     map[ParsersConstantsConstantTypes.boolean] = ParsersParserConstantBoolean
     map[ParsersConstantsConstantTypes.int] = ParsersParserConstantInt
@@ -15028,7 +15026,7 @@ class AbstractParserDefinitionParser extends AbstractExtendibleTreeNode {
     map[ParsersConstantsConstantTypes.float] = ParsersParserConstantFloat
     map[ParsersConstants.compilerParser] = ParsersCompilerParser
     map[ParsersConstants.example] = ParsersExampleParser
-    return new TreeNode.ParserCombinator(undefined, map, [{ regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser }])
+    return new Particle.ParserCombinator(undefined, map, [{ regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser }])
   }
   toTypeScriptInterface(used = new Set()) {
     let childrenInterfaces = []
@@ -15064,15 +15062,15 @@ ${properties.join("\n")}
     return this.id.replace(HandParsersProgram.parserSuffixRegex, "")
   }
   get constantsObject() {
-    const obj = this._getUniqueConstantNodes()
+    const obj = this._getUniqueConstantParticles()
     Object.keys(obj).forEach(key => (obj[key] = obj[key].constantValue))
     return obj
   }
-  _getUniqueConstantNodes(extended = true) {
+  _getUniqueConstantParticles(extended = true) {
     const obj = {}
     const items = extended ? this._getChildrenByParserInExtended(AbstractParserConstantParser) : this.getChildrenByParser(AbstractParserConstantParser)
     items.reverse() // Last definition wins.
-    items.forEach(node => (obj[node.identifier] = node))
+    items.forEach(particle => (obj[particle.identifier] = particle))
     return obj
   }
   get examples() {
@@ -15106,11 +15104,11 @@ ${properties.join("\n")}
   }
   get customJavascriptMethods() {
     const hasJsCode = this.has(ParsersConstants.javascript)
-    return hasJsCode ? this.getNode(ParsersConstants.javascript).childrenToString() : ""
+    return hasJsCode ? this.getParticle(ParsersConstants.javascript).childrenToString() : ""
   }
   get firstWordMapWithDefinitions() {
-    if (!this._cache_firstWordToNodeDefMap) this._cache_firstWordToNodeDefMap = this._createParserInfo(this._getInScopeParserIds()).firstWordMap
-    return this._cache_firstWordToNodeDefMap
+    if (!this._cache_firstWordToParticleDefMap) this._cache_firstWordToParticleDefMap = this._createParserInfo(this._getInScopeParserIds()).firstWordMap
+    return this._cache_firstWordToParticleDefMap
   }
   // todo: remove
   get runTimeFirstWordsInScope() {
@@ -15134,7 +15132,7 @@ ${properties.join("\n")}
     const catchAllCellTypeId = this.get(ParsersConstants.catchAllCellType)
     if (catchAllCellTypeId) getters.push(parsersProgram.getCellTypeDefinitionById(catchAllCellTypeId).getCatchAllGetter(getters.length))
     // Constants
-    Object.values(this._getUniqueConstantNodes(false)).forEach(node => getters.push(node.getGetter()))
+    Object.values(this._getUniqueConstantParticles(false)).forEach(particle => getters.push(particle.getGetter()))
     return getters.join("\n")
   }
   _createParserInfo(parserIdsInScope) {
@@ -15169,9 +15167,9 @@ ${properties.join("\n")}
     return arr
   }
   _getMyInScopeParserIds(target = this) {
-    const parsersNode = target.getNode(ParsersConstants.inScope)
+    const parsersParticle = target.getParticle(ParsersConstants.inScope)
     const scopedDefinitionIds = target.myScopedParserDefinitions.map(def => def.id)
-    return parsersNode ? parsersNode.getWordsFrom(1).concat(scopedDefinitionIds) : scopedDefinitionIds
+    return parsersParticle ? parsersParticle.getWordsFrom(1).concat(scopedDefinitionIds) : scopedDefinitionIds
   }
   _getInScopeParserIds() {
     // todo: allow multiple of these if we allow mixins?
@@ -15180,11 +15178,11 @@ ${properties.join("\n")}
     return parentDef ? ids.concat(parentDef._getInScopeParserIds()) : ids
   }
   get isSingle() {
-    const hit = this._getNodeFromExtended(ParsersConstants.single)
+    const hit = this._getParticleFromExtended(ParsersConstants.single)
     return hit && hit.get(ParsersConstants.single) !== "false"
   }
   get isUniqueLine() {
-    const hit = this._getNodeFromExtended(ParsersConstants.uniqueLine)
+    const hit = this._getParticleFromExtended(ParsersConstants.uniqueLine)
     return hit && hit.get(ParsersConstants.uniqueLine) !== "false"
   }
   isRequired() {
@@ -15195,21 +15193,21 @@ ${properties.join("\n")}
     const def = this.programParserDefinitionCache[parserId]
     if (def) return def
     this.languageDefinitionProgram._addDefaultCatchAllBlobParser() // todo: cleanup. Why did I do this? Needs to be removed or documented.
-    const nodeDef = this.languageDefinitionProgram.programParserDefinitionCache[parserId]
-    if (!nodeDef) throw new Error(`No definition found for parser id "${parserId}". Node: \n---\n${this.asString}\n---`)
-    return nodeDef
+    const particleDef = this.languageDefinitionProgram.programParserDefinitionCache[parserId]
+    if (!particleDef) throw new Error(`No definition found for parser id "${parserId}". Particle: \n---\n${this.asString}\n---`)
+    return particleDef
   }
   isDefined(parserId) {
     return !!this.programParserDefinitionCache[parserId]
   }
-  get idToNodeMap() {
+  get idToParticleMap() {
     return this.programParserDefinitionCache
   }
   _amIRoot() {
-    if (this._cache_isRoot === undefined) this._cache_isRoot = this._languageRootNode === this
+    if (this._cache_isRoot === undefined) this._cache_isRoot = this._languageRootParticle === this
     return this._cache_isRoot
   }
-  get _languageRootNode() {
+  get _languageRootParticle() {
     return this.root.rootParserDefinition
   }
   _isErrorParser() {
@@ -15220,14 +15218,14 @@ ${properties.join("\n")}
     return this._getFromExtended(ParsersConstants.baseParser) === ParsersConstants.blobParser
   }
   get errorMethodToJavascript() {
-    if (this._isBlobParser()) return "getErrors() { return [] }" // Skips parsing child nodes for perf gains.
+    if (this._isBlobParser()) return "getErrors() { return [] }" // Skips parsing child particles for perf gains.
     if (this._isErrorParser()) return "getErrors() { return this._getErrorParserErrors() }"
     return ""
   }
   get parserAsJavascript() {
     if (this._isBlobParser())
       // todo: do we need this?
-      return "createParserCombinator() { return new TreeNode.ParserCombinator(this._getBlobParserCatchAllParser())}"
+      return "createParserCombinator() { return new Particle.ParserCombinator(this._getBlobParserCatchAllParser())}"
     const parserInfo = this._createParserInfo(this._getMyInScopeParserIds())
     const myFirstWordMap = parserInfo.firstWordMap
     const regexRules = parserInfo.regexTests
@@ -15250,7 +15248,7 @@ ${properties.join("\n")}
     const catchAllStr = catchAllParser ? catchAllParser : this._amIRoot() ? `this._getBlobParserCatchAllParser()` : "undefined"
     const scopedParserJavascript = this.myScopedParserDefinitions.map(def => def.asJavascriptClass).join("\n\n")
     return `createParserCombinator() {${scopedParserJavascript}
-  return new TreeNode.ParserCombinator(${catchAllStr}, ${firstWordsStr}, ${regexStr})
+  return new Particle.ParserCombinator(${catchAllStr}, ${firstWordsStr}, ${regexStr})
   }`
   }
   get myScopedParserDefinitions() {
@@ -15260,8 +15258,8 @@ ${properties.join("\n")}
     if (this._isBlobParser()) return "this._getBlobParserCatchAllParser()"
     const parserId = this.get(ParsersConstants.catchAllParser)
     if (!parserId) return ""
-    const nodeDef = this.getParserDefinitionByParserId(parserId)
-    return nodeDef.generatedClassName
+    const particleDef = this.getParserDefinitionByParserId(parserId)
+    return particleDef.generatedClassName
   }
   get asJavascriptClass() {
     const components = [this.parserAsJavascript, this.errorMethodToJavascript, this.cellGettersAndParserConstants, this.customJavascriptMethods].filter(identity => identity)
@@ -15279,14 +15277,14 @@ ${properties.join("\n")}
   }
   _getExtendsClassName() {
     const extendedDef = this._getExtendedParent()
-    return extendedDef ? extendedDef.generatedClassName : "ParserBackedNode"
+    return extendedDef ? extendedDef.generatedClassName : "ParserBackedParticle"
   }
   _getCompilerObject() {
     let obj = {}
     const items = this._getChildrenByParserInExtended(ParsersCompilerParser)
     items.reverse() // Last definition wins.
-    items.forEach(node => {
-      obj = Object.assign(obj, node.toObject()) // todo: what about multiline strings?
+    items.forEach(particle => {
+      obj = Object.assign(obj, particle.toObject()) // todo: what about multiline strings?
     })
     return obj
   }
@@ -15380,17 +15378,17 @@ ${captures}
     if (!cellArray.length)
       // todo: remove this! just doing it for now until we refactor getCellArray to handle catchAlls better.
       return ""
-    const cells = new TreeNode(cellArray.map((cell, index) => cell._toStumpInput(crux)).join("\n"))
+    const cells = new Particle(cellArray.map((cell, index) => cell._toStumpInput(crux)).join("\n"))
     return `div
  label ${crux}
 ${cells.toString(1)}`
   }
   toStumpString() {
-    const nodeBreakSymbol = "\n"
-    return this._getConcreteNonErrorInScopeNodeDefinitions(this._getInScopeParserIds())
+    const particleBreakSymbol = "\n"
+    return this._getConcreteNonErrorInScopeParticleDefinitions(this._getInScopeParserIds())
       .map(def => def._toStumpString())
       .filter(identity => identity)
-      .join(nodeBreakSymbol)
+      .join(particleBreakSymbol)
   }
   _generateSimulatedLine(seed) {
     // todo: generate simulated data from catch all
@@ -15436,7 +15434,7 @@ ${cells.toString(1)}`
     const id = this.id
     return Object.values(defs).filter(def => def._doesExtend(id) && !def._isAbstract())
   }
-  _getConcreteNonErrorInScopeNodeDefinitions(parserIds) {
+  _getConcreteNonErrorInScopeParticleDefinitions(parserIds) {
     const defs = []
     parserIds.forEach(parserId => {
       const def = this.getParserDefinitionByParserId(parserId)
@@ -15447,24 +15445,24 @@ ${cells.toString(1)}`
     return defs
   }
   // todo: refactor
-  synthesizeNode(nodeCount = 1, indentCount = -1, parsersAlreadySynthesized = [], seed = Date.now()) {
+  synthesizeParticle(particleCount = 1, indentCount = -1, parsersAlreadySynthesized = [], seed = Date.now()) {
     let inScopeParserIds = this._getInScopeParserIds()
     const catchAllParserId = this._getFromExtended(ParsersConstants.catchAllParser)
     if (catchAllParserId) inScopeParserIds.push(catchAllParserId)
     const thisId = this.id
     if (!parsersAlreadySynthesized.includes(thisId)) parsersAlreadySynthesized.push(thisId)
     const lines = []
-    while (nodeCount) {
+    while (particleCount) {
       const line = this._generateSimulatedLine(seed)
       if (line) lines.push(" ".repeat(indentCount >= 0 ? indentCount : 0) + line)
-      this._getConcreteNonErrorInScopeNodeDefinitions(inScopeParserIds.filter(parserId => !parsersAlreadySynthesized.includes(parserId)))
+      this._getConcreteNonErrorInScopeParticleDefinitions(inScopeParserIds.filter(parserId => !parsersAlreadySynthesized.includes(parserId)))
         .filter(def => this._shouldSynthesize(def, parsersAlreadySynthesized))
         .forEach(def => {
           const chain = parsersAlreadySynthesized // .slice(0)
           chain.push(def.id)
-          def.synthesizeNode(1, indentCount + 1, chain, seed).forEach(line => lines.push(line))
+          def.synthesizeParticle(1, indentCount + 1, chain, seed).forEach(line => lines.push(line))
         })
-      nodeCount--
+      particleCount--
     }
     return lines
   }
@@ -15485,9 +15483,9 @@ class parserDefinitionParser extends AbstractParserDefinitionParser {}
 class HandParsersProgram extends AbstractParserDefinitionParser {
   createParserCombinator() {
     const map = {}
-    map[ParsersConstants.comment] = TreeNode
-    return new TreeNode.ParserCombinator(UnknownParserNode, map, [
-      { regex: HandParsersProgram.blankLineRegex, parser: TreeNode },
+    map[ParsersConstants.comment] = Particle
+    return new Particle.ParserCombinator(UnknownParserParticle, map, [
+      { regex: HandParsersProgram.blankLineRegex, parser: Particle },
       { regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser },
       { regex: HandParsersProgram.cellTypeFullRegex, parser: cellTypeDefinitionParser }
     ])
@@ -15503,14 +15501,14 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
     const path = require("path")
     const code = this.toNodeJsJavascript(__dirname)
     try {
-      const rootNode = this._requireInVmNodeJsRootParser(code)
-      this._cache_rootParser = rootNode.rootParser
+      const rootParticle = this._requireInVmNodeJsRootParser(code)
+      this._cache_rootParser = rootParticle.rootParser
       if (!this._cache_rootParser) throw new Error(`Failed to rootParser`)
     } catch (err) {
       // todo: figure out best error pattern here for debugging
       console.log(err)
       // console.log(`Error in code: `)
-      // console.log(new TreeNode(code).toStringWithLineNumbers())
+      // console.log(new Particle(code).toStringWithLineNumbers())
     }
     return this._cache_rootParser
   }
@@ -15518,27 +15516,27 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
     return ""
   }
   trainModel(programs, rootParser = this.compileAndReturnRootParser()) {
-    const nodeDefs = this.validConcreteAndAbstractParserDefinitions
-    const nodeDefCountIncludingRoot = nodeDefs.length + 1
-    const matrix = Utils.makeMatrix(nodeDefCountIncludingRoot, nodeDefCountIncludingRoot, 0)
+    const particleDefs = this.validConcreteAndAbstractParserDefinitions
+    const particleDefCountIncludingRoot = particleDefs.length + 1
+    const matrix = Utils.makeMatrix(particleDefCountIncludingRoot, particleDefCountIncludingRoot, 0)
     const idToIndex = {}
     const indexToId = {}
-    nodeDefs.forEach((def, index) => {
+    particleDefs.forEach((def, index) => {
       const id = def.id
       idToIndex[id] = index + 1
       indexToId[index + 1] = id
     })
     programs.forEach(code => {
       const exampleProgram = new rootParser(code)
-      exampleProgram.topDownArray.forEach(node => {
-        const nodeIndex = idToIndex[node.definition.id]
-        const parentNode = node.parent
-        if (!nodeIndex) return undefined
-        if (parentNode.isRoot()) matrix[0][nodeIndex]++
+      exampleProgram.topDownArray.forEach(particle => {
+        const particleIndex = idToIndex[particle.definition.id]
+        const parentParticle = particle.parent
+        if (!particleIndex) return undefined
+        if (parentParticle.isRoot()) matrix[0][particleIndex]++
         else {
-          const parentIndex = idToIndex[parentNode.definition.id]
+          const parentIndex = idToIndex[parentParticle.definition.id]
           if (!parentIndex) return undefined
-          matrix[parentIndex][nodeIndex]++
+          matrix[parentIndex][particleIndex]++
         }
       })
     })
@@ -15562,19 +15560,19 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
     predictions.sort(Utils.makeSortByFn(prediction => prediction.count)).reverse()
     return predictions
   }
-  predictChildren(model, node) {
-    return this._mapPredictions(this._predictChildren(model, node), model)
+  predictChildren(model, particle) {
+    return this._mapPredictions(this._predictChildren(model, particle), model)
   }
-  predictParents(model, node) {
-    return this._mapPredictions(this._predictParents(model, node), model)
+  predictParents(model, particle) {
+    return this._mapPredictions(this._predictParents(model, particle), model)
   }
-  _predictChildren(model, node) {
-    return model.matrix[node.isRoot() ? 0 : model.idToIndex[node.definition.id]]
+  _predictChildren(model, particle) {
+    return model.matrix[particle.isRoot() ? 0 : model.idToIndex[particle.definition.id]]
   }
-  _predictParents(model, node) {
-    if (node.isRoot()) return []
-    const nodeIndex = model.idToIndex[node.definition.id]
-    return model.matrix.map(row => row[nodeIndex])
+  _predictParents(model, particle) {
+    if (particle.isRoot()) return []
+    const particleIndex = model.idToIndex[particle.definition.id]
+    return model.matrix.map(row => row[particleIndex])
   }
   _setDirName(name) {
     this._dirName = name
@@ -15595,7 +15593,7 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
     } catch (err) {
       // todo: figure out best error pattern here for debugging
       console.log(`Error in compiled parsers code for language "${this.parsersName}"`)
-      // console.log(new TreeNode(code).toStringWithLineNumbers())
+      // console.log(new Particle(code).toStringWithLineNumbers())
       console.log(err)
       throw err
     }
@@ -15616,23 +15614,23 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
   }
   toReadMe() {
     const languageName = this.extensionName
-    const rootNodeDef = this.rootParserDefinition
+    const rootParticleDef = this.rootParserDefinition
     const cellTypes = this.cellTypeDefinitions
-    const parserFamilyTree = this.parserFamilyTree
-    const exampleNode = rootNodeDef.examples[0]
+    const parserLineage = this.parserLineage
+    const exampleParticle = rootParticleDef.examples[0]
     return `title ${languageName} Readme
 
-paragraph ${rootNodeDef.description}
+paragraph ${rootParticleDef.description}
 
 subtitle Quick Example
 
 code
-${exampleNode ? exampleNode.childrenToString(1) : ""}
+${exampleParticle ? exampleParticle.childrenToString(1) : ""}
 
 subtitle Quick facts about ${languageName}
 
 list
- - ${languageName} has ${parserFamilyTree.topDownArray.length} node types.
+ - ${languageName} has ${parserLineage.topDownArray.length} particle types.
  - ${languageName} has ${Object.keys(cellTypes).length} cell types
  - The source code for ${languageName} is ${this.topDownArray.length} lines long.
 
@@ -15646,15 +15644,15 @@ subtitle Testing
 code
  node test.js
 
-subtitle Node Types
+subtitle Parsers
 
 code
-${parserFamilyTree.toString(1)}
+${parserLineage.toString(1)}
 
 subtitle Cell Types
 
 code
-${new TreeNode(Object.keys(cellTypes).join("\n")).toString(1)}
+${new Particle(Object.keys(cellTypes).join("\n")).toString(1)}
 
 subtitle Road Map
 
@@ -15662,8 +15660,8 @@ paragraph Here are the "todos" present in the source code for ${languageName}:
 
 list
 ${this.topDownArray
-  .filter(node => node.getWord(0) === "todo")
-  .map(node => ` - ${node.getLine()}`)
+  .filter(particle => particle.getWord(0) === "todo")
+  .map(particle => ` - ${particle.getLine()}`)
   .join("\n")}
 
 paragraph This readme was auto-generated using the
@@ -15671,16 +15669,16 @@ paragraph This readme was auto-generated using the
   }
   toBundle() {
     const files = {}
-    const rootNodeDef = this.rootParserDefinition
+    const rootParticleDef = this.rootParserDefinition
     const languageName = this.extensionName
-    const example = rootNodeDef.examples[0]
+    const example = rootParticleDef.examples[0]
     const sampleCode = example ? example.childrenToString() : ""
     files[ParsersBundleFiles.package] = JSON.stringify(
       {
         name: languageName,
         private: true,
         dependencies: {
-          scrollsdk: TreeNode.getVersion()
+          scrollsdk: Particle.getVersion()
         }
       },
       null,
@@ -15698,7 +15696,7 @@ if (errors.length)
     const browserPath = `${languageName}.browser.js`
     files[browserPath] = this.toBrowserJavascript()
     files[ParsersBundleFiles.indexHtml] = `<script src="node_modules/scrollsdk/products/Utils.browser.js"></script>
-<script src="node_modules/scrollsdk/products/TreeNode.browser.js"></script>
+<script src="node_modules/scrollsdk/products/Particle.browser.js"></script>
 <script src="node_modules/scrollsdk/products/Parsers.ts.browser.js"></script>
 <script src="${browserPath}"></script>
 <script>
@@ -15727,35 +15725,35 @@ ${testCode}`
     // todo: return unknownCellTypeDefinition? or is that handled somewhere else?
     return this.cellTypeDefinitions[cellTypeId]
   }
-  get parserFamilyTree() {
-    const tree = new TreeNode()
-    Object.values(this.validConcreteAndAbstractParserDefinitions).forEach(node => tree.touchNode(node.ancestorParserIdsArray.join(" ")))
-    return tree
+  get parserLineage() {
+    const newParticle = new Particle()
+    Object.values(this.validConcreteAndAbstractParserDefinitions).forEach(particle => newParticle.touchParticle(particle.ancestorParserIdsArray.join(" ")))
+    return newParticle
   }
   get languageDefinitionProgram() {
     return this
   }
   get validConcreteAndAbstractParserDefinitions() {
-    return this.getChildrenByParser(parserDefinitionParser).filter(node => node._hasValidParserId())
+    return this.getChildrenByParser(parserDefinitionParser).filter(particle => particle._hasValidParserId())
   }
-  get lastRootParserDefinitionNode() {
+  get lastRootParserDefinitionParticle() {
     return this.findLast(def => def instanceof AbstractParserDefinitionParser && def.has(ParsersConstants.root) && def._hasValidParserId())
   }
-  _initRootParserDefinitionNode() {
-    if (this._cache_rootParserNode) return
-    if (!this._cache_rootParserNode) this._cache_rootParserNode = this.lastRootParserDefinitionNode
-    // By default, have a very permissive basic root node.
+  _initRootParserDefinitionParticle() {
+    if (this._cache_rootParserParticle) return
+    if (!this._cache_rootParserParticle) this._cache_rootParserParticle = this.lastRootParserDefinitionParticle
+    // By default, have a very permissive basic root particle.
     // todo: whats the best design pattern to use for this sort of thing?
-    if (!this._cache_rootParserNode) {
-      this._cache_rootParserNode = this.concat(`${ParsersConstants.DefaultRootParser}
+    if (!this._cache_rootParserParticle) {
+      this._cache_rootParserParticle = this.concat(`${ParsersConstants.DefaultRootParser}
  ${ParsersConstants.root}
  ${ParsersConstants.catchAllParser} ${ParsersConstants.BlobParser}`)[0]
       this._addDefaultCatchAllBlobParser()
     }
   }
   get rootParserDefinition() {
-    this._initRootParserDefinitionNode()
-    return this._cache_rootParserNode
+    this._initRootParserDefinitionParticle()
+    return this._cache_rootParserParticle
   }
   _addDefaultCatchAllBlobParser() {
     if (this._addedCatchAll) return
@@ -15780,8 +15778,8 @@ ${testCode}`
     return super._getMyInScopeParserIds(this.rootParserDefinition)
   }
   _getInScopeParserIds() {
-    const parsersNode = this.rootParserDefinition.getNode(ParsersConstants.inScope)
-    return parsersNode ? parsersNode.getWordsFrom(1) : []
+    const parsersParticle = this.rootParserDefinition.getParticle(ParsersConstants.inScope)
+    return parsersParticle ? parsersParticle.getWordsFrom(1) : []
   }
   makeProgramParserDefinitionCache() {
     const cache = {}
@@ -15799,19 +15797,19 @@ ${testCode}`
     return this.rootParserDefinition.get(ParsersConstants.extensions) ? this.rootParserDefinition.get(ParsersConstants.extensions).split(" ").join(",") : this.extensionName
   }
   toNodeJsJavascript(scrollsdkProductsPath = "scrollsdk/products") {
-    return this._rootNodeDefToJavascriptClass(scrollsdkProductsPath, true).trim()
+    return this._rootParticleDefToJavascriptClass(scrollsdkProductsPath, true).trim()
   }
   toBrowserJavascript() {
-    return this._rootNodeDefToJavascriptClass("", false).trim()
+    return this._rootParticleDefToJavascriptClass("", false).trim()
   }
-  _rootNodeDefToJavascriptClass(scrollsdkProductsPath, forNodeJs = true) {
+  _rootParticleDefToJavascriptClass(scrollsdkProductsPath, forNodeJs = true) {
     const defs = this.validConcreteAndAbstractParserDefinitions
-    // todo: throw if there is no root node defined
+    // todo: throw if there is no root particle defined
     const parserClasses = defs.map(def => def.asJavascriptClass).join("\n\n")
     const rootDef = this.rootParserDefinition
     const rootNodeJsHeader = forNodeJs && rootDef._getConcatBlockStringFromExtended(ParsersConstants._rootNodeJsHeader)
     const rootName = rootDef.generatedClassName
-    if (!rootName) throw new Error(`Root Node Type Has No Name`)
+    if (!rootName) throw new Error(`Root Particle Type Has No Name`)
     let exportScript = ""
     if (forNodeJs)
       exportScript = `module.exports = ${rootName};
@@ -15878,47 +15876,47 @@ PreludeKinds[PreludeCellTypeIds.numberCell] = ParsersFloatCell
 PreludeKinds[PreludeCellTypeIds.bitCell] = ParsersBitCell
 PreludeKinds[PreludeCellTypeIds.boolCell] = ParsersBoolCell
 PreludeKinds[PreludeCellTypeIds.intCell] = ParsersIntCell
-class UnknownParsersProgram extends TreeNode {
-  _inferRootNodeForAPrefixLanguage(parsersName) {
+class UnknownParsersProgram extends Particle {
+  _inferRootParticleForAPrefixLanguage(parsersName) {
     parsersName = HandParsersProgram.makeParserId(parsersName)
-    const rootNode = new TreeNode(`${parsersName}
+    const rootParticle = new Particle(`${parsersName}
  ${ParsersConstants.root}`)
     // note: right now we assume 1 global cellTypeMap and parserMap per parsers. But we may have scopes in the future?
-    const rootNodeNames = this.getFirstWords()
+    const rootParticleNames = this.getFirstWords()
       .filter(identity => identity)
       .map(word => HandParsersProgram.makeParserId(word))
-    rootNode
-      .nodeAt(0)
-      .touchNode(ParsersConstants.inScope)
-      .setWordsFrom(1, Array.from(new Set(rootNodeNames)))
-    return rootNode
+    rootParticle
+      .particleAt(0)
+      .touchParticle(ParsersConstants.inScope)
+      .setWordsFrom(1, Array.from(new Set(rootParticleNames)))
+    return rootParticle
   }
   _renameIntegerKeywords(clone) {
     // todo: why are we doing this?
-    for (let node of clone.getTopDownArrayIterator()) {
-      const firstWordIsAnInteger = !!node.firstWord.match(/^\d+$/)
-      const parentFirstWord = node.parent.firstWord
-      if (firstWordIsAnInteger && parentFirstWord) node.setFirstWord(HandParsersProgram.makeParserId(parentFirstWord + UnknownParsersProgram._childSuffix))
+    for (let particle of clone.getTopDownArrayIterator()) {
+      const firstWordIsAnInteger = !!particle.firstWord.match(/^\d+$/)
+      const parentFirstWord = particle.parent.firstWord
+      if (firstWordIsAnInteger && parentFirstWord) particle.setFirstWord(HandParsersProgram.makeParserId(parentFirstWord + UnknownParsersProgram._childSuffix))
     }
   }
   _getKeywordMaps(clone) {
     const keywordsToChildKeywords = {}
-    const keywordsToNodeInstances = {}
-    for (let node of clone.getTopDownArrayIterator()) {
-      const firstWord = node.firstWord
+    const keywordsToParticleInstances = {}
+    for (let particle of clone.getTopDownArrayIterator()) {
+      const firstWord = particle.firstWord
       if (!keywordsToChildKeywords[firstWord]) keywordsToChildKeywords[firstWord] = {}
-      if (!keywordsToNodeInstances[firstWord]) keywordsToNodeInstances[firstWord] = []
-      keywordsToNodeInstances[firstWord].push(node)
-      node.forEach(child => (keywordsToChildKeywords[firstWord][child.firstWord] = true))
+      if (!keywordsToParticleInstances[firstWord]) keywordsToParticleInstances[firstWord] = []
+      keywordsToParticleInstances[firstWord].push(particle)
+      particle.forEach(child => (keywordsToChildKeywords[firstWord][child.firstWord] = true))
     }
-    return { keywordsToChildKeywords: keywordsToChildKeywords, keywordsToNodeInstances: keywordsToNodeInstances }
+    return { keywordsToChildKeywords: keywordsToChildKeywords, keywordsToParticleInstances: keywordsToParticleInstances }
   }
   _inferParserDef(firstWord, globalCellTypeMap, childFirstWords, instances) {
     const edgeSymbol = this.edgeSymbol
     const parserId = HandParsersProgram.makeParserId(firstWord)
-    const nodeDefNode = new TreeNode(parserId).nodeAt(0)
+    const particleDefParticle = new Particle(parserId).particleAt(0)
     const childParserIds = childFirstWords.map(word => HandParsersProgram.makeParserId(word))
-    if (childParserIds.length) nodeDefNode.touchNode(ParsersConstants.inScope).setWordsFrom(1, childParserIds)
+    if (childParserIds.length) particleDefParticle.touchParticle(ParsersConstants.inScope).setWordsFrom(1, childParserIds)
     const cellsForAllInstances = instances
       .map(line => line.content)
       .filter(identity => identity)
@@ -15946,45 +15944,45 @@ class UnknownParsersProgram extends TreeNode {
       }
     }
     const needsCruxProperty = !firstWord.endsWith(UnknownParsersProgram._childSuffix + ParsersConstants.parserSuffix) // todo: cleanup
-    if (needsCruxProperty) nodeDefNode.set(ParsersConstants.crux, firstWord)
-    if (catchAllCellType) nodeDefNode.set(ParsersConstants.catchAllCellType, catchAllCellType)
+    if (needsCruxProperty) particleDefParticle.set(ParsersConstants.crux, firstWord)
+    if (catchAllCellType) particleDefParticle.set(ParsersConstants.catchAllCellType, catchAllCellType)
     const cellLine = cellTypeIds.slice()
     cellLine.unshift(PreludeCellTypeIds.keywordCell)
-    if (cellLine.length > 0) nodeDefNode.set(ParsersConstants.cells, cellLine.join(edgeSymbol))
-    //if (!catchAllCellType && cellTypeIds.length === 1) nodeDefNode.set(ParsersConstants.cells, cellTypeIds[0])
+    if (cellLine.length > 0) particleDefParticle.set(ParsersConstants.cells, cellLine.join(edgeSymbol))
+    //if (!catchAllCellType && cellTypeIds.length === 1) particleDefParticle.set(ParsersConstants.cells, cellTypeIds[0])
     // Todo: add conditional frequencies
-    return nodeDefNode.parent.toString()
+    return particleDefParticle.parent.toString()
   }
   //  inferParsersFileForAnSSVLanguage(parsersName: string): string {
   //     parsersName = HandParsersProgram.makeParserId(parsersName)
-  //    const rootNode = new TreeNode(`${parsersName}
+  //    const rootParticle = new Particle(`${parsersName}
   // ${ParsersConstants.root}`)
   //    // note: right now we assume 1 global cellTypeMap and parserMap per parsers. But we may have scopes in the future?
-  //    const rootNodeNames = this.getFirstWords().map(word => HandParsersProgram.makeParserId(word))
-  //    rootNode
-  //      .nodeAt(0)
-  //      .touchNode(ParsersConstants.inScope)
-  //      .setWordsFrom(1, Array.from(new Set(rootNodeNames)))
-  //    return rootNode
+  //    const rootParticleNames = this.getFirstWords().map(word => HandParsersProgram.makeParserId(word))
+  //    rootParticle
+  //      .particleAt(0)
+  //      .touchParticle(ParsersConstants.inScope)
+  //      .setWordsFrom(1, Array.from(new Set(rootParticleNames)))
+  //    return rootParticle
   //  }
   inferParsersFileForAKeywordLanguage(parsersName) {
     const clone = this.clone()
     this._renameIntegerKeywords(clone)
-    const { keywordsToChildKeywords, keywordsToNodeInstances } = this._getKeywordMaps(clone)
+    const { keywordsToChildKeywords, keywordsToParticleInstances } = this._getKeywordMaps(clone)
     const globalCellTypeMap = new Map()
     globalCellTypeMap.set(PreludeCellTypeIds.keywordCell, undefined)
     const parserDefs = Object.keys(keywordsToChildKeywords)
       .filter(identity => identity)
-      .map(firstWord => this._inferParserDef(firstWord, globalCellTypeMap, Object.keys(keywordsToChildKeywords[firstWord]), keywordsToNodeInstances[firstWord]))
+      .map(firstWord => this._inferParserDef(firstWord, globalCellTypeMap, Object.keys(keywordsToChildKeywords[firstWord]), keywordsToParticleInstances[firstWord]))
     const cellTypeDefs = []
     globalCellTypeMap.forEach((def, id) => cellTypeDefs.push(def ? def : id))
-    const nodeBreakSymbol = this.nodeBreakSymbol
-    return this._formatCode([this._inferRootNodeForAPrefixLanguage(parsersName).toString(), cellTypeDefs.join(nodeBreakSymbol), parserDefs.join(nodeBreakSymbol)].filter(identity => identity).join("\n"))
+    const particleBreakSymbol = this.particleBreakSymbol
+    return this._formatCode([this._inferRootParticleForAPrefixLanguage(parsersName).toString(), cellTypeDefs.join(particleBreakSymbol), parserDefs.join(particleBreakSymbol)].filter(identity => identity).join("\n"))
   }
   _formatCode(code) {
     // todo: make this run in browser too
     if (!this.isNodeJs()) return code
-    const parsersProgram = new HandParsersProgram(TreeNode.fromDisk(__dirname + "/../langs/parsers/parsers.parsers"))
+    const parsersProgram = new HandParsersProgram(Particle.fromDisk(__dirname + "/../langs/parsers/parsers.parsers"))
     const rootParser = parsersProgram.compileAndReturnRootParser()
     const program = new rootParser(code)
     return program.format().toString()
@@ -16027,7 +16025,7 @@ UnknownParsersProgram._childSuffix = "Child"
 window.ParsersConstants = ParsersConstants
 window.PreludeCellTypeIds = PreludeCellTypeIds
 window.HandParsersProgram = HandParsersProgram
-window.ParserBackedNode = ParserBackedNode
+window.ParserBackedParticle = ParserBackedParticle
 window.UnknownParserError = UnknownParserError
 window.UnknownParsersProgram = UnknownParsersProgram
 
@@ -16209,8 +16207,8 @@ const tmToCm = {
     }
   }
 }
-const textMateScopeToCodeMirrorStyle = (scopeSegments, styleTree = tmToCm) => {
-  const matchingBranch = styleTree[scopeSegments.shift()]
+const textMateScopeToCodeMirrorStyle = (scopeSegments, style = tmToCm) => {
+  const matchingBranch = style[scopeSegments.shift()]
   return matchingBranch ? textMateScopeToCodeMirrorStyle(scopeSegments, matchingBranch) || matchingBranch.$ || null : null
 }
 class ParsersCodeMirrorMode {
@@ -16324,11 +16322,11 @@ class ParsersCodeMirrorMode {
     let nextCharacter = stream.next()
     const lineNumber = stream.lineOracle.line + 1 // state.lineIndex
     const WordBreakSymbol = " "
-    const NodeBreakSymbol = "\n"
+    const ParticleBreakSymbol = "\n"
     while (typeof nextCharacter === "string") {
       const peek = stream.peek()
       if (nextCharacter === WordBreakSymbol) {
-        if (peek === undefined || peek === NodeBreakSymbol) {
+        if (peek === undefined || peek === ParticleBreakSymbol) {
           stream.skipToEnd() // advance string to end
           this._incrementLine(state)
         }
@@ -16372,9 +16370,9 @@ window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
 
 
 {
-  class stumpParser extends ParserBackedNode {
+  class stumpParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(
+      return new Particle.ParserCombinator(
         errorParser,
         Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {
           blockquote: htmlTagParser,
@@ -16585,17 +16583,17 @@ htmlTagParser
   get domElement() {
     var elem = document.createElement(this.getTag())
     elem.setAttribute("stumpUid", this._getUid())
-    this.filter(node => node.isAttributeParser)
+    this.filter(particle => particle.isAttributeParser)
       .forEach(child => elem.setAttribute(child.firstWord, child.content))
-    elem.innerHTML = this.has("bern") ? this.getNode("bern").childrenToString() : this._getOneLiner()
-    this.filter(node => node.isHtmlTagParser)
+    elem.innerHTML = this.has("bern") ? this.getParticle("bern").childrenToString() : this._getOneLiner()
+    this.filter(particle => particle.isHtmlTagParser)
       .forEach(child => elem.appendChild(child.domElement))
     return elem
   }
   _toHtml(indentCount, withSuid) {
    const tag = this.getTag()
    const children = this.map(child => child._toHtml(indentCount + 1, withSuid)).join("")
-   const attributesStr = this.filter(node => node.isAttributeParser)
+   const attributesStr = this.filter(particle => particle.isAttributeParser)
     .map(child => child.getAttribute())
     .join("")
    const indent = " ".repeat(indentCount)
@@ -16605,18 +16603,18 @@ htmlTagParser
    const oneLiner = this._getOneLiner()
    return \`\${!collapse ? indent : ""}<\${tag}\${attributesStr}\${suid}>\${oneLiner}\${indentForChildParsers ? "\\n" : ""}\${children}</\${tag}>\${collapse ? "" : "\\n"}\`
   }
-  removeCssStumpNode() {
-   return this.removeStumpNode()
+  removeCssStumpParticle() {
+   return this.removeStumpParticle()
   }
-  removeStumpNode() {
+  removeStumpParticle() {
    this.getShadow().removeShadow()
    return this.destroy()
   }
-  getNodeByGuid(guid) {
-   return this.topDownArray.find(node => node._getUid() === guid)
+  getParticleByGuid(guid) {
+   return this.topDownArray.find(particle => particle._getUid() === guid)
   }
-  addClassToStumpNode(className) {
-   const classParser = this.touchNode("class")
+  addClassToStumpParticle(className) {
+   const classParser = this.touchParticle("class")
    const words = classParser.getWordsFrom(1)
    // note: we call add on shadow regardless, because at the moment stump may have gotten out of
    // sync with shadow, if things modified the dom. todo: cleanup.
@@ -16626,8 +16624,8 @@ htmlTagParser
    classParser.setContent(words.join(this.wordBreakSymbol))
    return this
   }
-  removeClassFromStumpNode(className) {
-   const classParser = this.getNode("class")
+  removeClassFromStumpParticle(className) {
+   const classParser = this.getParticle("class")
    if (!classParser) return this
    const newClasses = classParser.words.filter(word => word !== className)
    if (!newClasses.length) classParser.destroy()
@@ -16635,11 +16633,11 @@ htmlTagParser
    this.getShadow().removeClassFromShadow(className)
    return this
   }
-  stumpNodeHasClass(className) {
-   const classParser = this.getNode("class")
+  stumpParticleHasClass(className) {
+   const classParser = this.getParticle("class")
    return classParser && classParser.words.includes(className) ? true : false
   }
-  isStumpNodeCheckbox() {
+  isStumpParticleCheckbox() {
    return this.get("type") === "checkbox"
   }
   getShadow() {
@@ -16649,49 +16647,49 @@ htmlTagParser
    }
    return this._shadow
   }
-  insertCssChildNode(text, index) {
-   return this.insertChildNode(text, index)
+  insertCssChildParticle(text, index) {
+   return this.insertChildParticle(text, index)
   }
-  insertChildNode(text, index) {
-   const singleNode = new TreeNode(text).getChildren()[0]
-   const newNode = this.insertLineAndChildren(singleNode.getLine(), singleNode.childrenToString(), index)
-   const stumpParserIndex = this.filter(node => node.isHtmlTagParser).indexOf(newNode)
-   this.getShadow().insertHtmlNode(newNode, stumpParserIndex)
-   return newNode
+  insertChildParticle(text, index) {
+   const singleParticle = new Particle(text).getChildren()[0]
+   const newParticle = this.insertLineAndChildren(singleParticle.getLine(), singleParticle.childrenToString(), index)
+   const stumpParserIndex = this.filter(particle => particle.isHtmlTagParser).indexOf(newParticle)
+   this.getShadow().insertHtmlParticle(newParticle, stumpParserIndex)
+   return newParticle
   }
   isInputType() {
    return ["input", "textarea"].includes(this.getTag()) || this.get("contenteditable") === "true"
   }
-  findStumpNodeByChild(line) {
-   return this.findStumpNodesByChild(line)[0]
+  findStumpParticleByChild(line) {
+   return this.findStumpParticlesByChild(line)[0]
   }
-  findStumpNodeByChildString(line) {
-   return this.topDownArray.find(node =>
-    node
+  findStumpParticleByChildString(line) {
+   return this.topDownArray.find(particle =>
+    particle
      .map(child => child.getLine())
      .join("\\n")
      .includes(line)
    )
   }
-  findStumpNodeByFirstWord(firstWord) {
-   return this._findStumpNodesByBase(firstWord)[0]
+  findStumpParticleByFirstWord(firstWord) {
+   return this._findStumpParticlesByBase(firstWord)[0]
   }
-  _findStumpNodesByBase(firstWord) {
-   return this.topDownArray.filter(node => node.doesExtend("htmlTagParser") && node.firstWord === firstWord)
+  _findStumpParticlesByBase(firstWord) {
+   return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstWord === firstWord)
   }
   hasLine(line) {
-   return this.getChildren().some(node => node.getLine() === line)
+   return this.getChildren().some(particle => particle.getLine() === line)
   }
-  findStumpNodesByChild(line) {
-   return this.topDownArray.filter(node => node.doesExtend("htmlTagParser") && node.hasLine(line))
+  findStumpParticlesByChild(line) {
+   return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.hasLine(line))
   }
-  findStumpNodesWithClass(className) {
+  findStumpParticlesWithClass(className) {
    return this.topDownArray.filter(
-    node =>
-     node.doesExtend("htmlTagParser") &&
-     node.has("class") &&
-     node
-      .getNode("class")
+    particle =>
+     particle.doesExtend("htmlTagParser") &&
+     particle.has("class") &&
+     particle
+      .getParticle("class")
       .words
       .includes(className)
    )
@@ -16700,21 +16698,21 @@ htmlTagParser
    return this.parent.getShadowClass()
   }
   // todo: should not be here
-  getStumpNodeTreeComponent() {
-   return this._treeComponent || this.parent.getStumpNodeTreeComponent()
+  getStumpParticleParticleComponent() {
+   return this._particleComponent || this.parent.getStumpParticleParticleComponent()
   }
   // todo: should not be here
-  setStumpNodeTreeComponent(treeComponent) {
-   this._treeComponent = treeComponent
+  setStumpParticleParticleComponent(particleComponent) {
+   this._particleComponent = particleComponent
    return this
   }
-  getStumpNodeCss(prop) {
+  getStumpParticleCss(prop) {
    return this.getShadow().getShadowCss(prop)
   }
-  getStumpNodeAttr(key) {
+  getStumpParticleAttr(key) {
    return this.get(key)
   }
-  setStumpNodeAttr(key, value) {
+  setStumpParticleAttr(key, value) {
    // todo
    return this
   }
@@ -16760,8 +16758,8 @@ lineOfHtmlContentParser
   getTextContent() {return this.getLine()}
 bernParser
  boolean isTileAttribute true
- // todo Rename this node type
- description This is a node where you can put any HTML content. It is called "bern" until someone comes up with a better name.
+ // todo Rename this particle type
+ description This is a particle where you can put any HTML content. It is called "bern" until someone comes up with a better name.
  catchAllParser lineOfHtmlContentParser
  javascript
   _toHtml() {
@@ -16775,7 +16773,7 @@ bernParser
     static rootParser = stumpParser
   }
 
-  class blankLineParser extends ParserBackedNode {
+  class blankLineParser extends ParserBackedParticle {
     get emptyCell() {
       return this.getWord(0)
     }
@@ -16787,9 +16785,9 @@ bernParser
     }
   }
 
-  class htmlTagParser extends ParserBackedNode {
+  class htmlTagParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(
+      return new Particle.ParserCombinator(
         undefined,
         Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {
           blockquote: htmlTagParser,
@@ -17118,15 +17116,15 @@ bernParser
     get domElement() {
       var elem = document.createElement(this.getTag())
       elem.setAttribute("stumpUid", this._getUid())
-      this.filter(node => node.isAttributeParser).forEach(child => elem.setAttribute(child.firstWord, child.content))
-      elem.innerHTML = this.has("bern") ? this.getNode("bern").childrenToString() : this._getOneLiner()
-      this.filter(node => node.isHtmlTagParser).forEach(child => elem.appendChild(child.domElement))
+      this.filter(particle => particle.isAttributeParser).forEach(child => elem.setAttribute(child.firstWord, child.content))
+      elem.innerHTML = this.has("bern") ? this.getParticle("bern").childrenToString() : this._getOneLiner()
+      this.filter(particle => particle.isHtmlTagParser).forEach(child => elem.appendChild(child.domElement))
       return elem
     }
     _toHtml(indentCount, withSuid) {
       const tag = this.getTag()
       const children = this.map(child => child._toHtml(indentCount + 1, withSuid)).join("")
-      const attributesStr = this.filter(node => node.isAttributeParser)
+      const attributesStr = this.filter(particle => particle.isAttributeParser)
         .map(child => child.getAttribute())
         .join("")
       const indent = " ".repeat(indentCount)
@@ -17136,18 +17134,18 @@ bernParser
       const oneLiner = this._getOneLiner()
       return `${!collapse ? indent : ""}<${tag}${attributesStr}${suid}>${oneLiner}${indentForChildParsers ? "\n" : ""}${children}</${tag}>${collapse ? "" : "\n"}`
     }
-    removeCssStumpNode() {
-      return this.removeStumpNode()
+    removeCssStumpParticle() {
+      return this.removeStumpParticle()
     }
-    removeStumpNode() {
+    removeStumpParticle() {
       this.getShadow().removeShadow()
       return this.destroy()
     }
-    getNodeByGuid(guid) {
-      return this.topDownArray.find(node => node._getUid() === guid)
+    getParticleByGuid(guid) {
+      return this.topDownArray.find(particle => particle._getUid() === guid)
     }
-    addClassToStumpNode(className) {
-      const classParser = this.touchNode("class")
+    addClassToStumpParticle(className) {
+      const classParser = this.touchParticle("class")
       const words = classParser.getWordsFrom(1)
       // note: we call add on shadow regardless, because at the moment stump may have gotten out of
       // sync with shadow, if things modified the dom. todo: cleanup.
@@ -17157,8 +17155,8 @@ bernParser
       classParser.setContent(words.join(this.wordBreakSymbol))
       return this
     }
-    removeClassFromStumpNode(className) {
-      const classParser = this.getNode("class")
+    removeClassFromStumpParticle(className) {
+      const classParser = this.getParticle("class")
       if (!classParser) return this
       const newClasses = classParser.words.filter(word => word !== className)
       if (!newClasses.length) classParser.destroy()
@@ -17166,11 +17164,11 @@ bernParser
       this.getShadow().removeClassFromShadow(className)
       return this
     }
-    stumpNodeHasClass(className) {
-      const classParser = this.getNode("class")
+    stumpParticleHasClass(className) {
+      const classParser = this.getParticle("class")
       return classParser && classParser.words.includes(className) ? true : false
     }
-    isStumpNodeCheckbox() {
+    isStumpParticleCheckbox() {
       return this.get("type") === "checkbox"
     }
     getShadow() {
@@ -17180,64 +17178,64 @@ bernParser
       }
       return this._shadow
     }
-    insertCssChildNode(text, index) {
-      return this.insertChildNode(text, index)
+    insertCssChildParticle(text, index) {
+      return this.insertChildParticle(text, index)
     }
-    insertChildNode(text, index) {
-      const singleNode = new TreeNode(text).getChildren()[0]
-      const newNode = this.insertLineAndChildren(singleNode.getLine(), singleNode.childrenToString(), index)
-      const stumpParserIndex = this.filter(node => node.isHtmlTagParser).indexOf(newNode)
-      this.getShadow().insertHtmlNode(newNode, stumpParserIndex)
-      return newNode
+    insertChildParticle(text, index) {
+      const singleParticle = new Particle(text).getChildren()[0]
+      const newParticle = this.insertLineAndChildren(singleParticle.getLine(), singleParticle.childrenToString(), index)
+      const stumpParserIndex = this.filter(particle => particle.isHtmlTagParser).indexOf(newParticle)
+      this.getShadow().insertHtmlParticle(newParticle, stumpParserIndex)
+      return newParticle
     }
     isInputType() {
       return ["input", "textarea"].includes(this.getTag()) || this.get("contenteditable") === "true"
     }
-    findStumpNodeByChild(line) {
-      return this.findStumpNodesByChild(line)[0]
+    findStumpParticleByChild(line) {
+      return this.findStumpParticlesByChild(line)[0]
     }
-    findStumpNodeByChildString(line) {
-      return this.topDownArray.find(node =>
-        node
+    findStumpParticleByChildString(line) {
+      return this.topDownArray.find(particle =>
+        particle
           .map(child => child.getLine())
           .join("\n")
           .includes(line)
       )
     }
-    findStumpNodeByFirstWord(firstWord) {
-      return this._findStumpNodesByBase(firstWord)[0]
+    findStumpParticleByFirstWord(firstWord) {
+      return this._findStumpParticlesByBase(firstWord)[0]
     }
-    _findStumpNodesByBase(firstWord) {
-      return this.topDownArray.filter(node => node.doesExtend("htmlTagParser") && node.firstWord === firstWord)
+    _findStumpParticlesByBase(firstWord) {
+      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstWord === firstWord)
     }
     hasLine(line) {
-      return this.getChildren().some(node => node.getLine() === line)
+      return this.getChildren().some(particle => particle.getLine() === line)
     }
-    findStumpNodesByChild(line) {
-      return this.topDownArray.filter(node => node.doesExtend("htmlTagParser") && node.hasLine(line))
+    findStumpParticlesByChild(line) {
+      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.hasLine(line))
     }
-    findStumpNodesWithClass(className) {
-      return this.topDownArray.filter(node => node.doesExtend("htmlTagParser") && node.has("class") && node.getNode("class").words.includes(className))
+    findStumpParticlesWithClass(className) {
+      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.has("class") && particle.getParticle("class").words.includes(className))
     }
     getShadowClass() {
       return this.parent.getShadowClass()
     }
     // todo: should not be here
-    getStumpNodeTreeComponent() {
-      return this._treeComponent || this.parent.getStumpNodeTreeComponent()
+    getStumpParticleParticleComponent() {
+      return this._particleComponent || this.parent.getStumpParticleParticleComponent()
     }
     // todo: should not be here
-    setStumpNodeTreeComponent(treeComponent) {
-      this._treeComponent = treeComponent
+    setStumpParticleParticleComponent(particleComponent) {
+      this._particleComponent = particleComponent
       return this
     }
-    getStumpNodeCss(prop) {
+    getStumpParticleCss(prop) {
       return this.getShadow().getShadowCss(prop)
     }
-    getStumpNodeAttr(key) {
+    getStumpParticleAttr(key) {
       return this.get(key)
     }
-    setStumpNodeAttr(key, value) {
+    setStumpParticleAttr(key, value) {
       // todo
       return this
     }
@@ -17246,7 +17244,7 @@ bernParser
     }
   }
 
-  class errorParser extends ParserBackedNode {
+  class errorParser extends ParserBackedParticle {
     getErrors() {
       return this._getErrorParserErrors()
     }
@@ -17261,9 +17259,9 @@ bernParser
     }
   }
 
-  class htmlAttributeParser extends ParserBackedNode {
+  class htmlAttributeParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(errorParser, undefined, undefined)
+      return new Particle.ParserCombinator(errorParser, undefined, undefined)
     }
     get htmlAttributeNameCell() {
       return this.getWord(0)
@@ -17294,9 +17292,9 @@ bernParser
     }
   }
 
-  class lineOfHtmlContentParser extends ParserBackedNode {
+  class lineOfHtmlContentParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
+      return new Particle.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
     }
     get anyHtmlContentCell() {
       return this.getWordsFrom(0)
@@ -17309,9 +17307,9 @@ bernParser
     }
   }
 
-  class bernParser extends ParserBackedNode {
+  class bernParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
+      return new Particle.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
     }
     get bernKeywordCell() {
       return this.getWord(0)
@@ -17332,16 +17330,16 @@ bernParser
 
 
 {
-  class hakonParser extends ParserBackedNode {
+  class hakonParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), { comment: commentParser }), undefined)
+      return new Particle.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), { comment: commentParser }), undefined)
     }
     getSelector() {
       return ""
     }
     compile() {
       return this.topDownArray
-        .filter(node => node.isSelectorParser)
+        .filter(particle => particle.isSelectorParser)
         .map(child => child.compile())
         .join("")
     }
@@ -17388,7 +17386,7 @@ hakonParser
   }
   compile() {
    return this.topDownArray
-    .filter(node => node.isSelectorParser)
+    .filter(particle => particle.isSelectorParser)
     .map(child => child.compile())
     .join("")
   }
@@ -17440,7 +17438,7 @@ selectorParser
     .join(",")
   }
   compile() {
-   const propertyParsers = this.getChildren().filter(node => node.doesExtend("propertyParser"))
+   const propertyParsers = this.getChildren().filter(particle => particle.doesExtend("propertyParser"))
    if (!propertyParsers.length) return ""
    const spaces = "  "
    return \`\${this.getSelector()} {
@@ -17454,9 +17452,9 @@ selectorParser
     static rootParser = hakonParser
   }
 
-  class propertyParser extends ParserBackedNode {
+  class propertyParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(errorParser, undefined, undefined)
+      return new Particle.ParserCombinator(errorParser, undefined, undefined)
     }
     get propertyKeywordCell() {
       return this.getWord(0)
@@ -17477,9 +17475,9 @@ selectorParser
     }
   }
 
-  class errorParser extends ParserBackedNode {
+  class errorParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(errorParser, undefined, undefined)
+      return new Particle.ParserCombinator(errorParser, undefined, undefined)
     }
     getErrors() {
       return this._getErrorParserErrors()
@@ -17489,9 +17487,9 @@ selectorParser
     }
   }
 
-  class commentParser extends ParserBackedNode {
+  class commentParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(commentParser, undefined, undefined)
+      return new Particle.ParserCombinator(commentParser, undefined, undefined)
     }
     get commentKeywordCell() {
       return this.getWord(0)
@@ -17501,9 +17499,9 @@ selectorParser
     }
   }
 
-  class selectorParser extends ParserBackedNode {
+  class selectorParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new TreeNode.ParserCombinator(
+      return new Particle.ParserCombinator(
         selectorParser,
         Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {
           "border-bottom-right-radius": propertyParser,
@@ -17739,7 +17737,7 @@ selectorParser
         .join(",")
     }
     compile() {
-      const propertyParsers = this.getChildren().filter(node => node.doesExtend("propertyParser"))
+      const propertyParsers = this.getChildren().filter(particle => particle.doesExtend("propertyParser"))
       if (!propertyParsers.length) return ""
       const spaces = "  "
       return `${this.getSelector()} {
@@ -17752,7 +17750,7 @@ ${propertyParsers.map(child => child.compile(spaces)).join("\n")}
 }
 
 
-//onsave scrollsdk build produce TreeComponentFramework.browser.js
+//onsave scrollsdk build produce ParticleComponentFramework.browser.js
 const BrowserEvents = {}
 BrowserEvents.click = "click"
 BrowserEvents.change = "change"
@@ -17856,11 +17854,11 @@ class WillowHTTPProxyCacheResponse extends WillowHTTPResponse {
   }
 }
 class AbstractWillowShadow {
-  constructor(stumpNode) {
-    this._stumpNode = stumpNode
+  constructor(stumpParticle) {
+    this._stumpParticle = stumpParticle
   }
-  getShadowStumpNode() {
-    return this._stumpNode
+  getShadowStumpParticle() {
+    return this._stumpParticle
   }
   getShadowValue() {
     return this._val
@@ -17873,7 +17871,7 @@ class AbstractWillowShadow {
     return this
   }
   getShadowParent() {
-    return this.getShadowStumpNode().parent.getShadow()
+    return this.getShadowStumpParticle().parent.getShadow()
   }
   getPositionAndDimensions(gridSize = 1) {
     const offset = this.getShadowOffset()
@@ -17953,7 +17951,7 @@ class AbstractWillowShadow {
   getShadowCss(property) {
     return ""
   }
-  insertHtmlNode(childNode, index) {}
+  insertHtmlParticle(childParticle, index) {}
   get element() {
     return {}
   }
@@ -17997,9 +17995,9 @@ class AbstractWillowBrowser extends stumpParser {
     this._offlineMode = false
     this._httpGetResponseCache = {}
     this.location = {}
-    this._htmlStumpNode = this.nodeAt(0)
-    this._headStumpNode = this.nodeAt(0).nodeAt(0)
-    this._bodyStumpNode = this.nodeAt(0).nodeAt(1)
+    this._htmlStumpParticle = this.particleAt(0)
+    this._headStumpParticle = this.particleAt(0).particleAt(0)
+    this._bodyStumpParticle = this.particleAt(0).particleAt(1)
     this.addSuidsToHtmlHeadAndBodyShadows()
     this._fullHtmlPageUrlIncludingProtocolAndFileName = fullHtmlPageUrlIncludingProtocolAndFileName
     const url = new URL(fullHtmlPageUrlIncludingProtocolAndFileName)
@@ -18029,16 +18027,16 @@ class AbstractWillowBrowser extends stumpParser {
     }
     return params.toString()
   }
-  toPrettyDeepLink(treeCode, queryObject) {
+  toPrettyDeepLink(particleCode, queryObject) {
     // todo: move things to a constant.
-    const nodeBreakSymbol = "~"
+    const particleBreakSymbol = "~"
     const edgeSymbol = "_"
     const obj = Object.assign({}, queryObject)
-    if (!treeCode.includes(nodeBreakSymbol) && !treeCode.includes(edgeSymbol)) {
-      obj.nodeBreakSymbol = nodeBreakSymbol
+    if (!particleCode.includes(particleBreakSymbol) && !particleCode.includes(edgeSymbol)) {
+      obj.particleBreakSymbol = particleBreakSymbol
       obj.edgeSymbol = edgeSymbol
-      obj.data = encodeURIComponent(treeCode.replace(/ /g, edgeSymbol).replace(/\n/g, nodeBreakSymbol))
-    } else obj.data = encodeURIComponent(treeCode)
+      obj.data = encodeURIComponent(particleCode.replace(/ /g, edgeSymbol).replace(/\n/g, particleBreakSymbol))
+    } else obj.data = encodeURIComponent(particleCode)
     return this.getAppWebPageUrl() + "?" + this.queryObjectToQueryString(obj)
   }
   getHost() {
@@ -18066,16 +18064,16 @@ class AbstractWillowBrowser extends stumpParser {
     return this._mousetrap
   }
   _getFocusedShadow() {
-    return this._focusedShadow || this.getBodyStumpNode().getShadow()
+    return this._focusedShadow || this.getBodyStumpParticle().getShadow()
   }
-  getHeadStumpNode() {
-    return this._headStumpNode
+  getHeadStumpParticle() {
+    return this._headStumpParticle
   }
-  getBodyStumpNode() {
-    return this._bodyStumpNode
+  getBodyStumpParticle() {
+    return this._bodyStumpParticle
   }
-  getHtmlStumpNode() {
-    return this._htmlStumpNode
+  getHtmlStumpParticle() {
+    return this._htmlStumpParticle
   }
   getStore() {
     if (!this._store) this._store = new WillowStore()
@@ -18084,8 +18082,8 @@ class AbstractWillowBrowser extends stumpParser {
   someInputHasFocus() {
     const focusedShadow = this._getFocusedShadow()
     if (!focusedShadow) return false
-    const stumpNode = focusedShadow.getShadowStumpNode()
-    return stumpNode && stumpNode.isInputType()
+    const stumpParticle = focusedShadow.getShadowStumpParticle()
+    return stumpParticle && stumpParticle.isInputType()
   }
   copyTextToClipboard(text) {}
   setCopyData(evt, str) {}
@@ -18151,15 +18149,15 @@ class AbstractWillowBrowser extends stumpParser {
   }
   async appendScript(url) {}
   getWindowTitle() {
-    // todo: deep getNodeByBase/withBase/type/word or something?
-    const nodes = this.topDownArray
-    const titleNode = nodes.find(node => node.firstWord === WillowConstants.titleTag)
-    return titleNode ? titleNode.content : ""
+    // todo: deep getParticleByBase/withBase/type/word or something?
+    const particles = this.topDownArray
+    const titleParticle = particles.find(particle => particle.firstWord === WillowConstants.titleTag)
+    return titleParticle ? titleParticle.content : ""
   }
   setWindowTitle(value) {
-    const nodes = this.topDownArray
-    const headNode = nodes.find(node => node.firstWord === WillowConstants.tags.head)
-    headNode.touchNode(WillowConstants.titleTag).setContent(value)
+    const particles = this.topDownArray
+    const headParticle = particles.find(particle => particle.firstWord === WillowConstants.tags.head)
+    headParticle.touchParticle(WillowConstants.titleTag).setContent(value)
     return this
   }
   _getHostname() {
@@ -18169,9 +18167,9 @@ class AbstractWillowBrowser extends stumpParser {
     // noop in willow
   }
   getPageHtml() {
-    return this.getHtmlStumpNode().asHtmlWithSuids()
+    return this.getHtmlStumpParticle().asHtmlWithSuids()
   }
-  getStumpNodeFromElement(el) {}
+  getStumpParticleFromElement(el) {}
   setPasteHandler(fn) {
     return this
   }
@@ -18222,7 +18220,7 @@ class WillowBrowser extends AbstractWillowBrowser {
 WillowBrowser._stumpsOnPage = 0
 class WillowBrowserShadow extends AbstractWillowShadow {
   get element() {
-    if (!this._cachedEl) this._cachedEl = document.querySelector(`[${WillowConstants.uidAttribute}="${this.getShadowStumpNode()._getUid()}"]`)
+    if (!this._cachedEl) this._cachedEl = document.querySelector(`[${WillowConstants.uidAttribute}="${this.getShadowStumpParticle()._getUid()}"]`)
     return this._cachedEl
   }
   getShadowValueFromAttr() {
@@ -18242,8 +18240,8 @@ class WillowBrowserShadow extends AbstractWillowShadow {
   // BEGIN MUTABLE METHODS:
   // todo: add tests
   // todo: idea, don't "paint" wall (dont append it to parent, until done.)
-  insertHtmlNode(childStumpNode, index) {
-    const { domElement } = childStumpNode
+  insertHtmlParticle(childStumpParticle, index) {
+    const { domElement } = childStumpParticle
     const { element } = this
     // todo: can we virtualize this?
     // would it be a "virtual shadow?"
@@ -18282,7 +18280,7 @@ class WillowBrowserShadow extends AbstractWillowShadow {
   }
   getShadowValue() {
     // todo: cleanup, add tests
-    if (this.getShadowStumpNode().isInputType()) return this.element.value
+    if (this.getShadowStumpParticle().isInputType()) return this.element.value
     return this.element.value || this.getShadowValueFromAttr()
   }
   addClassToShadow(className) {
@@ -18356,13 +18354,13 @@ class WillowBrowserShadow extends AbstractWillowShadow {
 WillowBrowserShadow._shadowUpdateNumber = 0 // todo: what is this for, debugging perf?
 // same thing, except with side effects.
 class RealWillowBrowser extends AbstractWillowBrowser {
-  findStumpNodesByShadowClass(className) {
-    const stumpNodes = []
+  findStumpParticlesByShadowClass(className) {
+    const stumpParticles = []
     const els = document.getElementsByClassName(className)
     for (let el of els) {
-      stumpNodes.push(this.getStumpNodeFromElement(this))
+      stumpParticles.push(this.getStumpParticleFromElement(this))
     }
-    return stumpNodes
+    return stumpParticles
   }
   getElementById(id) {
     return document.getElementById(id)
@@ -18390,9 +18388,9 @@ class RealWillowBrowser extends AbstractWillowBrowser {
     return document.getElementsByTagName(tagName)[0]
   }
   addSuidsToHtmlHeadAndBodyShadows() {
-    this.getElementByTagName(WillowConstants.tags.html).setAttribute(WillowConstants.uidAttribute, this.getHtmlStumpNode()._getUid())
-    this.getElementByTagName(WillowConstants.tags.head).setAttribute(WillowConstants.uidAttribute, this.getHeadStumpNode()._getUid())
-    this.getElementByTagName(WillowConstants.tags.body).setAttribute(WillowConstants.uidAttribute, this.getBodyStumpNode()._getUid())
+    this.getElementByTagName(WillowConstants.tags.html).setAttribute(WillowConstants.uidAttribute, this.getHtmlStumpParticle()._getUid())
+    this.getElementByTagName(WillowConstants.tags.head).setAttribute(WillowConstants.uidAttribute, this.getHeadStumpParticle()._getUid())
+    this.getElementByTagName(WillowConstants.tags.body).setAttribute(WillowConstants.uidAttribute, this.getBodyStumpParticle()._getUid())
   }
   getShadowClass() {
     return WillowBrowserShadow
@@ -18525,8 +18523,8 @@ class RealWillowBrowser extends AbstractWillowBrowser {
     })
     return this
   }
-  getStumpNodeFromElement(el) {
-    return this.getHtmlStumpNode().getNodeByGuid(parseInt(el.getAttribute(WillowConstants.uidAttribute)))
+  getStumpParticleFromElement(el) {
+    return this.getHtmlStumpParticle().getParticleByGuid(parseInt(el.getAttribute(WillowConstants.uidAttribute)))
   }
   forceRepaint() {
     // todo:
@@ -18552,8 +18550,8 @@ class RealWillowBrowser extends AbstractWillowBrowser {
     document.activeElement.blur()
   }
   setLoadedDroppedFileHandler(callback, helpText = "") {
-    const bodyStumpNode = this.getBodyStumpNode()
-    const bodyShadow = bodyStumpNode.getShadow()
+    const bodyStumpParticle = this.getBodyStumpParticle()
+    const bodyShadow = bodyStumpParticle.getShadow()
     // Added the below to ensure dragging from the chrome downloads bar works
     // http://stackoverflow.com/questions/19526430/drag-and-drop-file-uploads-from-chrome-downloads-bar
     const handleChromeBug = event => {
@@ -18565,10 +18563,10 @@ class RealWillowBrowser extends AbstractWillowBrowser {
       handleChromeBug(event)
       event.preventDefault()
       event.stopPropagation()
-      if (!bodyStumpNode.stumpNodeHasClass("dragOver")) {
-        bodyStumpNode.insertChildNode(`div ${helpText}
+      if (!bodyStumpParticle.stumpParticleHasClass("dragOver")) {
+        bodyStumpParticle.insertChildParticle(`div ${helpText}
  id dragOverHelp`)
-        bodyStumpNode.addClassToStumpNode("dragOver")
+        bodyStumpParticle.addClassToStumpParticle("dragOver")
         // Add the help, and then hopefull we'll get a dragover event on the dragOverHelp, then
         // 50ms later, add the dragleave handler, and from now on drag leave will only happen on the help
         // div
@@ -18580,15 +18578,15 @@ class RealWillowBrowser extends AbstractWillowBrowser {
     const dragleaveHandler = event => {
       event.preventDefault()
       event.stopPropagation()
-      bodyStumpNode.removeClassFromStumpNode("dragOver")
-      bodyStumpNode.findStumpNodeByChild("id dragOverHelp").removeStumpNode()
+      bodyStumpParticle.removeClassFromStumpParticle("dragOver")
+      bodyStumpParticle.findStumpParticleByChild("id dragOverHelp").removeStumpParticle()
       bodyShadow.offShadowEvent(BrowserEvents.dragleave, dragleaveHandler)
     }
     const dropHandler = async event => {
       event.preventDefault()
       event.stopPropagation()
-      bodyStumpNode.removeClassFromStumpNode("dragOver")
-      bodyStumpNode.findStumpNodeByChild("id dragOverHelp").removeStumpNode()
+      bodyStumpParticle.removeClassFromStumpParticle("dragOver")
+      bodyStumpParticle.findStumpParticleByChild("id dragOverHelp").removeStumpParticle()
       const droppedItems = event.originalEvent.dataTransfer.items
       // NOTE: YOU NEED TO STAY IN THE "DROP" EVENT, OTHERWISE THE DATATRANSFERITEMS MUTATE
       // (BY DESIGN) https://bugs.chromium.org/p/chromium/issues/detail?id=137231
@@ -18641,8 +18639,8 @@ class RealWillowBrowser extends AbstractWillowBrowser {
     })
   }
   _getFocusedShadow() {
-    const stumpNode = this.getStumpNodeFromElement(document.activeElement)
-    return stumpNode && stumpNode.getShadow()
+    const stumpParticle = this.getStumpParticleFromElement(document.activeElement)
+    return stumpParticle && stumpParticle.getShadow()
   }
 }
 class AbstractTheme {
@@ -18653,7 +18651,7 @@ class AbstractTheme {
   }
 }
 class DefaultTheme extends AbstractTheme {}
-class AbstractTreeComponentParser extends ParserBackedNode {
+class AbstractParticleComponentParser extends ParserBackedParticle {
   async startWhenReady() {
     if (this.isNodeJs()) return this.start()
     document.addEventListener(
@@ -18665,8 +18663,8 @@ class AbstractTreeComponentParser extends ParserBackedNode {
     )
   }
   start() {
-    this._bindTreeComponentFrameworkCommandListenersOnBody()
-    this.renderAndGetRenderReport(this.willowBrowser.getBodyStumpNode())
+    this._bindParticleComponentFrameworkCommandListenersOnBody()
+    this.renderAndGetRenderReport(this.willowBrowser.getBodyStumpParticle())
   }
   get willowBrowser() {
     if (!this._willowBrowser) {
@@ -18691,7 +18689,7 @@ class AbstractTreeComponentParser extends ParserBackedNode {
   _onCommandWillRun() {
     // todo: remove. currently used by ohayo
   }
-  _getCommandArgumentsFromStumpNode(stumpNode, commandMethod) {
+  _getCommandArgumentsFromStumpParticle(stumpParticle, commandMethod) {
     if (commandMethod.includes(" ")) {
       // todo: cleanup and document
       // It seems the command arguments can from the method string or from form values.
@@ -18701,75 +18699,75 @@ class AbstractTreeComponentParser extends ParserBackedNode {
         dos: parts[2]
       }
     }
-    const shadow = stumpNode.getShadow()
+    const shadow = stumpParticle.getShadow()
     let valueParam
-    if (stumpNode.isStumpNodeCheckbox()) valueParam = shadow.isShadowChecked() ? true : false
+    if (stumpParticle.isStumpParticleCheckbox()) valueParam = shadow.isShadowChecked() ? true : false
     // todo: fix bug if nothing is entered.
     else if (shadow.getShadowValue() !== undefined) valueParam = shadow.getShadowValue()
-    else valueParam = stumpNode.getStumpNodeAttr("value")
-    const nameParam = stumpNode.getStumpNodeAttr("name")
+    else valueParam = stumpParticle.getStumpParticleAttr("value")
+    const nameParam = stumpParticle.getStumpParticleAttr("name")
     return {
       uno: valueParam,
       dos: nameParam
     }
   }
-  getStumpNodeString() {
-    return this.willowBrowser.getHtmlStumpNode().toString()
+  getStumpParticleString() {
+    return this.willowBrowser.getHtmlStumpParticle().toString()
   }
-  _getHtmlOnlyNodes() {
-    const nodes = []
-    this.willowBrowser.getHtmlStumpNode().deepVisit(node => {
-      if (node.firstWord === "styleTag" || (node.content || "").startsWith("<svg ")) return false
-      nodes.push(node)
+  _getHtmlOnlyParticles() {
+    const particles = []
+    this.willowBrowser.getHtmlStumpParticle().deepVisit(particle => {
+      if (particle.firstWord === "styleTag" || (particle.content || "").startsWith("<svg ")) return false
+      particles.push(particle)
     })
-    return nodes
+    return particles
   }
-  getStumpNodeStringWithoutCssAndSvg() {
+  getStumpParticleStringWithoutCssAndSvg() {
     // todo: cleanup. feels hacky.
-    const clone = new TreeNode(this.willowBrowser.getHtmlStumpNode().toString())
-    clone.topDownArray.forEach(node => {
-      if (node.firstWord === "styleTag" || (node.content || "").startsWith("<svg ")) node.destroy()
+    const clone = new Particle(this.willowBrowser.getHtmlStumpParticle().toString())
+    clone.topDownArray.forEach(particle => {
+      if (particle.firstWord === "styleTag" || (particle.content || "").startsWith("<svg ")) particle.destroy()
     })
     return clone.toString()
   }
   getTextContent() {
-    return this._getHtmlOnlyNodes()
-      .map(node => node.getTextContent())
+    return this._getHtmlOnlyParticles()
+      .map(particle => particle.getTextContent())
       .filter(text => text)
       .join("\n")
   }
   getCommandNames() {
     return Object.getOwnPropertyNames(Object.getPrototypeOf(this)).filter(word => word.endsWith("Command"))
   }
-  async _executeCommandOnStumpNode(stumpNode, commandMethod) {
-    const params = this._getCommandArgumentsFromStumpNode(stumpNode, commandMethod)
+  async _executeCommandOnStumpParticle(stumpParticle, commandMethod) {
+    const params = this._getCommandArgumentsFromStumpParticle(stumpParticle, commandMethod)
     if (commandMethod.includes(" "))
       // todo: cleanup
       commandMethod = commandMethod.split(" ")[0]
     this.addToCommandLog([commandMethod, params.uno, params.dos].filter(identity => identity).join(" "))
     this._onCommandWillRun() // todo: remove. currently used by ohayo
-    let treeComponent = stumpNode.getStumpNodeTreeComponent()
-    while (!treeComponent[commandMethod]) {
-      const parent = treeComponent.parent
-      if (parent === treeComponent) throw new Error(`Unknown command "${commandMethod}"`)
+    let particleComponent = stumpParticle.getStumpParticleParticleComponent()
+    while (!particleComponent[commandMethod]) {
+      const parent = particleComponent.parent
+      if (parent === particleComponent) throw new Error(`Unknown command "${commandMethod}"`)
       if (!parent) debugger
-      treeComponent = parent
+      particleComponent = parent
     }
     try {
-      await treeComponent[commandMethod](params.uno, params.dos)
+      await particleComponent[commandMethod](params.uno, params.dos)
     } catch (err) {
       this.onCommandError(err)
     }
   }
-  _bindTreeComponentFrameworkCommandListenersOnBody() {
+  _bindParticleComponentFrameworkCommandListenersOnBody() {
     const willowBrowser = this.willowBrowser
-    const bodyShadow = willowBrowser.getBodyStumpNode().getShadow()
+    const bodyShadow = willowBrowser.getBodyStumpParticle().getShadow()
     const app = this
     const checkAndExecute = (el, attr, evt) => {
-      const stumpNode = willowBrowser.getStumpNodeFromElement(el)
+      const stumpParticle = willowBrowser.getStumpParticleFromElement(el)
       evt.preventDefault()
       evt.stopImmediatePropagation()
-      this._executeCommandOnStumpNode(stumpNode, stumpNode.getStumpNodeAttr(attr))
+      this._executeCommandOnStumpParticle(stumpParticle, stumpParticle.getStumpParticleAttr(attr))
       return false
     }
     bodyShadow.onShadowEventWithSelector(BrowserEvents.contextmenu, `[${WillowConstants.contextMenuCommand}]`, function (target, evt) {
@@ -18809,20 +18807,20 @@ class AbstractTreeComponentParser extends ParserBackedNode {
   async unmountAndDestroyCommand() {
     this.unmountAndDestroy()
   }
-  toggleTreeComponentFrameworkDebuggerCommand() {
+  toggleParticleComponentFrameworkDebuggerCommand() {
     // todo: move somewhere else?
     // todo: cleanup
     const app = this.root
-    const node = app.getNode("TreeComponentFrameworkDebuggerComponent")
-    if (node) {
-      node.unmountAndDestroy()
+    const particle = app.getParticle("ParticleComponentFrameworkDebuggerComponent")
+    if (particle) {
+      particle.unmountAndDestroy()
     } else {
-      app.appendLine("TreeComponentFrameworkDebuggerComponent")
+      app.appendLine("ParticleComponentFrameworkDebuggerComponent")
       app.renderAndGetRenderReport()
     }
   }
-  getStumpNode() {
-    return this._htmlStumpNode
+  getStumpParticle() {
+    return this._htmlStumpParticle
   }
   toHakonCode() {
     return ""
@@ -18843,10 +18841,10 @@ class AbstractTreeComponentParser extends ParserBackedNode {
     })
   }
   getMessageBuffer() {
-    if (!this._messageBuffer) this._messageBuffer = new TreeNode()
+    if (!this._messageBuffer) this._messageBuffer = new Particle()
     return this._messageBuffer
   }
-  // todo: move this to tree class? or other higher level class?
+  // todo: move this to particle class? or other higher level class?
   addStumpCodeMessageToLog(message) {
     // note: we have 1 parameter, and are going to do type inference first.
     // Todo: add actions that can be taken from a message?
@@ -18857,11 +18855,11 @@ class AbstractTreeComponentParser extends ParserBackedNode {
     // todo: cleanup!
     return this.addStumpCodeMessageToLog(`div
  class OhayoError
- bern${TreeNode.nest(errorMessage, 2)}`)
+ bern${Particle.nest(errorMessage, 2)}`)
   }
   logMessageText(message = "") {
     const pre = `pre
- bern${TreeNode.nest(message, 2)}`
+ bern${Particle.nest(message, 2)}`
     return this.addStumpCodeMessageToLog(pre)
   }
   unmount() {
@@ -18869,32 +18867,32 @@ class AbstractTreeComponentParser extends ParserBackedNode {
       !this.isMounted() // todo: why do we need this check?
     )
       return undefined
-    this._getChildTreeComponents().forEach(child => child.unmount())
-    this.treeComponentWillUnmount()
+    this._getChildParticleComponents().forEach(child => child.unmount())
+    this.particleComponentWillUnmount()
     this._removeCss()
     this._removeHtml()
     delete this._lastRenderedTime
-    this.treeComponentDidUnmount()
+    this.particleComponentDidUnmount()
   }
   _removeHtml() {
-    this._htmlStumpNode.removeStumpNode()
-    delete this._htmlStumpNode
+    this._htmlStumpParticle.removeStumpParticle()
+    delete this._htmlStumpParticle
   }
   toStumpCode() {
     return `div
  class ${this.getCssClassNames().join(" ")}`
   }
   getCssClassNames() {
-    return this._getJavascriptPrototypeChainUpTo("AbstractTreeComponentParser")
+    return this._getJavascriptPrototypeChainUpTo("AbstractParticleComponentParser")
   }
-  treeComponentWillMount() {}
-  async treeComponentDidMount() {
-    AbstractTreeComponentParser._mountedTreeComponents++
+  particleComponentWillMount() {}
+  async particleComponentDidMount() {
+    AbstractParticleComponentParser._mountedParticleComponents++
   }
-  treeComponentDidUnmount() {
-    AbstractTreeComponentParser._mountedTreeComponents--
+  particleComponentDidUnmount() {
+    AbstractParticleComponentParser._mountedParticleComponents--
   }
-  treeComponentWillUnmount() {}
+  particleComponentWillUnmount() {}
   getNewestTimeToRender() {
     return this._lastTimeToRender
   }
@@ -18902,16 +18900,16 @@ class AbstractTreeComponentParser extends ParserBackedNode {
     this._lastRenderedTime = time
     return this
   }
-  async treeComponentDidUpdate() {}
-  _getChildTreeComponents() {
-    return this.getChildrenByParser(AbstractTreeComponentParser)
+  async particleComponentDidUpdate() {}
+  _getChildParticleComponents() {
+    return this.getChildrenByParser(AbstractParticleComponentParser)
   }
-  _hasChildrenTreeComponents() {
-    return this._getChildTreeComponents().length > 0
+  _hasChildrenParticleComponents() {
+    return this._getChildParticleComponents().length > 0
   }
   // todo: this is hacky. we do it so we can just mount all tiles to wall.
-  getStumpNodeForChildren() {
-    return this.getStumpNode()
+  getStumpParticleForChildren() {
+    return this.getStumpParticle()
   }
   _getLastRenderedTime() {
     return this._lastRenderedTime
@@ -18932,36 +18930,36 @@ ${new stumpParser(this.toStumpCode()).compile()}
     this._removeCss()
     this._mountCss()
     // todo: fucking switch to react? looks like we don't update parent because we dont want to nuke children.
-    // okay. i see why we might do that for non tile treeComponents. but for Tile treeComponents, seems like we arent nesting, so why not?
+    // okay. i see why we might do that for non tile particleComponents. but for Tile particleComponents, seems like we arent nesting, so why not?
     // for now
-    if (this._hasChildrenTreeComponents()) return { shouldUpdate: false, reason: "did not update because is a parent" }
+    if (this._hasChildrenParticleComponents()) return { shouldUpdate: false, reason: "did not update because is a parent" }
     this._updateHtml()
     this._lastTimeToRender = this._getProcessTimeInMilliseconds() - this._getLastRenderedTime()
     return reasonForUpdatingOrNot
   }
   _updateHtml() {
-    const stumpNodeToMountOn = this._htmlStumpNode.parent
-    const currentIndex = this._htmlStumpNode.getIndex()
+    const stumpParticleToMountOn = this._htmlStumpParticle.parent
+    const currentIndex = this._htmlStumpParticle.getIndex()
     this._removeHtml()
-    this._mountHtml(stumpNodeToMountOn, this._toLoadedOrLoadingStumpCode(), currentIndex)
+    this._mountHtml(stumpParticleToMountOn, this._toLoadedOrLoadingStumpCode(), currentIndex)
   }
   unmountAndDestroy() {
     this.unmount()
     return this.destroy()
   }
-  // todo: move to keyword node class?
+  // todo: move to keyword particle class?
   toggle(firstWord, contentOptions) {
-    const currentNode = this.getNode(firstWord)
-    if (!contentOptions) return currentNode ? currentNode.unmountAndDestroy() : this.appendLine(firstWord)
-    const currentContent = currentNode === undefined ? undefined : currentNode.content
+    const currentParticle = this.getParticle(firstWord)
+    if (!contentOptions) return currentParticle ? currentParticle.unmountAndDestroy() : this.appendLine(firstWord)
+    const currentContent = currentParticle === undefined ? undefined : currentParticle.content
     const index = contentOptions.indexOf(currentContent)
     const newContent = index === -1 || index + 1 === contentOptions.length ? contentOptions[0] : contentOptions[index + 1]
     this.delete(firstWord)
-    if (newContent) this.touchNode(firstWord).setContent(newContent)
+    if (newContent) this.touchParticle(firstWord).setContent(newContent)
     return newContent
   }
   isMounted() {
-    return !!this._htmlStumpNode
+    return !!this._htmlStumpParticle
   }
   toggleAndRender(firstWord, contentOptions) {
     this.toggle(firstWord, contentOptions)
@@ -18977,13 +18975,13 @@ ${new stumpParser(this.toStumpCode()).compile()}
     if (lastRenderedTime === 0)
       return {
         shouldUpdate: true,
-        reason: "shouldUpdate because this TreeComponent hasn't been rendered yet",
+        reason: "shouldUpdate because this ParticleComponent hasn't been rendered yet",
         staleTime: staleTime
       }
     if (staleTime > 0)
       return {
         shouldUpdate: true,
-        reason: "shouldUpdate because this TreeComponent changed",
+        reason: "shouldUpdate because this ParticleComponent changed",
         staleTime: staleTime
       }
     const outdatedDependency = this._getFirstOutdatedDependency(lastRenderedTime)
@@ -19004,21 +19002,21 @@ ${new stumpParser(this.toStumpCode()).compile()}
   getDependencies() {
     return []
   }
-  _getTreeComponentsThatNeedRendering(arr) {
-    this._getChildTreeComponents().forEach(child => {
+  _getParticleComponentsThatNeedRendering(arr) {
+    this._getChildParticleComponents().forEach(child => {
       const reasonForUpdatingOrNot = child.getWhetherToUpdateAndReason()
       if (!child.isMounted() || reasonForUpdatingOrNot.shouldUpdate) arr.push({ child: child, childUpdateBecause: reasonForUpdatingOrNot })
-      child._getTreeComponentsThatNeedRendering(arr)
+      child._getParticleComponentsThatNeedRendering(arr)
     })
   }
   toStumpLoadingCode() {
     return `div Loading ${this.firstWord}...
  class ${this.getCssClassNames().join(" ")}
- id ${this.getTreeComponentId()}`
+ id ${this.getParticleComponentId()}`
   }
-  getTreeComponentId() {
+  getParticleComponentId() {
     // html ids can't begin with a number
-    return "treeComponent" + this._getUid()
+    return "particleComponent" + this._getUid()
   }
   _toLoadedOrLoadingStumpCode() {
     if (!this.isLoaded()) return this.toStumpLoadingCode()
@@ -19034,13 +19032,13 @@ ${new stumpParser(this.toStumpCode()).compile()}
   toStumpErrorStateCode(err) {
     return `div ${err}
  class ${this.getCssClassNames().join(" ")}
- id ${this.getTreeComponentId()}`
+ id ${this.getParticleComponentId()}`
   }
-  _mount(stumpNodeToMountOn, index) {
+  _mount(stumpParticleToMountOn, index) {
     this._setLastRenderedTime(this._getProcessTimeInMilliseconds())
-    this.treeComponentWillMount()
+    this.particleComponentWillMount()
     this._mountCss()
-    this._mountHtml(stumpNodeToMountOn, this._toLoadedOrLoadingStumpCode(), index) // todo: add index back?
+    this._mountHtml(stumpParticleToMountOn, this._toLoadedOrLoadingStumpCode(), index) // todo: add index back?
     this._lastTimeToRender = this._getProcessTimeInMilliseconds() - this._getLastRenderedTime()
     return this
   }
@@ -19049,57 +19047,57 @@ ${new stumpParser(this.toStumpCode()).compile()}
     const css = this._css
     if (!css) return this
     // todo: only insert css once per class? have a set?
-    this._cssStumpNode = this._getPageHeadStump().insertCssChildNode(`styleTag
+    this._cssStumpParticle = this._getPageHeadStump().insertCssChildParticle(`styleTag
  for ${this.constructor.name}
- bern${TreeNode.nest(css, 2)}`)
+ bern${Particle.nest(css, 2)}`)
   }
   _getPageHeadStump() {
-    return this.root.willowBrowser.getHeadStumpNode()
+    return this.root.willowBrowser.getHeadStumpParticle()
   }
   _removeCss() {
-    if (!this._cssStumpNode) return this
-    this._cssStumpNode.removeCssStumpNode()
-    delete this._cssStumpNode
+    if (!this._cssStumpParticle) return this
+    this._cssStumpParticle.removeCssStumpParticle()
+    delete this._cssStumpParticle
   }
-  _mountHtml(stumpNodeToMountOn, htmlCode, index) {
-    this._htmlStumpNode = stumpNodeToMountOn.insertChildNode(htmlCode, index)
-    this._htmlStumpNode.setStumpNodeTreeComponent(this)
+  _mountHtml(stumpParticleToMountOn, htmlCode, index) {
+    this._htmlStumpParticle = stumpParticleToMountOn.insertChildParticle(htmlCode, index)
+    this._htmlStumpParticle.setStumpParticleParticleComponent(this)
   }
-  renderAndGetRenderReport(stumpNode, index) {
+  renderAndGetRenderReport(stumpParticle, index) {
     const isUpdateOp = this.isMounted()
-    let treeComponentUpdateReport = {
+    let particleComponentUpdateReport = {
       shouldUpdate: false,
       reason: ""
     }
-    if (isUpdateOp) treeComponentUpdateReport = this._updateAndGetUpdateReport()
-    else this._mount(stumpNode, index)
-    const stumpNodeForChildren = this.getStumpNodeForChildren()
+    if (isUpdateOp) particleComponentUpdateReport = this._updateAndGetUpdateReport()
+    else this._mount(stumpParticle, index)
+    const stumpParticleForChildren = this.getStumpParticleForChildren()
     // Todo: insert delayed rendering?
-    const childResults = this._getChildTreeComponents().map((child, index) => child.renderAndGetRenderReport(stumpNodeForChildren, index))
+    const childResults = this._getChildParticleComponents().map((child, index) => child.renderAndGetRenderReport(stumpParticleForChildren, index))
     if (isUpdateOp) {
-      if (treeComponentUpdateReport.shouldUpdate) {
+      if (particleComponentUpdateReport.shouldUpdate) {
         try {
-          if (this.isLoaded()) this.treeComponentDidUpdate()
+          if (this.isLoaded()) this.particleComponentDidUpdate()
         } catch (err) {
           console.error(err)
         }
       }
     } else {
       try {
-        if (this.isLoaded()) this.treeComponentDidMount()
+        if (this.isLoaded()) this.particleComponentDidMount()
       } catch (err) {
         console.error(err)
       }
     }
-    let str = `${this.getWord(0) || this.constructor.name} ${isUpdateOp ? "update" : "mount"} ${treeComponentUpdateReport.shouldUpdate} ${treeComponentUpdateReport.reason}`
+    let str = `${this.getWord(0) || this.constructor.name} ${isUpdateOp ? "update" : "mount"} ${particleComponentUpdateReport.shouldUpdate} ${particleComponentUpdateReport.reason}`
     childResults.forEach(child => (str += "\n" + child.toString(1)))
-    return new TreeNode(str)
+    return new Particle(str)
   }
 }
-AbstractTreeComponentParser._mountedTreeComponents = 0
-class TreeComponentFrameworkDebuggerComponent extends AbstractTreeComponentParser {
+AbstractParticleComponentParser._mountedParticleComponents = 0
+class ParticleComponentFrameworkDebuggerComponent extends AbstractParticleComponentParser {
   toHakonCode() {
-    return `.TreeComponentFrameworkDebuggerComponent
+    return `.ParticleComponentFrameworkDebuggerComponent
  position fixed
  top 5px
  left 5px
@@ -19109,7 +19107,7 @@ class TreeComponentFrameworkDebuggerComponent extends AbstractTreeComponentParse
  padding 12px
  overflow scroll
  max-height 500px
-.TreeComponentFrameworkDebuggerComponentCloseButton
+.ParticleComponentFrameworkDebuggerComponentCloseButton
  position absolute
  cursor pointer
  opacity .9
@@ -19121,21 +19119,21 @@ class TreeComponentFrameworkDebuggerComponent extends AbstractTreeComponentParse
   toStumpCode() {
     const app = this.root
     return `div
- class TreeComponentFrameworkDebuggerComponent
+ class ParticleComponentFrameworkDebuggerComponent
  div x
-  class TreeComponentFrameworkDebuggerComponentCloseButton
-  clickCommand toggleTreeComponentFrameworkDebuggerCommand
+  class ParticleComponentFrameworkDebuggerComponentCloseButton
+  clickCommand toggleParticleComponentFrameworkDebuggerCommand
  div
   span This app is powered by the
-  a Tree Component Framework
-   href https://github.com/breck7/scrollsdk/tree/main/treeComponentFramework
+  a ParticleComponentFramework
+   href https://github.com/breck7/scrollsdk/tree/main/particleComponentFramework
  p ${app.numberOfLines} components loaded. ${WillowBrowser._stumpsOnPage} stumps on page.
  pre
   bern
 ${app.toString(3)}`
   }
 }
-class AbstractGithubTriangleComponent extends AbstractTreeComponentParser {
+class AbstractGithubTriangleComponent extends AbstractParticleComponentParser {
   constructor() {
     super(...arguments)
     this.githubLink = `https://github.com/breck7/scrollsdk`
@@ -19156,6 +19154,6 @@ class AbstractGithubTriangleComponent extends AbstractTreeComponentParser {
   }
 }
 window.AbstractGithubTriangleComponent = AbstractGithubTriangleComponent
-window.AbstractTreeComponentParser = AbstractTreeComponentParser
+window.AbstractParticleComponentParser = AbstractParticleComponentParser
 window.WillowBrowser = WillowBrowser
-window.TreeComponentFrameworkDebuggerComponent = TreeComponentFrameworkDebuggerComponent
+window.ParticleComponentFrameworkDebuggerComponent = ParticleComponentFrameworkDebuggerComponent
