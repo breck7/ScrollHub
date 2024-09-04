@@ -39,6 +39,7 @@ class EditorApp {
 		dropZone.addEventListener("dragover", this.handleDragOver.bind(this))
 		dropZone.addEventListener("dragleave", this.handleDragLeave.bind(this))
 		dropZone.addEventListener("drop", this.handleDrop.bind(this))
+		return this
 	}
 
 	handleDragOver(event) {
