@@ -75,7 +75,7 @@ class SiteImporter {
 		const folder = path.join(rootFolder, hostname)
 		try {
 			if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true })
-			execSync("scroll init; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folder })
+			execSync("scroll init; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folder })
 			await this.importSite(url, folder)
 			execSync("scroll build", { cwd: folder })
 		} catch (err) {

@@ -115,7 +115,7 @@ class EditorApp {
 		const serverName = window.location.hostname
 		document.getElementById("folderNameLink").innerHTML = `http://${serverName}/${this.folderName}`
 		document.getElementById("folderNameLink").href = this.folderName
-		document.getElementById("gitClone").innerHTML = `git clone http://${serverName}/git/${this.folderName}`
+		document.getElementById("gitClone").innerHTML = `git clone http://${serverName}/git/${this.folderName} --origin scrollhub`
 		document.title = `Editing ${serverName}/${this.folderName}`
 	}
 

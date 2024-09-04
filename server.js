@@ -185,7 +185,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 		fs.mkdirSync(folderPath, { recursive: true })
 		const stamp = stamps.bare
 		fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
-		execSync("scroll build; rm stamp.scroll; scroll format; git init; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+		execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 		updateList()
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
