@@ -21,6 +21,7 @@ body {
   padding: 10px;
 }
 
+.darkText,
 .greyText {
   color: rgba(204, 204, 204, 0.8);
   text-align: center;
@@ -29,6 +30,10 @@ body {
   font-family: monospace;
   margin: auto;
   padding: 0.5rem;
+}
+
+.darkText {
+  color: rgba(104, 104, 104, 1);
 }
 
 .drag-over {

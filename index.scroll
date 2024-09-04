@@ -42,6 +42,13 @@ center
  fetch('/foldersPublished').then(response => response.text()).then(data => document.getElementById('foldersPublished').innerText = `${data} published folders`);
  </script>
 
-<br><br>
+br 2
+
+center
+Want a managed ScrollHub server for your business? Buy now
+ https://buy.stripe.com/fZeaIqfvbduZ3IcfZl Buy now
+ class darkText
+
+br 2
 
 import footer.scroll
