@@ -1,4 +1,4 @@
-import settings.scroll
+settings.scroll
 metaTags
 gazetteCss
 title ScrollHub: a new way to publish science
@@ -51,4 +51,4 @@ Want a managed ScrollHub server for your business? Buy now
 
 br 2
 
-import footer.scroll
+footer.scroll

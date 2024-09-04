@@ -1,4 +1,4 @@
-import settings.scroll
+settings.scroll
 metaTags
 homeButton
 gazetteCss
@@ -30,7 +30,7 @@ title Edit Folder
 
 <script src="editor.js"></script>
 
-import footer.scroll
+footer.scroll
 
 # New folder | Powered by Scroll
  link index.html New folder

@@ -1,8 +1,8 @@
-import settings.scroll
+settings.scroll
 metaTags
 gazetteCss
 title Idea Island
-import header.scroll
+header.scroll
 <link rel="stylesheet" type="text/css" href="style.css" />
 
 # Convert your websites to Scrolls
@@ -17,5 +17,5 @@ endColumns
 <input type="text" name="url" placeholder="https://yoursite.com"><button>Convert to Scroll</button>
 </form>
 
-import footer.scroll
+footer.scroll
 

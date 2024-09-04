@@ -118,7 +118,7 @@ const getFolders = () => {
 let allFolders
 const updateList = () => {
 	allFolders = getFolders()
-	const scroll = `import settings.scroll
+	const scroll = `settings.scroll
 homeButton
 buildHtml
 metaTags
@@ -159,7 +159,7 @@ const stamps = {
   printTitle
   mediumColumns 1
  index.scroll
-  import header.scroll
+  header.scroll
   title Hello world
   
   Welcome to my folder.
