@@ -414,6 +414,12 @@ const startServers = app => {
 		return false
 	}
 
+	// Load SSL certificates
+	const sslOptions = {
+		key: fs.readFileSync("privkey.pem"),
+		cert: fs.readFileSync("fullchain.pem")
+	}
+
 	// HTTPS server
 	https.createServer(sslOptions, app).listen(443, () => console.log("HTTPS server running on port 443"))
 
