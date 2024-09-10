@@ -56,6 +56,8 @@ const express = require("express")
 const { execSync } = require("child_process")
 const fs = require("fs")
 const path = require("path")
+const https = require("https")
+const http = require("http")
 const rateLimit = require("express-rate-limit")
 const httpBackend = require("git-http-backend")
 const { spawn } = require("child_process")
@@ -405,4 +407,28 @@ app.use("/", express.static(rootFolder))
 // Serve the root directory statically
 app.use(express.static(__dirname))
 
-app.listen(port, () => console.log(`Server running at http://localhost:${port}`))
+const startServers = app => {
+	const filepath = path.join(__dirname, "privkey.pem")
+	if (!fs.existsSync(filepath)) {
+		http.createServer(app).listen(port, () => console.log(`Server running at http://localhost:${port}`))
+		return false
+	}
+
+	// HTTPS server
+	https.createServer(sslOptions, app).listen(443, () => console.log("HTTPS server running on port 443"))
+
+	// Middleware to redirect HTTP to HTTPS
+	app.use((req, res, next) => {
+		if (!req.secure) return res.redirect("https://" + req.headers.host + req.url)
+
+		next()
+	})
+
+	// Create a simple HTTP server that redirects all traffic to HTTPS
+	const httpApp = express()
+	httpApp.use((req, res) => res.redirect("https://" + req.headers.host + req.url))
+
+	http.createServer(httpApp).listen(port, () => console.log("HTTP server running, redirecting to HTTPS"))
+}
+
+startServers(app)
