@@ -143,9 +143,9 @@ class EditorApp {
 	}
 
 	updateFileList(files) {
-		const fileLinks = files.map(file =>
-			file.endsWith(".scroll") ? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>` : `<a target="preview" href="/${this.folderName}/${file}">${file}</a>`
-		)
+		const fileLinks = files
+			.filter(file => !file.endsWith(".txt") && !file.endsWith(".html"))
+			.map(file => (file.endsWith(".scroll") ? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>` : `<a target="preview" href="/${this.folderName}/${file}">${file}</a>`))
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
 

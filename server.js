@@ -194,7 +194,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	}
 })
 
-const allowedExtensions = "scroll jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
+const allowedExtensions = "scroll parsers txt html htm css js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
 
 app.get("/ls", (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
@@ -279,10 +279,20 @@ app.post("/git/:repo/*", (req, res) => {
 	req.pipe(handlers).pipe(res)
 })
 
+const extensionOkay = (filepath, res) => {
+	const fileExtension = path.extname(filepath).toLowerCase().slice(1)
+	if (!allowedExtensions.includes(fileExtension)) {
+		res.status(400).send(`Cannot edit a ${fileExtension} file. Only editing of ${allowedExtensions} files is allowed.`)
+		return false
+	}
+	return true
+}
+
 app.get("/read", (req, res) => {
 	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
 
-	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
+	const ok = extensionOkay(filePath, res)
+	if (!ok) return
 
 	if (!fs.existsSync(filePath)) return res.status(404).send("File not found")
 
@@ -299,7 +309,8 @@ app.get("/read", (req, res) => {
 const writeFile = (res, filePath, content) => {
 	filePath = path.join(rootFolder, filePath)
 
-	if (!filePath.endsWith(".scroll")) return res.status(400).send("Invalid file type. Only editing of .scroll files is allowed.")
+	const ok = extensionOkay(filePath, res)
+	if (!ok) return
 
 	const folderPath = path.dirname(filePath)
 	if (!fs.existsSync(folderPath)) return res.status(400).send("Folder does not exist")
