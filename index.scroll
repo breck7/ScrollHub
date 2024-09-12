@@ -37,17 +37,10 @@ br 3
 br 3
 
 center
-<a id="foldersPublished" class="greyText" href="list.html#order=1.desc"></a>
+<a id="foldersPublished" class="greyText" href="list.html"></a>
 <script>
  fetch('/foldersPublished').then(response => response.text()).then(data => document.getElementById('foldersPublished').innerText = `${data} published folders`);
  </script>
-
-br 2
-
-center
-Want a managed ScrollHub server for your business? Buy now
- https://buy.stripe.com/fZeaIqfvbduZ3IcfZl Buy now
- class darkText
 
 br 2
 

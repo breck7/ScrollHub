@@ -111,7 +111,7 @@ const getFolders = () => {
 		return {
 			folder,
 			folderLink: folder + "/",
-			created: new Date(ctime).toLocaleString()
+			ctime
 		}
 	})
 	return all.filter(i => i)
@@ -133,7 +133,8 @@ mediumColumns 1
 ${allFolders.length} published folders on this server
 
 table
- printTable
+ orderBy -ctime
+  printTable
  data
   ${new Particle(allFolders).asCsv.replace(/\n/g, "\n  ")}
 
