@@ -67,6 +67,7 @@ const fileUpload = require("express-fileupload")
 
 const app = express()
 const port = 80
+const maxSize = 10 * 1000 * 1024
 
 // Middleware to parse URL-encoded bodies (form data)
 app.use(express.urlencoded({ extended: true }))
@@ -361,7 +362,6 @@ app.post("/upload", (req, res) => {
 		return res.status(400).send(`Invalid file type. Only ${allowedExtensions.join(" ")} files are allowed.`)
 	}
 
-	const maxSize = 1000 * 1024
 	if (file.size > maxSize) {
 		return res.status(400).send("File size exceeds the maximum limit of 1MB.")
 	}
