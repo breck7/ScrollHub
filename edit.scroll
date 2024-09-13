@@ -10,7 +10,7 @@ title Edit Folder
 <script src="./ide/libs.js"></script>
 <script src="./ide/parsers.js"></script>
 
-# <a id="folderNameLink"></a> is online.
+# <a id="folderNameLink"></a>
 
 <div id="gitClone" class="greyText"></div>
 
