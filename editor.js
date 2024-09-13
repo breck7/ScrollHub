@@ -206,9 +206,8 @@ class EditorApp {
 	}
 
 	updateFileList(files) {
-		const sorted = files.filter(file => !file.endsWith(".txt") && !file.endsWith(".html"))
-		// sort by scroll files first, and then everything else
-
+		const scrollFiles = files.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+		const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
 		const fileLinks = sorted.map(file =>
 			file.endsWith(".scroll") || file.endsWith(".parsers")
 				? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`

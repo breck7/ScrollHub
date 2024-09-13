@@ -154,6 +154,7 @@ app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folde
 const stamps = {
 	bare: `stamp
  header.scroll
+  importOnly
   buildHtml
   buildTxt
   metaTags
