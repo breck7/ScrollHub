@@ -5,15 +5,12 @@ title Idea Island
 header.scroll
 <link rel="stylesheet" type="text/css" href="style.css" />
 
-# Convert your websites to Scrolls
- https://scroll.pub Scrolls
-
-* _Give us your writings, your math, your music<br>Your novel ideas yearning to breathe free_
+* Your ideas deserve the best. Your ideas deserve Scroll.
  style font-size:200%; text-align: center; font-family: Exchange, Georgia, serif; line-height: 120%; padding: 40px;
 
 endColumns
 
-<form method="get" action="createFromForm" id="islandForm">
+<form method="get" action="createFromForm" id="importForm">
 <input type="text" name="url" placeholder="https://yoursite.com"><button>Convert to Scroll</button>
 </form>
 
