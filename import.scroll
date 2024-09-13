@@ -3,16 +3,10 @@ metaTags
 gazetteCss
 title Idea Island
 header.scroll
-<link rel="stylesheet" type="text/css" href="style.css" />
 
+center
 * Your ideas deserve the best. Your ideas deserve Scroll.
- style font-size:200%; text-align: center; font-family: Exchange, Georgia, serif; line-height: 120%; padding: 40px;
+ style font-size:200%; center; font-family: Exchange, Georgia, serif; line-height: 120%; padding: 40px;
 
-endColumns
-
-<form method="get" action="createFromForm" id="importForm">
-<input type="text" name="url" placeholder="https://yoursite.com"><button>Convert to Scroll</button>
-</form>
-
+importForm.scroll
 footer.scroll
-
