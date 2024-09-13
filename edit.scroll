@@ -22,7 +22,7 @@ title Edit Folder
 <div id="fileList"></div>
 </div>
 <div>
- <textarea name="content" id="fileEditor" rows="20"></textarea>
+ <textarea name="content" id="fileEditor" rows="30"></textarea>
  <button>Publish</button>
 </div>
 </form>
@@ -31,9 +31,5 @@ title Edit Folder
 <script src="editor.js"></script>
 
 footer.scroll
-
-# New folder | Powered by Scroll
- link index.html New folder
- https://scroll.pub Scroll
 
 viewSourceButton

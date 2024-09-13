@@ -43,20 +43,24 @@ body {
 
 iframe {
   height: 600px;
-  width: 600px;
+  width: 400px;
   border: 0;
   transform: scale(0.5);
   transform-origin: 0 0;
 }
 .iframeHolder {
-  width: 300px;
-  height: 200px;
+  width: 200px;
+  height: 125px;
   box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  margin: 10px;
+  margin-right: 10px;
+  margin-bottom: 10px;
   display: inline-block;
   position: relative;
   overflow: hidden;
+}
+.nonScrollFile {
+  color: grey;
 }
 
 .createButton {
@@ -71,7 +75,7 @@ form {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
+  align-items: top;
   margin: 0 auto;
   max-width: 600px;
 }
@@ -79,7 +83,7 @@ form {
   margin-top: 20px;
 }
 #editForm {
-  max-width: 1000px;
+  max-width: 1025px;
   margin-top: 20px;
   margin-bottom: 30px;
 }
@@ -93,7 +97,7 @@ textarea {
   font-size: 16px;
 }
 textarea {
-  width: 60ch; /* Set width to 60 characters */
+  width: 80ch; /* Set width to 60 characters */
   max-width: 100%; /* Ensure it doesn't overflow on small screens */
 }
 

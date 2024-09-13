@@ -1,3 +1,5 @@
+// todo: before unload warn about unsaved changes
+
 class EditorApp {
 	constructor() {
 		this.folderName = ""
@@ -8,7 +10,7 @@ class EditorApp {
 			lineWrapping: false,
 			lineNumbers: false
 		})
-		this.codeMirrorInstance.setSize(600, 360) // todo: adjust on resize
+		this.codeMirrorInstance.setSize(800, 500) // todo: adjust on resize
 	}
 
 	showError(message) {
@@ -143,9 +145,14 @@ class EditorApp {
 	}
 
 	updateFileList(files) {
-		const fileLinks = files
-			.filter(file => !file.endsWith(".txt") && !file.endsWith(".html"))
-			.map(file => (file.endsWith(".scroll") ? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>` : `<a target="preview" href="/${this.folderName}/${file}">${file}</a>`))
+		const sorted = files.filter(file => !file.endsWith(".txt") && !file.endsWith(".html"))
+		// sort by scroll files first, and then everything else
+
+		const fileLinks = sorted.map(file =>
+			file.endsWith(".scroll") || file.endsWith(".parsers")
+				? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
+				: `<a class="nonScrollFile" target="preview" href="/${this.folderName}/${file}">${file}</a>`
+		)
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
 
