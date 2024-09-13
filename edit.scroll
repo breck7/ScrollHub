@@ -12,8 +12,6 @@ title Edit Folder
 
 # <a id="folderNameLink"></a>
 
-<div id="gitClone" class="greyText"></div>
-
 <form method="post" action="write" id="editForm">
 <div>
  <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
@@ -27,6 +25,8 @@ title Edit Folder
 </div>
 </form>
 // # Commands
+
+<div id="gitClone" class="greyText"></div>
 
 <script src="editor.js"></script>
 
