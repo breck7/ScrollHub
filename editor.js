@@ -1,5 +1,4 @@
 // todo: before unload warn about unsaved changes
-
 class EditorApp {
 	constructor() {
 		this.folderName = ""
@@ -7,7 +6,7 @@ class EditorApp {
 		this.fileList = null
 		const scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
 		this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
-			lineWrapping: false,
+			lineWrapping: true, // todo: some way to see wrapped lines? do we want to disable line wrapping? make a keyboard shortcut?
 			lineNumbers: false
 		})
 		this.codeMirrorInstance.setSize(784, 490) // todo: adjust on resize
@@ -16,6 +15,10 @@ class EditorApp {
 	showError(message) {
 		console.error(message)
 		this.fileList.innerHTML = `<span style="color:red;">${message}</span>`
+	}
+
+	get filePath() {
+		return `${this.folderName}/${this.fileName}`
 	}
 
 	main() {
@@ -30,7 +33,7 @@ class EditorApp {
 		this.fetchAndDisplayFileList()
 
 		this.fileEditor = document.getElementById("fileEditor")
-		document.getElementById("filePathInput").value = `${this.folderName}/${this.fileName}`
+		document.getElementById("filePathInput").value = this.filePath
 		document.getElementById("folderNameInput").value = this.folderName
 		this.loadFileContent()
 
@@ -41,7 +44,65 @@ class EditorApp {
 		dropZone.addEventListener("dragover", this.handleDragOver.bind(this))
 		dropZone.addEventListener("dragleave", this.handleDragLeave.bind(this))
 		dropZone.addEventListener("drop", this.handleDrop.bind(this))
+		this.bindKeyboardShortcuts()
 		return this
+	}
+
+	async saveFile() {
+		const formData = new FormData()
+		formData.append("filePath", this.filePath)
+		formData.append("folderName", this.folderName)
+		formData.append("content", this.codeMirrorInstance.getValue())
+		try {
+			const response = await fetch("/write", {
+				method: "POST",
+				body: formData
+			})
+
+			if (!response.ok) {
+				const errorText = await response.text()
+				throw new Error(errorText || "Network response was not ok")
+			}
+
+			const data = await response.text()
+			console.log("File saved successfully:", data)
+			this.updatePreviewIFrame()
+			return data
+		} catch (error) {
+			console.error("Error saving file:", error.message)
+			throw error // Re-throw the error if you want calling code to handle it
+		}
+	}
+
+	bindKeyboardShortcuts() {
+		const that = this
+		// note: I do not rememeber why we do any of this stopCallback stuff but it seems hard won knowledge ;)
+		Mousetrap._originalStopCallback = Mousetrap.prototype.stopCallback
+		Mousetrap.prototype.stopCallback = async function (evt, element, shortcut) {
+			if (shortcut === "command+s") {
+				// save. refresh preview
+				that.saveFile()
+				evt.preventDefault()
+				return true
+			}
+			if (Mousetrap._pause) return true
+			return Mousetrap._originalStopCallback.call(this, evt, element)
+		}
+
+		const keyboardShortcuts = {
+			"command+s": () => {
+				console.log("Saved")
+			}
+		}
+
+		Object.keys(keyboardShortcuts).forEach(key => {
+			Mousetrap.bind(key, function (evt) {
+				keyboardShortcuts[key]()
+				// todo: handle the below when we need to
+				if (evt.preventDefault) evt.preventDefault()
+				return false
+			})
+		})
 	}
 
 	handleDragOver(event) {
