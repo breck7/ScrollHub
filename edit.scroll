@@ -16,14 +16,14 @@ title Edit Folder
 
 <form method="post" action="write" id="editForm">
 <div>
-<div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
-<input type="hidden" name="filePath" id="filePathInput"/>
-<input type="hidden" name="folderName" id="folderNameInput"/>
-<div id="fileList"></div>
+ <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
+ <input type="hidden" name="filePath" id="filePathInput"/>
+ <input type="hidden" name="folderName" id="folderNameInput"/>
+ <div id="fileList"></div>
 </div>
-<div>
+<div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button>Publish</button>
+ <button class="publishButton">Publish</button>
 </div>
 </form>
 // # Commands

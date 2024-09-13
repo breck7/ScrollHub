@@ -53,11 +53,13 @@ iframe {
   height: 125px;
   box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  margin-right: 10px;
-  margin-bottom: 10px;
+  margin: 10px;
   display: inline-block;
   position: relative;
   overflow: hidden;
+}
+#fileList {
+  margin: 0 10px;
 }
 .nonScrollFile {
   color: grey;
@@ -86,6 +88,11 @@ form {
   max-width: 1025px;
   margin-top: 20px;
   margin-bottom: 30px;
+  padding: 0;
+}
+.editorHolder {
+  border-left: 1px solid rgb(232, 232, 232);
+  padding: 7px;
 }
 
 input[type="text"],
@@ -99,6 +106,9 @@ textarea {
 textarea {
   width: 80ch; /* Set width to 60 characters */
   max-width: 100%; /* Ensure it doesn't overflow on small screens */
+}
+.CodeMirror {
+  border: 0;
 }
 
 button {
@@ -115,6 +125,15 @@ button {
 
 button:hover {
   background-color: #45b069;
+}
+
+button:active {
+  background-color: #35a059;
+}
+
+.publishButton {
+  margin-top: 7px;
+  border-radius: 4px;
 }
 
 /* Responsive adjustments */

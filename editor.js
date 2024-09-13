@@ -10,7 +10,7 @@ class EditorApp {
 			lineWrapping: false,
 			lineNumbers: false
 		})
-		this.codeMirrorInstance.setSize(800, 500) // todo: adjust on resize
+		this.codeMirrorInstance.setSize(784, 490) // todo: adjust on resize
 	}
 
 	showError(message) {

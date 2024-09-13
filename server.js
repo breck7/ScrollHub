@@ -111,6 +111,7 @@ const getFolders = () => {
 		return {
 			folder,
 			folderLink: folder + "/",
+			editUrl: `edit.html?folderName=${folder}&fileName=index.scroll`,
 			ctime
 		}
 	})
