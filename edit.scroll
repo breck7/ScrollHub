@@ -4,11 +4,11 @@ homeButton
 gazetteCss
 title Edit Folder
 
-<link rel="stylesheet" type="text/css" href="style.css" />
+style.css
+./ide/codeMirror.css
 
-<link rel="stylesheet" type="text/css" href="./ide/codeMirror.css" />
-<script src="./ide/libs.js"></script>
-<script src="./ide/parsers.js"></script>
+./ide/libs.js
+./ide/parsers.js
 
 # <a id="folderNameLink"></a>
 
@@ -28,7 +28,7 @@ title Edit Folder
 
 <div id="gitClone" class="greyText"></div>
 
-<script src="editor.js"></script>
+editor.js
 
 footer.scroll
 

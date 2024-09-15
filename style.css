@@ -31,6 +31,9 @@ body {
   margin: auto;
   padding: 0.5rem;
 }
+.historyLink {
+  color: rgba(204, 204, 204, 0.8);
+}
 
 .darkText {
   color: rgba(104, 104, 104, 1);

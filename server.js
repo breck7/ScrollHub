@@ -338,6 +338,25 @@ const writeFile = (res, filePath, content) => {
 	}
 }
 
+app.get("/history/:folderName", (req, res) => {
+	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(rootFolder, folderName)
+
+	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
+
+	try {
+		// Get the git log and format it as CSV
+		const gitLog = execSync(`git log --pretty=format:"%h,%an,%ad,%at,%s" --date=short`, { cwd: folderPath })
+
+		res.setHeader("Content-Type", "text/plain; charset=utf-8")
+		const header = "commit,author,date,timestamp,message\n"
+		res.send(header + gitLog.toString())
+	} catch (error) {
+		console.error(error)
+		res.status(500).send("An error occurred while fetching the git log")
+	}
+})
+
 app.get("/write", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
 app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.content))
 
