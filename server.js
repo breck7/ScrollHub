@@ -186,21 +186,34 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	if (rawInput.includes("~")) {
 		// advanced form creation
 		const particle = new Particle(rawInput.replace(/~/g, "\n"))
-		template = sanitizeFolderName(particle.get("template"))
-		inputFolderName = particle.get("folder") || particle.particleAt(0).getLine()
+		inputFolderName = particle.particleAt(0).getLine()
+		template = particle.particleAt(1).getLine()
 	}
 	const folderName = sanitizeFolderName(inputFolderName)
 	const folderPath = path.join(rootFolder, folderName)
 
-	if (!isValidFolderName(folderName)) return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z and pass a few other checks.`, folderName })
+	if (!isValidFolderName(folderName))
+		return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and pass a few other checks.`, folderName: rawInput })
 
-	if (fs.existsSync(folderPath)) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName })
+	if (fs.existsSync(folderPath)) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName: rawInput })
 
 	try {
 		if (template) {
-			const templatePath = path.join(rootFolder, template)
-			if (!fs.existsSync(templatePath)) return handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName })
-			execSync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
+			const isUrl = template.startsWith("https") || template.startsWith("http")
+			if (isUrl) {
+				// http://hub.scroll.pub/git/onlybreck
+				try {
+					new URL(template)
+				} catch (err) {
+					return handleCreateError(res, { errorMessage: `Invalid template url.`, folderName: rawInput })
+				}
+				execSync(`git clone ${template} ${folderName}`, { cwd: rootFolder })
+			} else {
+				template = sanitizeFolderName(template)
+				const templatePath = path.join(rootFolder, template)
+				if (!fs.existsSync(templatePath)) return handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName: rawInput })
+				execSync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
+			}
 		} else {
 			fs.mkdirSync(folderPath, { recursive: true })
 			const stamp = stamps.bare
