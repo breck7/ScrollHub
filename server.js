@@ -180,7 +180,16 @@ const stamps = {
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
 app.get("/create/:folderName(*)", createLimiter, (req, res) => {
-	const folderName = sanitizeFolderName(req.params.folderName)
+	const rawInput = req.params.folderName
+	let inputFolderName = rawInput
+	let template = ""
+	if (rawInput.includes("~")) {
+		// advanced form creation
+		const particle = new Particle(rawInput.replace(/~/g, "\n"))
+		template = sanitizeFolderName(particle.get("template"))
+		inputFolderName = particle.get("folder") || particle.particleAt(0).getLine()
+	}
+	const folderName = sanitizeFolderName(inputFolderName)
 	const folderPath = path.join(rootFolder, folderName)
 
 	if (!isValidFolderName(folderName)) return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z and pass a few other checks.`, folderName })
@@ -188,10 +197,16 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 	if (fs.existsSync(folderPath)) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName })
 
 	try {
-		fs.mkdirSync(folderPath, { recursive: true })
-		const stamp = stamps.bare
-		fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
-		execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+		if (template) {
+			const templatePath = path.join(rootFolder, template)
+			if (!fs.existsSync(templatePath)) return handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName })
+			execSync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
+		} else {
+			fs.mkdirSync(folderPath, { recursive: true })
+			const stamp = stamps.bare
+			fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
+			execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+		}
 		updateList()
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 	} catch (error) {
