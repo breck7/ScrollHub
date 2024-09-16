@@ -55,6 +55,7 @@ It should also serve this folder statically
 const express = require("express")
 const { execSync } = require("child_process")
 const fs = require("fs")
+const os = require("os")
 const path = require("path")
 const https = require("https")
 const http = require("http")
@@ -68,6 +69,7 @@ const fileUpload = require("express-fileupload")
 const app = express()
 const port = 80
 const maxSize = 10 * 1000 * 1024
+const hostname = os.hostname()
 
 // Middleware to parse URL-encoded bodies (form data)
 app.use(express.urlencoded({ extended: true }))
@@ -100,28 +102,55 @@ const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length
 
 app.get("/foldersPublished", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
-	res.send(allFolders.length.toString())
+	res.send(Object.values(folderCache).length.toString())
 })
 
-const getFolders = () => {
-	const all = fs.readdirSync(rootFolder).map(folder => {
-		const fullPath = path.join(rootFolder, folder)
-		const stats = fs.statSync(fullPath)
-		if (!stats.isDirectory()) return null
-		const { ctime, mtime } = stats
-		return {
-			folder,
-			folderLink: folder + "/",
-			editUrl: `edit.html?folderName=${folder}&fileName=index.scroll`,
-			ctime
+const updateFolder = folder => {
+	const fullPath = path.join(rootFolder, folder)
+	const stats = fs.statSync(fullPath)
+
+	if (!stats.isDirectory()) return null
+
+	const { ctime, mtime } = stats
+
+	// Get number of files and total size
+	const files = fs.readdirSync(fullPath)
+	let fileSize = 0
+	let fileCount = 0
+
+	files.forEach(file => {
+		const filePath = path.join(fullPath, file)
+		const fileStats = fs.statSync(filePath)
+		if (fileStats.isFile()) {
+			fileSize += fileStats.size
+			fileCount++
 		}
 	})
-	return all.filter(i => i)
-}
 
-let allFolders
-const updateList = () => {
-	allFolders = getFolders()
+	// Get number of git commits
+	let commitCount = 0
+	try {
+		const gitCommits = execSync(`git rev-list --count HEAD`, { cwd: fullPath })
+		commitCount = parseInt(gitCommits.toString().trim(), 10)
+	} catch (err) {
+		console.log(`Error getting git commits for folder: ${folder}`)
+	}
+
+	folderCache[folder] = {
+		folder,
+		folderLink: folder + "/",
+		editUrl: `edit.html?folderName=${folder}&fileName=index.scroll`,
+		ctime,
+		mtime,
+		files: fileCount,
+		MB: (fileSize / (1024 * 1024)).toFixed(3),
+		commits: commitCount
+	}
+}
+const folderCache = {}
+fs.readdirSync(rootFolder).map(updateFolder)
+const buildListFile = () => {
+	const folders = Object.values(folderCache)
 	const scroll = `settings.scroll
 homeButton
 buildHtml
@@ -131,14 +160,15 @@ title Folders
 
 <link rel="stylesheet" type="text/css" href="style.css" />
 
-mediumColumns 1
-${allFolders.length} published folders on this server
+wideColumns 1
+${hostname} serves ${folders.length} folders.
+ link / ${hostname}
 
 table
  orderBy -ctime
   printTable
  data
-  ${new Particle(allFolders).asCsv.replace(/\n/g, "\n  ")}
+  ${new Particle(folders).asCsv.replace(/\n/g, "\n  ")}
 
 endColumns
 tableSearch
@@ -146,8 +176,7 @@ scrollVersionLink`
 	fs.writeFileSync(path.join(__dirname, "list.scroll"), scroll, "utf8")
 	execSync(`scroll build`, { cwd: __dirname })
 }
-
-updateList()
+buildListFile()
 
 app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
 
@@ -220,8 +249,9 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 			fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
 			execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 		}
-		updateList()
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
+		updateFolder(folderName)
+		buildListFile()
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("Sorry, an error occurred while creating the folder:", error)
