@@ -1,8 +1,11 @@
 // STDLib
-const { execSync, spawn } = require("child_process")
+const { exec, execSync, spawn } = require("child_process")
 const fs = require("fs")
+const fsp = require("fs").promises
 const os = require("os")
 const path = require("path")
+const util = require("util")
+const execAsync = util.promisify(exec)
 
 // Web server
 const express = require("express")
@@ -46,35 +49,52 @@ app.get("/foldersPublished", (req, res) => {
 	res.send(Object.values(folderCache).length.toString())
 })
 
-const updateFolder = folder => {
+const updateFolder = async folder => {
 	const fullPath = path.join(rootFolder, folder)
-	const stats = fs.statSync(fullPath)
+	const stats = await fsp.stat(fullPath)
 
 	if (!stats.isDirectory()) return null
 
 	const { ctime, mtime } = stats
 
 	// Get number of files and total size
-	const files = fs.readdirSync(fullPath)
 	let fileSize = 0
 	let fileCount = 0
+	const files = await fsp.readdir(fullPath)
 
-	files.forEach(file => {
-		const filePath = path.join(fullPath, file)
-		const fileStats = fs.statSync(filePath)
-		if (fileStats.isFile()) {
-			fileSize += fileStats.size
-			fileCount++
-		}
-	})
+	await Promise.all(
+		files.map(async file => {
+			const filePath = path.join(fullPath, file)
+			const fileStats = await fsp.stat(filePath)
+			if (fileStats.isFile()) {
+				fileSize += fileStats.size
+				fileCount++
+			}
+		})
+	)
 
 	// Get number of git commits
 	let commitCount = 0
 	try {
-		const gitCommits = execSync(`git rev-list --count HEAD`, { cwd: fullPath })
-		commitCount = parseInt(gitCommits.toString().trim(), 10)
+		const gitCommits = await new Promise((resolve, reject) => {
+			const gitProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: fullPath })
+
+			let result = ""
+			gitProcess.stdout.on("data", data => {
+				result += data.toString()
+			})
+
+			gitProcess.on("close", code => {
+				if (code === 0) {
+					resolve(result.trim())
+				} else {
+					reject(new Error(`git process exited with code ${code}`))
+				}
+			})
+		})
+		commitCount = parseInt(gitCommits, 10)
 	} catch (err) {
-		console.log(`Error getting git commits for folder: ${folder}`)
+		console.error(`Error getting git commits for folder: ${folder}`)
 	}
 
 	folderCache[folder] = {
@@ -88,9 +108,17 @@ const updateFolder = folder => {
 		commits: commitCount
 	}
 }
+
 const folderCache = {}
-fs.readdirSync(rootFolder).map(updateFolder)
-const buildListFile = () => {
+
+const initCache = async () => {
+	const folders = await fsp.readdir(rootFolder)
+	await Promise.all(folders.map(updateFolder))
+	buildListFile()
+}
+initCache()
+
+const buildListFile = async () => {
 	const folders = Object.values(folderCache)
 	const scroll = `settings.scroll
 homeButton
@@ -114,10 +142,9 @@ table
 endColumns
 tableSearch
 scrollVersionLink`
-	fs.writeFileSync(path.join(__dirname, "list.scroll"), scroll, "utf8")
-	execSync(`scroll build`, { cwd: __dirname })
+	await fsp.writeFile(path.join(__dirname, "list.scroll"), scroll, "utf8")
+	await execAsync(`scroll build`, { cwd: __dirname })
 }
-buildListFile()
 
 app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
 
@@ -149,94 +176,104 @@ const stamps = {
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create/:folderName(*)", createLimiter, (req, res) => {
+app.get("/create/:folderName(*)", createLimiter, async (req, res) => {
 	const rawInput = req.params.folderName
 	let inputFolderName = rawInput
 	let template = ""
+
 	if (rawInput.includes("~")) {
-		// advanced form creation
 		const particle = new Particle(rawInput.replace(/~/g, "\n"))
 		inputFolderName = particle.particleAt(0).getLine()
 		template = particle.particleAt(1).getLine()
 	}
+
 	const folderName = sanitizeFolderName(inputFolderName)
 	const folderPath = path.join(rootFolder, folderName)
 
 	if (!isValidFolderName(folderName))
 		return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and pass a few other checks.`, folderName: rawInput })
 
-	if (fs.existsSync(folderPath)) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName: rawInput })
+	if (folderCache[folderName]) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName: rawInput })
 
 	try {
 		if (template) {
 			const isUrl = template.startsWith("https") || template.startsWith("http")
 			if (isUrl) {
-				// http://hub.scroll.pub/git/onlybreck
 				try {
 					new URL(template)
 				} catch (err) {
 					return handleCreateError(res, { errorMessage: `Invalid template url.`, folderName: rawInput })
 				}
-				execSync(`git clone ${template} ${folderName} && cd ${folderName} && scroll build`, { cwd: rootFolder })
+				await execAsync(`git clone ${template} ${folderName} && cd ${folderName} && scroll build`, { cwd: rootFolder })
 			} else {
 				template = sanitizeFolderName(template)
 				const templatePath = path.join(rootFolder, template)
-				if (!fs.existsSync(templatePath)) return handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName: rawInput })
-				execSync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
+				try {
+					await fsp.access(templatePath)
+				} catch (err) {
+					return handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName: rawInput })
+				}
+				await execAsync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
 			}
-		} else {
-			execSync(`mv ${path.join(__dirname, "blankTemplate")} ${folderPath}`)
-		}
+		} else await execAsync(`mv ${path.join(__dirname, "blankTemplate")} ${folderPath}`)
+
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
-		updateFolder(folderName)
-		buildListFile()
-		cookNext()
+		prepNext(folderName)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("Sorry, an error occurred while creating the folder:", error)
 	}
 })
 
-const cookNext = () => {
+const prepNext = async folderName => {
+	cookNext()
+	updateFolder(folderName)
+	buildListFile()
+}
+
+const cookNext = async () => {
 	const folderPath = path.join(__dirname, "blankTemplate")
-	if (fs.existsSync(folderPath)) return
-	fs.mkdirSync(folderPath, { recursive: true })
+	const folderExists = await fsp
+		.access(folderPath)
+		.then(() => true)
+		.catch(() => false)
+
+	if (folderExists) return
+
+	await fsp.mkdir(folderPath, { recursive: true })
+
 	const stamp = stamps.bare
-	fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
-	execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+	await fsp.writeFile(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
+
+	await execAsync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 }
 cookNext()
-app.get("/ls", (req, res) => {
+app.get("/ls", async (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)
 
-	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
-	try {
-		const files = fs.readdirSync(folderPath).filter(file => {
-			const ext = path.extname(file).toLowerCase().slice(1)
-			return allowedExtensions.includes(ext)
-		})
+	const files = (await fsp.readdir(folderPath)).filter(file => {
+		const ext = path.extname(file).toLowerCase().slice(1)
+		return allowedExtensions.includes(ext)
+	})
 
-		res.setHeader("Content-Type", "text/plain")
-		res.send(files.join("\n"))
-	} catch (error) {
-		console.error(error)
-		res.status(500).send("An error occurred while listing the .scroll files")
-	}
+	res.setHeader("Content-Type", "text/plain")
+	res.send(files.join("\n"))
 })
 
-const runCommand = (req, res, command) => {
+const runCommand = async (req, res, command) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)
 
-	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
 	try {
-		const output = execSync(`scroll ${command}`, { cwd: folderPath })
-		res.send(output.toString())
+		const { stdout } = await execAsync(`scroll ${command}`, { cwd: folderPath })
+		res.send(stdout.toString())
 	} catch (error) {
-		console.error(error)
+		console.error(`Error running '${command}' in '${folderName}':`, error)
 		res.status(500).send(`An error occurred while running '${command}' in '${folderName}'`)
 	}
 }
@@ -264,7 +301,7 @@ app.get("/git/:repo/*", (req, res) => {
 })
 
 // todo: check pw
-app.post("/git/:repo/*", (req, res) => {
+app.post("/git/:repo/*", async (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(rootFolder, repo)
 
@@ -278,10 +315,10 @@ app.post("/git/:repo/*", (req, res) => {
 		const ps = spawn(service.cmd, service.args.concat(repoPath))
 		ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
 
-		// Log successful Git pushes
-		ps.on("close", code => {
+		// Handle Git pushes asynchronously and build the scroll
+		ps.on("close", async code => {
 			if (code === 0 && service.action === "push") {
-				execSync(`scroll build`, { cwd: repoPath })
+				await execAsync(`scroll build`, { cwd: repoPath })
 			}
 		})
 	})
@@ -298,16 +335,20 @@ const extensionOkay = (filepath, res) => {
 	return true
 }
 
-app.get("/read", (req, res) => {
+app.get("/read", async (req, res) => {
 	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
 
 	const ok = extensionOkay(filePath, res)
 	if (!ok) return
 
-	if (!fs.existsSync(filePath)) return res.status(404).send("File not found")
-
 	try {
-		const content = fs.readFileSync(filePath, "utf8")
+		const fileExists = await fsp
+			.access(filePath)
+			.then(() => true)
+			.catch(() => false)
+		if (!fileExists) return res.status(404).send("File not found")
+
+		const content = await fsp.readFile(filePath, "utf8")
 		res.setHeader("Content-Type", "text/plain")
 		res.send(content)
 	} catch (error) {
@@ -316,24 +357,31 @@ app.get("/read", (req, res) => {
 	}
 })
 
-const writeFile = (res, filePath, content) => {
+const writeFile = async (res, filePath, content) => {
 	filePath = path.join(rootFolder, filePath)
 
 	const ok = extensionOkay(filePath, res)
 	if (!ok) return
 
 	const folderPath = path.dirname(filePath)
-	if (!fs.existsSync(folderPath)) return res.status(400).send("Folder does not exist")
+
+	// Check if the folder exists asynchronously
+	const folderExists = await fsp
+		.access(folderPath)
+		.then(() => true)
+		.catch(() => false)
+	if (!folderExists) return res.status(400).send("Folder does not exist")
 
 	// Extract folder name and file name for the redirect
 	const folderName = path.relative(rootFolder, folderPath)
 	const fileName = path.basename(filePath)
 
 	try {
-		fs.writeFileSync(filePath, content, "utf8")
+		// Write the file content asynchronously
+		await fsp.writeFile(filePath, content, "utf8")
 
-		// Run scroll build on the folder
-		execSync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
+		// Run the scroll build and git commands asynchronously
+		await execAsync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 	} catch (error) {
@@ -342,19 +390,17 @@ const writeFile = (res, filePath, content) => {
 	}
 }
 
-app.get("/history/:folderName", (req, res) => {
+app.get("/history/:folderName", async (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(rootFolder, folderName)
-
-	if (!fs.existsSync(folderPath)) return res.status(404).send("Folder not found")
-
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 	try {
-		// Get the git log and format it as CSV
-		const gitLog = execSync(`git log --pretty=format:"%h,%an,%ad,%at,%s" --date=short`, { cwd: folderPath })
+		// Get the git log asynchronously and format it as CSV
+		const { stdout: gitLog } = await execAsync(`git log --pretty=format:"%h,%an,%ad,%at,%s" --date=short`, { cwd: folderPath })
 
 		res.setHeader("Content-Type", "text/plain; charset=utf-8")
 		const header = "commit,author,date,timestamp,message\n"
-		res.send(header + gitLog.toString())
+		res.send(header + gitLog)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while fetching the git log")
@@ -365,49 +411,37 @@ app.get("/write", (req, res) => writeFile(res, decodeURIComponent(req.query.file
 app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.content))
 
 // Add a route for file uploads
-app.post("/upload", (req, res) => {
-	if (!req.files || Object.keys(req.files).length === 0) {
-		return res.status(400).send("No files were uploaded.")
-	}
+app.post("/upload", async (req, res) => {
+	if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.")
 
 	const file = req.files.file
 	const folderName = req.body.folderName
 	const folderPath = path.join(rootFolder, sanitizeFolderName(folderName))
 
-	// Check if folder exists
-	if (!fs.existsSync(folderPath)) {
-		return res.status(404).send("Folder not found")
-	}
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
 	// Check file extension
 	const fileExtension = path.extname(file.name).toLowerCase().slice(1)
-	if (!allowedExtensions.includes(fileExtension)) {
-		return res.status(400).send(`Invalid file type. Only ${allowedExtensions.join(" ")} files are allowed.`)
-	}
+	if (!allowedExtensions.includes(fileExtension)) return res.status(400).send(`Invalid file type. Only ${allowedExtensions.join(" ")} files are allowed.`)
 
-	if (file.size > maxSize) {
-		return res.status(400).send("File size exceeds the maximum limit of 1MB.")
-	}
+	if (file.size > maxSize) return res.status(400).send("File size exceeds the maximum limit of 1MB.")
 
 	// Save file to disk
 	const fileName = sanitizeFolderName(path.basename(file.name, path.extname(file.name))) + "." + fileExtension
 	const filePath = path.join(folderPath, fileName)
 
-	file.mv(filePath, err => {
-		if (err) {
-			console.error(err)
-			return res.status(500).send("An error occurred while uploading the file.")
-		}
+	try {
+		// Use async `mv` with `await`
+		await file.mv(filePath)
 
-		// Run scroll build on the folder
-		try {
-			execSync(`git add ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
-			res.send("File uploaded successfully")
-		} catch (error) {
-			console.error(error)
-			res.status(500).send("File uploaded, but an error occurred while rebuilding the folder.")
-		}
-	})
+		// Run git and scroll commands asynchronously
+		await execAsync(`git add ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
+
+		res.send("File uploaded successfully")
+	} catch (err) {
+		console.error(err)
+		res.status(500).send("An error occurred while uploading or processing the file.")
+	}
 })
 
 // Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
@@ -416,13 +450,18 @@ app.post("/upload", (req, res) => {
 
 // Middleware to serve .scroll files as plain text
 // This should come BEFORE the static file serving middleware
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
 	if (!req.url.endsWith(".scroll")) return next()
+
 	const filePath = path.join(rootFolder, decodeURIComponent(req.url))
-	if (fs.existsSync(filePath)) {
+
+	try {
+		await fsp.access(filePath)
 		res.setHeader("Content-Type", "text/plain; charset=utf-8")
 		res.sendFile(filePath)
-	} else next()
+	} catch (err) {
+		next()
+	}
 })
 
 // Serve the folders directory from the root URL
