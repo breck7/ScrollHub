@@ -1,57 +1,3 @@
-/*
-
-ServerJS has these routes:
-
-/createFromForm (GET)
- params: folderName
- redirects to GET: create/[FolderName]
-/create (GET)
- example: create/breckyunits.com
- parameters: folderName
- Takes a foldername and creates a site in this folder on the server.
- - First it sanitizes the name, allowing only a-z and 0-9, all lowercase, and periods and underscores.
-  - Folders cannot start with numbers or periods or underscores
-  - it rate limits to 1 site per IP per 10 seconds
-   - if someone creates sites too fast, it says "You are creating sites too fast"
-  - If the sanitized name already exists, or is less than 1 character, display an error message and return HTTP server error.
- - Then it runs mkdir
-  - Then it runs, through exec sync, "scroll init" in that folder
-   - Then it runs, scroll build
- - Then it redirects user to /edit/folderName
-/build (GET)
- example: build/breckyunits.com
-  - This runs "scroll build" on the folder name provided, using execSync, if the folder exists
-/edit (GET)
- example: edit/folderName 
-/format (GET)
- example: format/folderName
- - This runs "scroll format" on the folder name provided, using execSync, if the folder exists and dumps the results to user
-/test (GET)
- example: test/folderName
- - This runs "scroll test" on the folder name provided, using execSync, if the folder exists, and dumps the results to user
-/siteCounter (GET)
- - returns number of sites created
-/ls (GET)
- example: ls/folderName
- - This runs "ls *.scroll" in folderName and returns the results as plain text one filename per line
-/read (GET)
- example: read/{filePath}
- - This takes filePath param, which can be a deep multipart path, and returns the contents of the file as plain text
- - Verify the provided path ends with .scroll.
-/write (GET)
- example: write?filePath=${filePath}&content=${content}
-  - This takes filepath param, which can be a deep multpart path, and writes the content in content to disk.
-  - Verify the file ends with .scroll
-  - It vierfies the folder exists
-  - It then runs scroll build on the folder provided
-  - It uri decodes the filePath and content params first.
-
-
-
-It should also serve this folder statically
-
-*/
-
 const express = require("express")
 const { execSync } = require("child_process")
 const fs = require("fs")
@@ -71,10 +17,8 @@ const port = 80
 const maxSize = 10 * 1000 * 1024
 const hostname = os.hostname()
 
-// Middleware to parse URL-encoded bodies (form data)
 app.use(express.urlencoded({ extended: true }))
 
-// Add file upload middleware
 app.use(
 	fileUpload({
 		//limits: { fileSize: 1000 * 1024 } // 100KB limit
@@ -84,20 +28,17 @@ app.use(
 const rootFolder = path.join(__dirname, "folders")
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
 
-// Rate limiting middleware
 const rateLimitSeconds = 0.1
 const createLimiter = rateLimit({
-	windowMs: rateLimit * 1000, // 10 seconds
-	max: 1, // limit each IP to 1 request per windowMs
+	windowMs: rateLimit * 1000,
+	max: 1,
 	message: `Sorry, you exceeded 1 folder every ${rateLimitSeconds} seconds`,
 	standardHeaders: true,
 	legacyHeaders: false
 })
 
-// Sanitize folder name
 const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 
-// Validate folder name
 const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
 
 app.get("/foldersPublished", (req, res) => {
