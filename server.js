@@ -1,34 +1,34 @@
-const express = require("express")
-const { execSync } = require("child_process")
+// STDLib
+const { execSync, spawn } = require("child_process")
 const fs = require("fs")
 const os = require("os")
 const path = require("path")
+
+// Web server
+const express = require("express")
 const https = require("https")
 const http = require("http")
 const rateLimit = require("express-rate-limit")
-const httpBackend = require("git-http-backend")
-const { spawn } = require("child_process")
-const { Particle } = require("scrollsdk/products/Particle.js")
-
 const fileUpload = require("express-fileupload")
+
+// Git server
+const httpBackend = require("git-http-backend")
+
+// PPS
+const { Particle } = require("scrollsdk/products/Particle.js")
 
 const app = express()
 const port = 80
+const rateLimitSeconds = 0.1
 const maxSize = 10 * 1000 * 1024
+const allowedExtensions = "scroll parsers txt html htm css js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
 const hostname = os.hostname()
+const rootFolder = path.join(__dirname, "folders")
 
 app.use(express.urlencoded({ extended: true }))
-
-app.use(
-	fileUpload({
-		//limits: { fileSize: 1000 * 1024 } // 100KB limit
-	})
-)
-
-const rootFolder = path.join(__dirname, "folders")
+app.use(fileUpload({ limits: { fileSize: maxSize } }))
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
 
-const rateLimitSeconds = 0.1
 const createLimiter = rateLimit({
 	windowMs: rateLimit * 1000,
 	max: 1,
@@ -206,9 +206,6 @@ const cookNext = () => {
 	execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
 }
 cookNext()
-
-const allowedExtensions = "scroll parsers txt html htm css js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
-
 app.get("/ls", (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)
@@ -412,8 +409,6 @@ app.post("/upload", (req, res) => {
 		}
 	})
 })
-
-// Add a route to support the uploading of files of these kinds  jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps
 
 // Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
