@@ -244,19 +244,27 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 				execSync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
 			}
 		} else {
-			fs.mkdirSync(folderPath, { recursive: true })
-			const stamp = stamps.bare
-			fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
-			execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+			execSync(`mv ${path.join(__dirname, "blankTemplate")} ${folderPath}`)
 		}
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
 		updateFolder(folderName)
 		buildListFile()
+		cookNext()
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("Sorry, an error occurred while creating the folder:", error)
 	}
 })
+
+const cookNext = () => {
+	const folderPath = path.join(__dirname, "blankTemplate")
+	if (fs.existsSync(folderPath)) return
+	fs.mkdirSync(folderPath, { recursive: true })
+	const stamp = stamps.bare
+	fs.writeFileSync(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
+	execSync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+}
+cookNext()
 
 const allowedExtensions = "scroll parsers txt html htm css js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
 
