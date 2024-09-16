@@ -363,15 +363,15 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     return inst
   }
 
-  var nonASCIISingleCaseWordChar = /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/
-  function isWordCharBasic(ch) {
-    return /\w/.test(ch) || (ch > "\x80" && (ch.toUpperCase() != ch.toLowerCase() || nonASCIISingleCaseWordChar.test(ch)))
+  var nonASCIISingleCaseAtomChar = /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/
+  function isAtomCharBasic(ch) {
+    return /\w/.test(ch) || (ch > "\x80" && (ch.toUpperCase() != ch.toLowerCase() || nonASCIISingleCaseAtomChar.test(ch)))
   }
-  function isWordChar(ch, helper) {
+  function isAtomChar(ch, helper) {
     if (!helper) {
-      return isWordCharBasic(ch)
+      return isAtomCharBasic(ch)
     }
-    if (helper.source.indexOf("\\w") > -1 && isWordCharBasic(ch)) {
+    if (helper.source.indexOf("\\w") > -1 && isAtomCharBasic(ch)) {
       return true
     }
     return helper.test(ch)
@@ -8673,16 +8673,16 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     "Ctrl-B": "goCharLeft",
     "Ctrl-P": "goLineUp",
     "Ctrl-N": "goLineDown",
-    "Alt-F": "goWordRight",
-    "Alt-B": "goWordLeft",
+    "Alt-F": "goAtomRight",
+    "Alt-B": "goAtomLeft",
     "Ctrl-A": "goLineStart",
     "Ctrl-E": "goLineEnd",
     "Ctrl-V": "goPageDown",
     "Shift-Ctrl-V": "goPageUp",
     "Ctrl-D": "delCharAfter",
     "Ctrl-H": "delCharBefore",
-    "Alt-D": "delWordAfter",
-    "Alt-Backspace": "delWordBefore",
+    "Alt-D": "delAtomAfter",
+    "Alt-Backspace": "delAtomBefore",
     "Ctrl-K": "killLine",
     "Ctrl-T": "transposeChars",
     "Ctrl-O": "openLine"
@@ -9170,7 +9170,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     goColumnRight: function (cm) {
       return cm.moveH(1, "column")
     },
-    goWordLeft: function (cm) {
+    goAtomLeft: function (cm) {
       return cm.moveH(-1, "word")
     },
     goGroupRight: function (cm) {
@@ -9179,7 +9179,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     goGroupLeft: function (cm) {
       return cm.moveH(-1, "group")
     },
-    goWordRight: function (cm) {
+    goAtomRight: function (cm) {
       return cm.moveH(1, "word")
     },
     delCharBefore: function (cm) {
@@ -9188,10 +9188,10 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     delCharAfter: function (cm) {
       return cm.deleteH(1, "char")
     },
-    delWordBefore: function (cm) {
+    delAtomBefore: function (cm) {
       return cm.deleteH(-1, "word")
     },
-    delWordAfter: function (cm) {
+    delAtomAfter: function (cm) {
       return cm.deleteH(1, "word")
     },
     delGroupBefore: function (cm) {
@@ -9740,7 +9740,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       return new Range(pos, pos)
     }
     if (unit == "word") {
-      return cm.findWordAt(pos)
+      return cm.findAtomAt(pos)
     }
     if (unit == "line") {
       return new Range(Pos(pos.line, 0), clipPos(cm.doc, Pos(pos.line + 1, 0)))
@@ -10470,7 +10470,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
             return
           }
           e_preventDefault(e)
-          var word = cm.findWordAt(pos)
+          var word = cm.findAtomAt(pos)
           extendSelection(cm.doc, word.anchor, word.head)
         })
       )
@@ -10540,7 +10540,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
           range = new Range(pos, pos)
         } else if (!touch.prev.prev || farAway(touch, touch.prev.prev)) {
           // Double tap
-          range = cm.findWordAt(pos)
+          range = cm.findAtomAt(pos)
         } // Triple tap
         else {
           range = new Range(Pos(pos.line, 0), clipPos(cm.doc, Pos(pos.line + 1, 0)))
@@ -11273,7 +11273,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       }),
 
       // Find the word at the given position (as returned by coordsChar).
-      findWordAt: function (pos) {
+      findAtomAt: function (pos) {
         var doc = this.doc,
           line = getLine(doc, pos.line).text
         var start = pos.ch,
@@ -11286,16 +11286,16 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
             ++end
           }
           var startChar = line.charAt(start)
-          var check = isWordChar(startChar, helper)
+          var check = isAtomChar(startChar, helper)
             ? function (ch) {
-                return isWordChar(ch, helper)
+                return isAtomChar(ch, helper)
               }
             : /\s/.test(startChar)
             ? function (ch) {
                 return /\s/.test(ch)
               }
             : function (ch) {
-                return !/\s/.test(ch) && !isWordChar(ch)
+                return !/\s/.test(ch) && !isAtomChar(ch)
               }
           while (start > 0 && check(line.charAt(start - 1))) {
             --start
@@ -11515,7 +11515,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
           break
         }
         var cur = lineObj.text.charAt(pos.ch) || "\n"
-        var type = isWordChar(cur, helper) ? "w" : group && cur == "\n" ? "n" : !group || /\s/.test(cur) ? null : "p"
+        var type = isAtomChar(cur, helper) ? "w" : group && cur == "\n" ? "n" : !group || /\s/.test(cur) ? null : "p"
         if (group && !first && !type) {
           type = "s"
         }
@@ -12762,7 +12762,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     CodeMirror.splitLines = splitLinesAuto
     CodeMirror.countColumn = countColumn
     CodeMirror.findColumn = findColumn
-    CodeMirror.isWordChar = isWordCharBasic
+    CodeMirror.isAtomChar = isAtomCharBasic
     CodeMirror.Pass = Pass
     CodeMirror.signal = signal
     CodeMirror.Line = Line
@@ -12861,7 +12861,6 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/5/LICENSE
-
 ;(function (mod) {
   if (typeof exports == "object" && typeof module == "object")
     // CommonJS
@@ -12950,7 +12949,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: https://codemirror.net/LICENSE
 
-;(function(mod) {
+;(function (mod) {
   if (typeof exports == "object" && typeof module == "object")
     // CommonJS
     mod(require("../../lib/codemirror"))
@@ -12959,7 +12958,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     define(["../../lib/codemirror"], mod)
   // Plain browser env
   else mod(CodeMirror)
-})(function(CodeMirror) {
+})(function (CodeMirror) {
   "use strict"
 
   var HINT_ELEMENT_CLASS = "CodeMirror-hint"
@@ -12967,7 +12966,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 
   // This is the old interface, kept around for now to stay
   // backwards-compatible.
-  CodeMirror.showHint = function(cm, getHints, options) {
+  CodeMirror.showHint = function (cm, getHints, options) {
     if (!getHints) return cm.showHint(options)
     if (options && options.async) getHints.async = true
     var newOpts = { hint: getHints }
@@ -12975,7 +12974,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     return cm.showHint(newOpts)
   }
 
-  CodeMirror.defineExtension("showHint", function(options) {
+  CodeMirror.defineExtension("showHint", function (options) {
     options = parseOptions(this, this.getCursor("start"), options)
     var selections = this.listSelections()
     if (selections.length > 1) return
@@ -12996,7 +12995,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     completion.update(true)
   })
 
-  CodeMirror.defineExtension("closeHint", function() {
+  CodeMirror.defineExtension("closeHint", function () {
     if (this.state.completionActive) this.state.completionActive.close()
   })
 
@@ -13012,7 +13011,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     var self = this
     cm.on(
       "cursorActivity",
-      (this.activityFunc = function() {
+      (this.activityFunc = function () {
         self.cursorActivity()
       })
     )
@@ -13020,13 +13019,13 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 
   var requestAnimationFrame =
     window.requestAnimationFrame ||
-    function(fn) {
+    function (fn) {
       return setTimeout(fn, 1000 / 60)
     }
   var cancelAnimationFrame = window.cancelAnimationFrame || clearTimeout
 
   Completion.prototype = {
-    close: function() {
+    close: function () {
       if (!this.active()) return
       this.cm.state.completionActive = null
       this.tick = null
@@ -13037,11 +13036,11 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       CodeMirror.signal(this.cm, "endCompletion", this.cm)
     },
 
-    active: function() {
+    active: function () {
       return this.cm.state.completionActive == this
     },
 
-    pick: function(data, i) {
+    pick: function (data, i) {
       var completion = data.list[i]
       if (completion.hint) completion.hint(this.cm, data, completion)
       else this.cm.replaceRange(getText(completion), completion.from || data.from, completion.to || data.to, "complete")
@@ -13049,7 +13048,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       this.close()
     },
 
-    cursorActivity: function() {
+    cursorActivity: function () {
       if (this.debounce) {
         cancelAnimationFrame(this.debounce)
         this.debounce = 0
@@ -13057,33 +13056,27 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 
       var pos = this.cm.getCursor(),
         line = this.cm.getLine(pos.line)
-      if (
-        pos.line != this.startPos.line ||
-        line.length - pos.ch != this.startLen - this.startPos.ch ||
-        pos.ch < this.startPos.ch ||
-        this.cm.somethingSelected() ||
-        (!pos.ch || this.options.closeCharacters.test(line.charAt(pos.ch - 1)))
-      ) {
+      if (pos.line != this.startPos.line || line.length - pos.ch != this.startLen - this.startPos.ch || pos.ch < this.startPos.ch || this.cm.somethingSelected() || !pos.ch || this.options.closeCharacters.test(line.charAt(pos.ch - 1))) {
         this.close()
       } else {
         var self = this
-        this.debounce = requestAnimationFrame(function() {
+        this.debounce = requestAnimationFrame(function () {
           self.update()
         })
         if (this.widget) this.widget.disable()
       }
     },
 
-    update: function(first) {
+    update: function (first) {
       if (this.tick == null) return
       var self = this,
         myTick = ++this.tick
-      fetchHints(this.options.hint, this.cm, this.options, function(data) {
+      fetchHints(this.options.hint, this.cm, this.options, function (data) {
         if (self.tick == myTick) self.finishUpdate(data, first)
       })
     },
 
-    finishUpdate: function(data, first) {
+    finishUpdate: function (data, first) {
       if (this.data) CodeMirror.signal(this.data, "update")
 
       var picked = (this.widget && this.widget.picked) || (first && this.options.completeSingle)
@@ -13119,22 +13112,22 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 
   function buildKeyMap(completion, handle) {
     var baseMap = {
-      Up: function() {
+      Up: function () {
         handle.moveFocus(-1)
       },
-      Down: function() {
+      Down: function () {
         handle.moveFocus(1)
       },
-      PageUp: function() {
+      PageUp: function () {
         handle.moveFocus(-handle.menuSize() + 1, true)
       },
-      PageDown: function() {
+      PageDown: function () {
         handle.moveFocus(handle.menuSize() - 1, true)
       },
-      Home: function() {
+      Home: function () {
         handle.setFocus(0)
       },
-      End: function() {
+      End: function () {
         handle.setFocus(handle.length - 1)
       },
       Enter: handle.pick,
@@ -13145,10 +13138,10 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     var mac = /Mac/.test(navigator.platform)
 
     if (mac) {
-      baseMap["Ctrl-P"] = function() {
+      baseMap["Ctrl-P"] = function () {
         handle.moveFocus(-1)
       }
-      baseMap["Ctrl-N"] = function() {
+      baseMap["Ctrl-N"] = function () {
         handle.moveFocus(1)
       }
     }
@@ -13158,7 +13151,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     function addBinding(key, val) {
       var bound
       if (typeof val != "string")
-        bound = function(cm) {
+        bound = function (cm) {
           return val(cm, handle)
         }
       // This mechanism is deprecated
@@ -13205,17 +13198,15 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       elt.hintId = i
     }
 
-    var pos = cm.cursorCoords(completion.options.alignWithWord ? data.from : null)
+    var pos = cm.cursorCoords(completion.options.alignWithAtom ? data.from : null)
     var left = pos.left,
       top = pos.bottom,
       below = true
     hints.style.left = left + "px"
     hints.style.top = top + "px"
     // If we're at the edge of the screen, then we want the menu to appear on the left of the cursor.
-    var winW =
-      parentWindow.innerWidth || Math.max(ownerDocument.body.offsetWidth, ownerDocument.documentElement.offsetWidth)
-    var winH =
-      parentWindow.innerHeight || Math.max(ownerDocument.body.offsetHeight, ownerDocument.documentElement.offsetHeight)
+    var winW = parentWindow.innerWidth || Math.max(ownerDocument.body.offsetWidth, ownerDocument.documentElement.offsetWidth)
+    var winH = parentWindow.innerHeight || Math.max(ownerDocument.body.offsetHeight, ownerDocument.documentElement.offsetHeight)
     ;(completion.options.container || ownerDocument.body).appendChild(hints)
     var box = hints.getBoundingClientRect(),
       overlapY = box.bottom - winH
@@ -13248,26 +13239,24 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       }
       hints.style.left = (left = pos.left - overlapX) + "px"
     }
-    if (scrolls)
-      for (var node = hints.firstChild; node; node = node.nextSibling)
-        node.style.paddingRight = cm.display.nativeBarWidth + "px"
+    if (scrolls) for (var node = hints.firstChild; node; node = node.nextSibling) node.style.paddingRight = cm.display.nativeBarWidth + "px"
 
     cm.addKeyMap(
       (this.keyMap = buildKeyMap(completion, {
-        moveFocus: function(n, avoidWrap) {
+        moveFocus: function (n, avoidWrap) {
           widget.changeActive(widget.selectedHint + n, avoidWrap)
         },
-        setFocus: function(n) {
+        setFocus: function (n) {
           widget.changeActive(n)
         },
-        menuSize: function() {
+        menuSize: function () {
           return widget.screenAmount()
         },
         length: completions.length,
-        close: function() {
+        close: function () {
           completion.close()
         },
-        pick: function() {
+        pick: function () {
           widget.pick()
         },
         data: data
@@ -13278,15 +13267,15 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       var closingOnBlur
       cm.on(
         "blur",
-        (this.onBlur = function() {
-          closingOnBlur = setTimeout(function() {
+        (this.onBlur = function () {
+          closingOnBlur = setTimeout(function () {
             completion.close()
           }, 100)
         })
       )
       cm.on(
         "focus",
-        (this.onFocus = function() {
+        (this.onFocus = function () {
           clearTimeout(closingOnBlur)
         })
       )
@@ -13294,12 +13283,11 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
 
     cm.on(
       "scroll",
-      (this.onScroll = function() {
+      (this.onScroll = function () {
         var curScroll = cm.getScrollInfo(),
           editor = cm.getWrapperElement().getBoundingClientRect()
         var newTop = top + startScroll.top - curScroll.top
-        var point =
-          newTop - (parentWindow.pageYOffset || (ownerDocument.documentElement || ownerDocument.body).scrollTop)
+        var point = newTop - (parentWindow.pageYOffset || (ownerDocument.documentElement || ownerDocument.body).scrollTop)
         if (!below) point += hints.offsetHeight
         if (point <= editor.top || point >= editor.bottom) return completion.close()
         hints.style.top = newTop + "px"
@@ -13307,7 +13295,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       })
     )
 
-    CodeMirror.on(hints, "dblclick", function(e) {
+    CodeMirror.on(hints, "dblclick", function (e) {
       var t = getHintElement(hints, e.target || e.srcElement)
       if (t && t.hintId != null) {
         widget.changeActive(t.hintId)
@@ -13315,7 +13303,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       }
     })
 
-    CodeMirror.on(hints, "click", function(e) {
+    CodeMirror.on(hints, "click", function (e) {
       var t = getHintElement(hints, e.target || e.srcElement)
       if (t && t.hintId != null) {
         widget.changeActive(t.hintId)
@@ -13323,8 +13311,8 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       }
     })
 
-    CodeMirror.on(hints, "mousedown", function() {
-      setTimeout(function() {
+    CodeMirror.on(hints, "mousedown", function () {
+      setTimeout(function () {
         cm.focus()
       }, 20)
     })
@@ -13334,7 +13322,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
   }
 
   Widget.prototype = {
-    close: function() {
+    close: function () {
       if (this.completion.widget != this) return
       this.completion.widget = null
       this.hints.parentNode.removeChild(this.hints)
@@ -13348,22 +13336,22 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       cm.off("scroll", this.onScroll)
     },
 
-    disable: function() {
+    disable: function () {
       this.completion.cm.removeKeyMap(this.keyMap)
       var widget = this
       this.keyMap = {
-        Enter: function() {
+        Enter: function () {
           widget.picked = true
         }
       }
       this.completion.cm.addKeyMap(this.keyMap)
     },
 
-    pick: function() {
+    pick: function () {
       this.completion.pick(this.data, this.selectedHint)
     },
 
-    changeActive: function(i, avoidWrap) {
+    changeActive: function (i, avoidWrap) {
       if (i >= this.data.list.length) i = avoidWrap ? this.data.list.length - 1 : 0
       else if (i < 0) i = avoidWrap ? 0 : this.data.list.length - 1
       if (this.selectedHint == i) return
@@ -13372,12 +13360,11 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       node = this.hints.childNodes[(this.selectedHint = i)]
       node.className += " " + ACTIVE_HINT_ELEMENT_CLASS
       if (node.offsetTop < this.hints.scrollTop) this.hints.scrollTop = node.offsetTop - 3
-      else if (node.offsetTop + node.offsetHeight > this.hints.scrollTop + this.hints.clientHeight)
-        this.hints.scrollTop = node.offsetTop + node.offsetHeight - this.hints.clientHeight + 3
+      else if (node.offsetTop + node.offsetHeight > this.hints.scrollTop + this.hints.clientHeight) this.hints.scrollTop = node.offsetTop + node.offsetHeight - this.hints.clientHeight + 3
       CodeMirror.signal(this.data, "select", this.data.list[this.selectedHint], node)
     },
 
-    screenAmount: function() {
+    screenAmount: function () {
       return Math.floor(this.hints.clientHeight / this.hints.firstChild.offsetHeight) || 1
     }
   }
@@ -13403,11 +13390,11 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     var helpers = cm.getHelpers(pos, "hint"),
       words
     if (helpers.length) {
-      var resolved = function(cm, callback, options) {
+      var resolved = function (cm, callback, options) {
         var app = applicableHelpers(cm, helpers)
         function run(i) {
           if (i == app.length) return callback(null)
-          fetchHints(app[i], cm, options, function(result) {
+          fetchHints(app[i], cm, options, function (result) {
             if (result && result.list.length > 0) callback(result)
             else run(i + 1)
           })
@@ -13417,16 +13404,16 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
       resolved.async = true
       resolved.supportsSelection = true
       return resolved
-    } else if ((words = cm.getHelper(cm.getCursor(), "hintWords"))) {
-      return function(cm) {
+    } else if ((words = cm.getHelper(cm.getCursor(), "hintAtoms"))) {
+      return function (cm) {
         return CodeMirror.hint.fromList(cm, { words: words })
       }
     } else if (CodeMirror.hint.anyword) {
-      return function(cm, options) {
+      return function (cm, options) {
         return CodeMirror.hint.anyword(cm, options)
       }
     } else {
-      return function() {}
+      return function () {}
     }
   }
 
@@ -13434,7 +13421,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
     resolve: resolveAutoHints
   })
 
-  CodeMirror.registerHelper("hint", "fromList", function(cm, options) {
+  CodeMirror.registerHelper("hint", "fromList", function (cm, options) {
     var cur = cm.getCursor(),
       token = cm.getTokenAt(cur)
     var term,
@@ -13460,7 +13447,7 @@ d.init=function(){var a=d(u),b;for(b in a)"_"!==b.charAt(0)&&(d[b]=function(b){r
   var defaultOptions = {
     hint: CodeMirror.hint.auto,
     completeSingle: true,
-    alignWithWord: true,
+    alignWithAtom: true,
     closeCharacters: /[\s()\[\]{};:>,]/,
     closeOnUnfocus: true,
     completeOnSingleClick: true,
@@ -13592,7 +13579,7 @@ class Utils {
     if (instance[command + "Command"]) return run(command + "Command")
     // Get commands from both the child and parent classes
     const classes = [Object.getPrototypeOf(instance), Object.getPrototypeOf(Object.getPrototypeOf(instance))]
-    const allCommands = classes.map(classInstance => Object.getOwnPropertyNames(classInstance).filter(word => word.endsWith("Command"))).flat()
+    const allCommands = classes.map(classInstance => Object.getOwnPropertyNames(classInstance).filter(atom => atom.endsWith("Command"))).flat()
     allCommands.sort()
     const commandAsNumber = parseInt(command) - 1
     if (command.match(/^\d+$/) && allCommands[commandAsNumber]) return run(allCommands[commandAsNumber])
@@ -13627,47 +13614,47 @@ class Utils {
     return `${color}${message}${reset}`
   }
   static ensureDelimiterNotFound(strings, delimiter) {
-    const hit = strings.find(word => word.includes(delimiter))
+    const hit = strings.find(atom => atom.includes(delimiter))
     if (hit) throw `Delimiter "${delimiter}" found in hit`
   }
   // https://github.com/rigoneri/indefinite-article.js/blob/master/indefinite-article.js
   static getIndefiniteArticle(phrase) {
-    // Getting the first word
+    // Getting the first atom
     const match = /\w+/.exec(phrase)
-    let word
-    if (match) word = match[0]
+    let atom
+    if (match) atom = match[0]
     else return "an"
-    var l_word = word.toLowerCase()
-    // Specific start of words that should be preceded by 'an'
+    var l_atom = atom.toLowerCase()
+    // Specific start of atoms that should be preceded by 'an'
     var alt_cases = ["honest", "hour", "hono"]
     for (var i in alt_cases) {
-      if (l_word.indexOf(alt_cases[i]) == 0) return "an"
+      if (l_atom.indexOf(alt_cases[i]) == 0) return "an"
     }
-    // Single letter word which should be preceded by 'an'
-    if (l_word.length == 1) {
-      if ("aedhilmnorsx".indexOf(l_word) >= 0) return "an"
+    // Single letter atom which should be preceded by 'an'
+    if (l_atom.length == 1) {
+      if ("aedhilmnorsx".indexOf(l_atom) >= 0) return "an"
       else return "a"
     }
-    // Capital words which should likely be preceded by 'an'
-    if (word.match(/(?!FJO|[HLMNS]Y.|RY[EO]|SQU|(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])[FHLMNRSX][A-Z]/)) {
+    // Capital atoms which should likely be preceded by 'an'
+    if (atom.match(/(?!FJO|[HLMNS]Y.|RY[EO]|SQU|(F[LR]?|[HL]|MN?|N|RH?|S[CHKLMNPTVW]?|X(YL)?)[AEIOU])[FHLMNRSX][A-Z]/)) {
       return "an"
     }
-    // Special cases where a word that begins with a vowel should be preceded by 'a'
+    // Special cases where a atom that begins with a vowel should be preceded by 'a'
     const regexes = [/^e[uw]/, /^onc?e\b/, /^uni([^nmd]|mo)/, /^u[bcfhjkqrst][aeiou]/]
     for (var i in regexes) {
-      if (l_word.match(regexes[i])) return "a"
+      if (l_atom.match(regexes[i])) return "a"
     }
-    // Special capital words (UK, UN)
-    if (word.match(/^U[NK][AIEO]/)) {
+    // Special capital atoms (UK, UN)
+    if (atom.match(/^U[NK][AIEO]/)) {
       return "a"
-    } else if (word == word.toUpperCase()) {
-      if ("aedhilmnorsx".indexOf(l_word[0]) >= 0) return "an"
+    } else if (atom == atom.toUpperCase()) {
+      if ("aedhilmnorsx".indexOf(l_atom[0]) >= 0) return "an"
       else return "a"
     }
-    // Basic method of words that begin with a vowel being preceded by 'an'
-    if ("aeiou".indexOf(l_word[0]) >= 0) return "an"
+    // Basic method of atoms that begin with a vowel being preceded by 'an'
+    if ("aeiou".indexOf(l_atom[0]) >= 0) return "an"
     // Instances where y follwed by specific letters is preceded by 'an'
-    if (l_word.match(/^y(b[lor]|cl[ea]|fere|gg|p[ios]|rou|tt)/)) return "an"
+    if (l_atom.match(/^y(b[lor]|cl[ea]|fere|gg|p[ios]|rou|tt)/)) return "an"
     return "a"
   }
   static htmlEscaped(content = "") {
@@ -13867,7 +13854,7 @@ class Utils {
     if (len <= limit) return clone.join(", ") + ` and ${last}`
     return clone.join(", ") + ` and ${len - limit} more`
   }
-  // todo: refactor so instead of str input takes an array of cells(strings) and scans each indepndently.
+  // todo: refactor so instead of str input takes an array of atoms(strings) and scans each indepndently.
   static _chooseDelimiter(str) {
     const del = " ,|\t;^%$!#@~*&+-=_:?.{}[]()<>/".split("").find(idea => !str.includes(idea))
     if (!del) throw new Error("Could not find a delimiter")
@@ -13991,26 +13978,26 @@ class Utils {
     document.head.appendChild(script)
     return window[name]
   }
-  static formatStr(str, catchAllCellDelimiter = " ", parameterMap) {
+  static formatStr(str, catchAllAtomDelimiter = " ", parameterMap) {
     return str.replace(/{([^\}]+)}/g, (match, path) => {
       const val = parameterMap[path]
       if (!val) return ""
-      return Array.isArray(val) ? val.join(catchAllCellDelimiter) : val
+      return Array.isArray(val) ? val.join(catchAllAtomDelimiter) : val
     })
   }
   static stripHtml(text) {
     return text && text.replace ? text.replace(/<(?:.|\n)*?>/gm, "") : text
   }
-  static getUniqueWordsArray(allWords) {
-    const words = allWords.replace(/\n/g, " ").split(" ")
+  static getUniqueAtomsArray(allAtoms) {
+    const atoms = allAtoms.replace(/\n/g, " ").split(" ")
     const index = {}
-    words.forEach(word => {
-      if (!index[word]) index[word] = 0
-      index[word]++
+    atoms.forEach(atom => {
+      if (!index[atom]) index[atom] = 0
+      index[atom]++
     })
     return Object.keys(index).map(key => {
       return {
-        word: key,
+        atom: key,
         count: index[key]
       }
     })
@@ -14152,7 +14139,7 @@ class Utils {
       const particleAFirst = -1
       const particleBFirst = 1
       if (!particleAExtends && !particleBExtends) {
-        // If neither extends, sort by firstWord
+        // If neither extends, sort by firstAtom
         if (particleAUniqueId > particleBUniqueId) return particleBFirst
         else if (particleAUniqueId < particleBUniqueId) return particleAFirst
         return 0
@@ -14166,7 +14153,7 @@ class Utils {
       // Sort by what they extend
       if (particleAExtends > particleBExtends) return particleBFirst
       else if (particleAExtends < particleBExtends) return particleAFirst
-      // Finally sort by firstWord
+      // Finally sort by firstAtom
       if (particleAUniqueId > particleBUniqueId) return particleBFirst
       else if (particleAUniqueId < particleBUniqueId) return particleAFirst
       // Should never hit this, unless we have a duplicate line.
@@ -14252,16 +14239,16 @@ class ChildAddedParticleEvent extends AbstractParticleEvent {}
 class ChildRemovedParticleEvent extends AbstractParticleEvent {}
 class DescendantChangedParticleEvent extends AbstractParticleEvent {}
 class LineChangedParticleEvent extends AbstractParticleEvent {}
-class ParticleWord {
-  constructor(particle, cellIndex) {
+class ParticleAtom {
+  constructor(particle, atomIndex) {
     this._particle = particle
-    this._cellIndex = cellIndex
+    this._atomIndex = atomIndex
   }
-  replace(newWord) {
-    this._particle.setWord(this._cellIndex, newWord)
+  replace(newAtom) {
+    this._particle.setAtom(this._atomIndex, newAtom)
   }
-  get word() {
-    return this._particle.getWord(this._cellIndex)
+  get atom() {
+    return this._particle.getAtom(this._atomIndex)
   }
 }
 const ParticleEvents = { ChildAddedParticleEvent, ChildRemovedParticleEvent, DescendantChangedParticleEvent, LineChangedParticleEvent }
@@ -14285,29 +14272,29 @@ var ParticlesConstants
   ParticlesConstants["extends"] = "extends"
 })(ParticlesConstants || (ParticlesConstants = {}))
 class ParserCombinator {
-  constructor(catchAllParser, firstWordMap = {}, regexTests = undefined) {
+  constructor(catchAllParser, firstAtomMap = {}, regexTests = undefined) {
     this._catchAllParser = catchAllParser
-    this._firstWordMap = new Map(Object.entries(firstWordMap))
+    this._firstAtomMap = new Map(Object.entries(firstAtomMap))
     this._regexTests = regexTests
   }
-  getFirstWordOptions() {
-    return Array.from(this._getFirstWordMap().keys())
+  getFirstAtomOptions() {
+    return Array.from(this._getFirstAtomMap().keys())
   }
   // todo: remove
-  _getFirstWordMap() {
-    return this._firstWordMap
+  _getFirstAtomMap() {
+    return this._firstAtomMap
   }
   // todo: remove
-  _getFirstWordMapAsObject() {
+  _getFirstAtomMapAsObject() {
     let obj = {}
-    const map = this._getFirstWordMap()
+    const map = this._getFirstAtomMap()
     for (let [key, val] of map.entries()) {
       obj[key] = val
     }
     return obj
   }
-  _getParser(line, contextParticle, wordBreakSymbol = TN_WORD_BREAK_SYMBOL) {
-    return this._getFirstWordMap().get(this._getFirstWord(line, wordBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
+  _getParser(line, contextParticle, atomBreakSymbol = TN_WORD_BREAK_SYMBOL) {
+    return this._getFirstAtomMap().get(this._getFirstAtom(line, atomBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
   }
   _getCatchAllParser(contextParticle) {
     if (this._catchAllParser) return this._catchAllParser
@@ -14321,8 +14308,8 @@ class ParserCombinator {
     if (hit) return hit.parser
     return undefined
   }
-  _getFirstWord(line, wordBreakSymbol) {
-    const firstBreak = line.indexOf(wordBreakSymbol)
+  _getFirstAtom(line, atomBreakSymbol) {
+    const firstBreak = line.indexOf(atomBreakSymbol)
     return line.substr(0, firstBreak > -1 ? firstBreak : undefined)
   }
 }
@@ -14343,9 +14330,9 @@ class Particle extends AbstractParticle {
   getErrors() {
     return []
   }
-  get lineCellTypes() {
+  get lineAtomTypes() {
     // todo: make this any a constant
-    return "undefinedCellType ".repeat(this.words.length).trim()
+    return "undefinedAtomType ".repeat(this.atoms.length).trim()
   }
   isNodeJs() {
     return typeof exports !== "undefined"
@@ -14419,17 +14406,17 @@ class Particle extends AbstractParticle {
   _getMaxUnitsOnALine() {
     let max = 0
     for (let particle of this.getTopDownArrayIterator()) {
-      const count = particle.words.length + particle.getIndentLevel()
+      const count = particle.atoms.length + particle.getIndentLevel()
       if (count > max) max = count
     }
     return max
   }
-  get numberOfWords() {
-    let wordCount = 0
+  get numberOfAtoms() {
+    let atomCount = 0
     for (let particle of this.getTopDownArrayIterator()) {
-      wordCount += particle.words.length
+      atomCount += particle.atoms.length
     }
-    return wordCount
+    return atomCount
   }
   get lineNumber() {
     return this._getLineNumberRelativeTo()
@@ -14446,8 +14433,8 @@ class Particle extends AbstractParticle {
   isBlankLine() {
     return !this.length && !this.getLine()
   }
-  hasDuplicateFirstWords() {
-    return this.length ? new Set(this.getFirstWords()).size !== this.length : false
+  hasDuplicateFirstAtoms() {
+    return this.length ? new Set(this.getFirstAtoms()).size !== this.length : false
   }
   isEmpty() {
     return !this.length && !this.content
@@ -14492,13 +14479,13 @@ class Particle extends AbstractParticle {
       })
     return this
   }
-  getWord(index) {
-    const words = this._getWords(0)
-    if (index < 0) index = words.length + index
-    return words[index]
+  getAtom(index) {
+    const atoms = this._getAtoms(0)
+    if (index < 0) index = atoms.length + index
+    return atoms[index]
   }
   get list() {
-    return this.getWordsFrom(1)
+    return this.getAtomsFrom(1)
   }
   _toHtml(indentCount) {
     const path = this.getPathVector().join(" ")
@@ -14509,18 +14496,18 @@ class Particle extends AbstractParticle {
       particleSubparticles: "particleSubparticles"
     }
     const edge = this.edgeSymbol.repeat(indentCount)
-    // Set up the firstWord part of the particle
+    // Set up the firstAtom part of the particle
     const edgeHtml = `<span class="${classes.particleLine}" data-pathVector="${path}"><span class="${classes.edgeSymbol}">${edge}</span>`
     const lineHtml = this._getLineHtml()
     const subparticlesHtml = this.length ? `<span class="${classes.particleBreakSymbol}">${this.particleBreakSymbol}</span>` + `<span class="${classes.particleSubparticles}">${this._subparticlesToHtml(indentCount + 1)}</span>` : ""
     return `${edgeHtml}${lineHtml}${subparticlesHtml}</span>`
   }
-  _getWords(startFrom) {
-    if (!this._words) this._words = this._getLine().split(this.wordBreakSymbol)
-    return startFrom ? this._words.slice(startFrom) : this._words
+  _getAtoms(startFrom) {
+    if (!this._atoms) this._atoms = this._getLine().split(this.atomBreakSymbol)
+    return startFrom ? this._atoms.slice(startFrom) : this._atoms
   }
-  get words() {
-    return this._getWords(0)
+  get atoms() {
+    return this._getAtoms(0)
   }
   doesExtend(parserId) {
     return false
@@ -14529,8 +14516,8 @@ class Particle extends AbstractParticle {
     if (!this.isNodeJs()) return window[moduleName]
     return require(filePath || moduleName)
   }
-  getWordsFrom(startFrom) {
-    return this._getWords(startFrom)
+  getAtomsFrom(startFrom) {
+    return this._getAtoms(startFrom)
   }
   getFirstAncestor() {
     const parent = this.parent
@@ -14568,7 +14555,7 @@ class Particle extends AbstractParticle {
   patch(two) {
     const copy = this.clone()
     two.forEach(particle => {
-      const hit = copy.getParticle(particle.getWord(0))
+      const hit = copy.getParticle(particle.getAtom(0))
       if (hit) hit.destroy()
     })
     copy.concat(two)
@@ -14586,7 +14573,7 @@ class Particle extends AbstractParticle {
     return 1 - count / (particles.length * fields.length)
   }
   // todo: rename. what is the proper term from set/cat theory?
-  getBiDirectionalMaps(propertyNameOrFn, propertyNameOrFn2 = particle => particle.getWord(0)) {
+  getBiDirectionalMaps(propertyNameOrFn, propertyNameOrFn2 = particle => particle.getAtom(0)) {
     const oneToTwo = {}
     const twoToOne = {}
     const is1Str = typeof propertyNameOrFn === "string"
@@ -14606,65 +14593,65 @@ class Particle extends AbstractParticle {
     })
     return [oneToTwo, twoToOne]
   }
-  _getWordIndexCharacterStartPosition(wordIndex) {
+  _getAtomIndexCharacterStartPosition(atomIndex) {
     const xiLength = this.edgeSymbol.length
     const numIndents = this._getIndentLevel() - 1
     const indentPosition = xiLength * numIndents
-    if (wordIndex < 1) return xiLength * (numIndents + wordIndex)
-    return indentPosition + this.words.slice(0, wordIndex).join(this.wordBreakSymbol).length + this.wordBreakSymbol.length
+    if (atomIndex < 1) return xiLength * (numIndents + atomIndex)
+    return indentPosition + this.atoms.slice(0, atomIndex).join(this.atomBreakSymbol).length + this.atomBreakSymbol.length
   }
   getParticleInScopeAtCharIndex(charIndex) {
     if (this.isRoot()) return this
-    let wordIndex = this.getWordIndexAtCharacterIndex(charIndex)
-    if (wordIndex > 0) return this
+    let atomIndex = this.getAtomIndexAtCharacterIndex(charIndex)
+    if (atomIndex > 0) return this
     let particle = this
-    while (wordIndex < 1) {
+    while (atomIndex < 1) {
       particle = particle.parent
-      wordIndex++
+      atomIndex++
     }
     return particle
   }
-  getWordProperties(wordIndex) {
-    const start = this._getWordIndexCharacterStartPosition(wordIndex)
-    const word = wordIndex < 0 ? "" : this.getWord(wordIndex)
+  getAtomProperties(atomIndex) {
+    const start = this._getAtomIndexCharacterStartPosition(atomIndex)
+    const atom = atomIndex < 0 ? "" : this.getAtom(atomIndex)
     return {
       startCharIndex: start,
-      endCharIndex: start + word.length,
-      word: word
+      endCharIndex: start + atom.length,
+      atom: atom
     }
   }
   fill(fill = "") {
     this.topDownArray.forEach(line => {
-      line.words.forEach((word, index) => line.setWord(index, fill))
+      line.atoms.forEach((atom, index) => line.setAtom(index, fill))
     })
     return this
   }
-  getAllWordBoundaryCoordinates() {
+  getAllAtomBoundaryCoordinates() {
     const coordinates = []
     let lineIndex = 0
     for (let particle of this.getTopDownArrayIterator()) {
-      particle.getWordBoundaryCharIndices().forEach((charIndex, wordIndex) => {
+      particle.getAtomBoundaryCharIndices().forEach((charIndex, atomIndex) => {
         coordinates.push({
           lineIndex: lineIndex,
           charIndex: charIndex,
-          wordIndex: wordIndex
+          atomIndex: atomIndex
         })
       })
       lineIndex++
     }
     return coordinates
   }
-  getWordBoundaryCharIndices() {
+  getAtomBoundaryCharIndices() {
     let indentLevel = this._getIndentLevel()
-    const wordBreakSymbolLength = this.wordBreakSymbol.length
+    const atomBreakSymbolLength = this.atomBreakSymbol.length
     let elapsed = indentLevel
-    return this.words.map((word, wordIndex) => {
+    return this.atoms.map((atom, atomIndex) => {
       const boundary = elapsed
-      elapsed += word.length + wordBreakSymbolLength
+      elapsed += atom.length + atomBreakSymbolLength
       return boundary
     })
   }
-  getWordIndexAtCharacterIndex(charIndex) {
+  getAtomIndexAtCharacterIndex(charIndex) {
     // todo: is this correct thinking for handling root?
     if (this.isRoot()) return 0
     const numberOfIndents = this._getIndentLevel(undefined) - 1
@@ -14673,11 +14660,11 @@ class Particle extends AbstractParticle {
     while (spots.length < numberOfIndents) {
       spots.push(-(numberOfIndents - spots.length))
     }
-    this.words.forEach((word, wordIndex) => {
-      word.split("").forEach(letter => {
-        spots.push(wordIndex)
+    this.atoms.forEach((atom, atomIndex) => {
+      atom.split("").forEach(letter => {
+        spots.push(atomIndex)
       })
-      spots.push(wordIndex)
+      spots.push(atomIndex)
     })
     return spots[charIndex]
   }
@@ -14703,12 +14690,12 @@ class Particle extends AbstractParticle {
       line++
     }
   }
-  get firstWord() {
-    return this.words[0]
+  get firstAtom() {
+    return this.atoms[0]
   }
   get content() {
-    const words = this.getWordsFrom(1)
-    return words.length ? words.join(this.wordBreakSymbol) : undefined
+    const atoms = this.getAtomsFrom(1)
+    return atoms.length ? atoms.join(this.atomBreakSymbol) : undefined
   }
   get contentWithSubparticles() {
     // todo: deprecate
@@ -14733,8 +14720,8 @@ class Particle extends AbstractParticle {
       .join(this.particleBreakSymbol)
   }
   getLine(language) {
-    if (!this._words && !language) return this._getLine() // todo: how does this interact with "language" param?
-    return this.words.join((language || this).wordBreakSymbol)
+    if (!this._atoms && !language) return this._getLine() // todo: how does this interact with "language" param?
+    return this.atoms.join((language || this).atomBreakSymbol)
   }
   getColumnNames() {
     return this._getUnionNames()
@@ -14752,16 +14739,16 @@ class Particle extends AbstractParticle {
     return clone
   }
   // todo: return array? getPathArray?
-  _getFirstWordPath(relativeTo) {
+  _getFirstAtomPath(relativeTo) {
     if (this.isRoot(relativeTo)) return ""
-    else if (this.parent.isRoot(relativeTo)) return this.firstWord
-    return this.parent._getFirstWordPath(relativeTo) + this.edgeSymbol + this.firstWord
+    else if (this.parent.isRoot(relativeTo)) return this.firstAtom
+    return this.parent._getFirstAtomPath(relativeTo) + this.edgeSymbol + this.firstAtom
   }
-  getFirstWordPathRelativeTo(relativeTo) {
-    return this._getFirstWordPath(relativeTo)
+  getFirstAtomPathRelativeTo(relativeTo) {
+    return this._getFirstAtomPath(relativeTo)
   }
-  getFirstWordPath() {
-    return this._getFirstWordPath()
+  getFirstAtomPath() {
+    return this._getFirstAtomPath()
   }
   getPathVector() {
     return this._getPathVector()
@@ -14782,7 +14769,7 @@ class Particle extends AbstractParticle {
     return !this.length
   }
   _getLineHtml() {
-    return this.words.map((word, index) => `<span class="word${index}">${Utils.stripHtml(word)}</span>`).join(`<span class="zIncrement">${this.wordBreakSymbol}</span>`)
+    return this.atoms.map((atom, index) => `<span class="atom${index}">${Utils.stripHtml(atom)}</span>`).join(`<span class="zIncrement">${this.atomBreakSymbol}</span>`)
   }
   _getXmlContent(indentCount) {
     if (this.content !== undefined) return this.contentWithSubparticles
@@ -14790,7 +14777,7 @@ class Particle extends AbstractParticle {
   }
   _toXml(indentCount) {
     const indent = " ".repeat(indentCount)
-    const tag = this.firstWord
+    const tag = this.firstAtom
     return `${indent}<${tag}>${this._getXmlContent(indentCount)}</${tag}>${indentCount === -1 ? "" : "\n"}`
   }
   _toObjectTuple() {
@@ -14801,7 +14788,7 @@ class Particle extends AbstractParticle {
     // If the particle has a content and a subparticle return it as a string, as
     // Javascript object values can't be both a leaf and a particle.
     const tupleValue = hasSubparticlesNoContent ? this.toObject() : hasContentAndHasSubparticles ? this.contentWithSubparticles : content
-    return [this.firstWord, tupleValue]
+    return [this.firstAtom, tupleValue]
   }
   _indexOfParticle(needleParticle) {
     let result = -1
@@ -14887,20 +14874,20 @@ class Particle extends AbstractParticle {
     )
   }
   _hasColumns(columns) {
-    const words = this.words
-    return columns.every((searchTerm, index) => searchTerm === words[index])
+    const atoms = this.atoms
+    return columns.every((searchTerm, index) => searchTerm === atoms[index])
   }
-  hasWord(index, word) {
-    return this.getWord(index) === word
+  hasAtom(index, atom) {
+    return this.getAtom(index) === atom
   }
   getParticleByColumns(...columns) {
     return this.topDownArray.find(particle => particle._hasColumns(columns))
   }
   getParticleByColumn(index, name) {
-    return this.find(particle => particle.getWord(index) === name)
+    return this.find(particle => particle.getAtom(index) === name)
   }
   _getParticlesByColumn(index, name) {
-    return this.filter(particle => particle.getWord(index) === name)
+    return this.filter(particle => particle.getAtom(index) === name)
   }
   // todo: preserve subclasses!
   select(columnNames) {
@@ -14940,20 +14927,20 @@ class Particle extends AbstractParticle {
     let parser
     if (valueType === "number") parser = parseFloat
     const fn = particle => {
-      const cell = particle.get(columnName)
-      const typedCell = parser ? parser(cell) : cell
-      if (operator === WhereOperators.equal) return fixedValue === typedCell
-      else if (operator === WhereOperators.notEqual) return fixedValue !== typedCell
-      else if (operator === WhereOperators.includes) return typedCell !== undefined && typedCell.includes(fixedValue)
-      else if (operator === WhereOperators.doesNotInclude) return typedCell === undefined || !typedCell.includes(fixedValue)
-      else if (operator === WhereOperators.greaterThan) return typedCell > fixedValue
-      else if (operator === WhereOperators.lessThan) return typedCell < fixedValue
-      else if (operator === WhereOperators.greaterThanOrEqual) return typedCell >= fixedValue
-      else if (operator === WhereOperators.lessThanOrEqual) return typedCell <= fixedValue
+      const atom = particle.get(columnName)
+      const typedAtom = parser ? parser(atom) : atom
+      if (operator === WhereOperators.equal) return fixedValue === typedAtom
+      else if (operator === WhereOperators.notEqual) return fixedValue !== typedAtom
+      else if (operator === WhereOperators.includes) return typedAtom !== undefined && typedAtom.includes(fixedValue)
+      else if (operator === WhereOperators.doesNotInclude) return typedAtom === undefined || !typedAtom.includes(fixedValue)
+      else if (operator === WhereOperators.greaterThan) return typedAtom > fixedValue
+      else if (operator === WhereOperators.lessThan) return typedAtom < fixedValue
+      else if (operator === WhereOperators.greaterThanOrEqual) return typedAtom >= fixedValue
+      else if (operator === WhereOperators.lessThanOrEqual) return typedAtom <= fixedValue
       else if (operator === WhereOperators.empty) return !particle.has(columnName)
-      else if (operator === WhereOperators.notEmpty) return particle.has(columnName) || (cell !== "" && cell !== undefined)
-      else if (operator === WhereOperators.in && isArray) return fixedValue.includes(typedCell)
-      else if (operator === WhereOperators.notIn && isArray) return !fixedValue.includes(typedCell)
+      else if (operator === WhereOperators.notEmpty) return particle.has(columnName) || (atom !== "" && atom !== undefined)
+      else if (operator === WhereOperators.in && isArray) return fixedValue.includes(typedAtom)
+      else if (operator === WhereOperators.notIn && isArray) return !fixedValue.includes(typedAtom)
     }
     const result = new Particle()
     this.filter(fn).forEach(particle => {
@@ -14961,11 +14948,11 @@ class Particle extends AbstractParticle {
     })
     return result
   }
-  with(firstWord) {
-    return this.filter(particle => particle.has(firstWord))
+  with(firstAtom) {
+    return this.filter(particle => particle.has(firstAtom))
   }
-  without(firstWord) {
-    return this.filter(particle => !particle.has(firstWord))
+  without(firstAtom) {
+    return this.filter(particle => !particle.has(firstAtom))
   }
   first(quantity = 1) {
     return this.limit(quantity, 0)
@@ -15045,9 +15032,9 @@ class Particle extends AbstractParticle {
     let newObject = {}
     const { edgeSymbolRegex } = this
     this.forEach((subparticle, index) => {
-      newObject[subparticle.getWord(0)] = subparticle.content
+      newObject[subparticle.getAtom(0)] = subparticle.content
       subparticle.topDownArray.forEach(particle => {
-        const newColumnName = particle.getFirstWordPathRelativeTo(this).replace(edgeSymbolRegex, delimiter)
+        const newColumnName = particle.getFirstAtomPathRelativeTo(this).replace(edgeSymbolRegex, delimiter)
         const value = particle.content
         newObject[newColumnName] = value
       })
@@ -15066,11 +15053,11 @@ class Particle extends AbstractParticle {
     return this._subparticlesToHtml(0)
   }
   _toHtmlCubeLine(indents = 0, lineIndex = 0, planeIndex = 0) {
-    const getLine = (cellIndex, word = "") =>
-      `<span class="htmlCubeSpan" style="top: calc(var(--topIncrement) * ${planeIndex} + var(--rowHeight) * ${lineIndex}); left:calc(var(--leftIncrement) * ${planeIndex} + var(--cellWidth) * ${cellIndex});">${word}</span>`
-    let cells = []
-    this.words.forEach((word, index) => (word ? cells.push(getLine(index + indents, word)) : ""))
-    return cells.join("")
+    const getLine = (atomIndex, atom = "") =>
+      `<span class="htmlCubeSpan" style="top: calc(var(--topIncrement) * ${planeIndex} + var(--rowHeight) * ${lineIndex}); left:calc(var(--leftIncrement) * ${planeIndex} + var(--atomWidth) * ${atomIndex});">${atom}</span>`
+    let atoms = []
+    this.atoms.forEach((atom, index) => (atom ? atoms.push(getLine(index + indents, atom)) : ""))
+    return atoms.join("")
   }
   get asHtmlCube() {
     return this.map((plane, planeIndex) => plane.topDownArray.map((line, lineIndex) => line._toHtmlCubeLine(line.getIndentLevel() - 2, lineIndex, planeIndex)).join("")).join("")
@@ -15116,10 +15103,10 @@ class Particle extends AbstractParticle {
   _lineToYaml(indentLevel, listTag = "") {
     let prefix = " ".repeat(indentLevel)
     if (listTag && indentLevel > 1) prefix = " ".repeat(indentLevel - 2) + listTag + " "
-    return prefix + `${this.firstWord}:` + (this.content ? " " + this.content : "")
+    return prefix + `${this.firstAtom}:` + (this.content ? " " + this.content : "")
   }
   _isYamlList() {
-    return this.hasDuplicateFirstWords()
+    return this.hasDuplicateFirstAtoms()
   }
   get asYaml() {
     return `%YAML 1.2
@@ -15161,32 +15148,32 @@ class Particle extends AbstractParticle {
   _toObjectForSerialization() {
     return this.length
       ? {
-          cells: this.words,
+          atoms: this.atoms,
           subparticles: this.map(subparticle => subparticle._toObjectForSerialization())
         }
       : {
-          cells: this.words
+          atoms: this.atoms
         }
   }
   get asJson() {
     return JSON.stringify({ subparticles: this.map(subparticle => subparticle._toObjectForSerialization()) }, null, " ")
   }
   get asGrid() {
-    const WordBreakSymbol = this.wordBreakSymbol
+    const AtomBreakSymbol = this.atomBreakSymbol
     return this.toString()
       .split(this.particleBreakSymbol)
-      .map(line => line.split(WordBreakSymbol))
+      .map(line => line.split(AtomBreakSymbol))
   }
   get asGridJson() {
     return JSON.stringify(this.asGrid, null, 2)
   }
-  findParticles(firstWordPath) {
+  findParticles(firstAtomPath) {
     // todo: can easily speed this up
     const map = {}
-    if (!Array.isArray(firstWordPath)) firstWordPath = [firstWordPath]
-    firstWordPath.forEach(path => (map[path] = true))
+    if (!Array.isArray(firstAtomPath)) firstAtomPath = [firstAtomPath]
+    firstAtomPath.forEach(path => (map[path] = true))
     return this.topDownArray.filter(particle => {
-      if (map[particle._getFirstWordPath(this)]) return true
+      if (map[particle._getFirstAtomPath(this)]) return true
       return false
     })
   }
@@ -15209,15 +15196,15 @@ class Particle extends AbstractParticle {
       })
     return clone
   }
-  getParticle(firstWordPath) {
-    return this._getParticleByPath(firstWordPath)
+  getParticle(firstAtomPath) {
+    return this._getParticleByPath(firstAtomPath)
   }
   getFrom(prefix) {
     const hit = this.filter(particle => particle.getLine().startsWith(prefix))[0]
-    if (hit) return hit.getLine().substr((prefix + this.wordBreakSymbol).length)
+    if (hit) return hit.getLine().substr((prefix + this.atomBreakSymbol).length)
   }
-  get(firstWordPath) {
-    const particle = this._getParticleByPath(firstWordPath)
+  get(firstAtomPath) {
+    const particle = this._getParticleByPath(firstAtomPath)
     return particle === undefined ? undefined : particle.content
   }
   getOneOf(keys) {
@@ -15231,7 +15218,7 @@ class Particle extends AbstractParticle {
     const newParticle = new Particle(this.toString()) // todo: why not clone?
     const map = Utils.arrayToMap(fields)
     newParticle.particleAt(0).forEach(particle => {
-      if (!map[particle.getWord(0)]) particle.destroy()
+      if (!map[particle.getAtom(0)]) particle.destroy()
     })
     return newParticle
   }
@@ -15242,24 +15229,24 @@ class Particle extends AbstractParticle {
     const edgeSymbol = this.edgeSymbol
     if (!globPath.includes(edgeSymbol)) {
       if (globPath === "*") return this.getSubparticles()
-      return this.filter(particle => particle.firstWord === globPath)
+      return this.filter(particle => particle.firstAtom === globPath)
     }
     const parts = globPath.split(edgeSymbol)
     const current = parts.shift()
     const rest = parts.join(edgeSymbol)
-    const matchingParticles = current === "*" ? this.getSubparticles() : this.filter(subparticle => subparticle.firstWord === current)
+    const matchingParticles = current === "*" ? this.getSubparticles() : this.filter(subparticle => subparticle.firstAtom === current)
     return [].concat.apply(
       [],
       matchingParticles.map(particle => particle._getParticlesByGlobPath(rest))
     )
   }
-  _getParticleByPath(firstWordPath) {
+  _getParticleByPath(firstAtomPath) {
     const edgeSymbol = this.edgeSymbol
-    if (!firstWordPath.includes(edgeSymbol)) {
-      const index = this.indexOfLast(firstWordPath)
+    if (!firstAtomPath.includes(edgeSymbol)) {
+      const index = this.indexOfLast(firstAtomPath)
       return index === -1 ? undefined : this._particleAt(index)
     }
-    const parts = firstWordPath.split(edgeSymbol)
+    const parts = firstAtomPath.split(edgeSymbol)
     const current = parts.shift()
     const currentParticle = this._getSubparticlesArray()[this._getIndex()[current]]
     return currentParticle ? currentParticle._getParticleByPath(parts.join(edgeSymbol)) : undefined
@@ -15286,7 +15273,7 @@ class Particle extends AbstractParticle {
     this.forEach(particle => {
       if (!particle.length) return undefined
       particle.forEach(particle => {
-        obj[particle.firstWord] = 1
+        obj[particle.firstAtom] = 1
       })
     })
     return Object.keys(obj)
@@ -15304,7 +15291,7 @@ class Particle extends AbstractParticle {
   getAncestorParticlesByInheritanceViaColumnIndices(thisColumnNumber, extendsColumnNumber) {
     const ancestorParticles = this._getAncestorParticles(
       (particle, id) => particle._getParticlesByColumn(thisColumnNumber, id),
-      particle => particle.getWord(extendsColumnNumber),
+      particle => particle.getAtom(extendsColumnNumber),
       this
     )
     ancestorParticles.push(this)
@@ -15323,13 +15310,13 @@ class Particle extends AbstractParticle {
     ancestorParticles.push(parentParticle)
     return ancestorParticles
   }
-  pathVectorToFirstWordPath(pathVector) {
+  pathVectorToFirstAtomPath(pathVector) {
     const path = pathVector.slice() // copy array
     const names = []
     let particle = this
     while (path.length) {
       if (!particle) return names
-      names.push(particle.particleAt(path[0]).firstWord)
+      names.push(particle.particleAt(path[0]).firstAtom)
       particle = particle.particleAt(path.shift())
     }
     return names
@@ -15368,15 +15355,15 @@ class Particle extends AbstractParticle {
       float: parseFloat,
       int: parseInt
     }
-    const cellFn = (cellValue, rowIndex, columnIndex) => (rowIndex ? parsers[types[columnIndex]](cellValue) : cellValue)
-    const arrays = this._toArrays(header, cellFn)
+    const atomFn = (atomValue, rowIndex, columnIndex) => (rowIndex ? parsers[types[columnIndex]](atomValue) : atomValue)
+    const arrays = this._toArrays(header, atomFn)
     arrays.rows.unshift(arrays.header)
     return arrays.rows
   }
   toDelimited(delimiter, header = this._getUnionNames(), escapeSpecialChars = true) {
     const regex = new RegExp(`(\\n|\\"|\\${delimiter})`)
-    const cellFn = (str, row, column) => (!str.toString().match(regex) ? str : `"` + str.replace(/\"/g, `""`) + `"`)
-    return this._toDelimited(delimiter, header, escapeSpecialChars ? cellFn : str => str)
+    const atomFn = (str, row, column) => (!str.toString().match(regex) ? str : `"` + str.replace(/\"/g, `""`) + `"`)
+    return this._toDelimited(delimiter, header, escapeSpecialChars ? atomFn : str => str)
   }
   _getMatrix(columns) {
     const matrix = []
@@ -15389,14 +15376,14 @@ class Particle extends AbstractParticle {
     })
     return matrix
   }
-  _toArrays(columnNames, cellFn) {
+  _toArrays(columnNames, atomFn) {
     const skipHeaderRow = 1
-    const header = columnNames.map((columnName, index) => cellFn(columnName, 0, index))
+    const header = columnNames.map((columnName, index) => atomFn(columnName, 0, index))
     const rows = this.map((particle, rowNumber) =>
       columnNames.map((columnName, columnIndex) => {
         const subparticleParticle = particle.getParticle(columnName)
         const content = subparticleParticle ? subparticleParticle.contentWithSubparticles : ""
-        return cellFn(content, rowNumber + skipHeaderRow, columnIndex)
+        return atomFn(content, rowNumber + skipHeaderRow, columnIndex)
       })
     )
     return {
@@ -15404,8 +15391,8 @@ class Particle extends AbstractParticle {
       header
     }
   }
-  _toDelimited(delimiter, header, cellFn) {
-    const data = this._toArrays(header, cellFn)
+  _toDelimited(delimiter, header, atomFn) {
+    const data = this._toArrays(header, atomFn)
     return data.header.join(delimiter) + "\n" + data.rows.map(row => row.join(delimiter)).join("\n")
   }
   get asTable() {
@@ -15423,22 +15410,22 @@ class Particle extends AbstractParticle {
     this.forEach(particle => {
       if (!particle.length) return true
       header.forEach((col, index) => {
-        const cellValue = particle.get(col)
-        if (!cellValue) return true
-        const length = cellValue.toString().length
+        const atomValue = particle.get(col)
+        if (!atomValue) return true
+        const length = atomValue.toString().length
         if (length > widths[index]) widths[index] = length > maxCharactersPerColumn ? maxCharactersPerColumn : length
       })
     })
-    const cellFn = (cellText, row, col) => {
+    const atomFn = (atomText, row, col) => {
       const width = widths[col]
       // Strip newlines in fixedWidth output
-      const cellValue = cellText.toString().replace(/\n/g, "\\n")
-      const cellLength = cellValue.length
-      if (cellLength > width) return cellValue.substr(0, width) + "..."
-      const padding = " ".repeat(width - cellLength)
-      return alignRight ? padding + cellValue : cellValue + padding
+      const atomValue = atomText.toString().replace(/\n/g, "\\n")
+      const atomLength = atomValue.length
+      if (atomLength > width) return atomValue.substr(0, width) + "..."
+      const padding = " ".repeat(width - atomLength)
+      return alignRight ? padding + atomValue : atomValue + padding
     }
-    return this._toDelimited(" ", header, cellFn)
+    return this._toDelimited(" ", header, atomFn)
   }
   get asSsv() {
     return this.toDelimited(" ")
@@ -15456,12 +15443,12 @@ class Particle extends AbstractParticle {
       const particle = outlineParticle.particle
       if (lastStatesCopy.push([outlineParticle, last]) && lastStates.length > 0) {
         let line = ""
-        // firstWordd on the "was last element" states of whatever we're nested within,
+        // firstAtomd on the "was last element" states of whatever we're nested within,
         // we need to append either blankness or a branch to our line
         lastStates.forEach((lastState, idx) => {
           if (idx > 0) line += lastState[1] ? " " : "│"
         })
-        // the prefix varies firstWordd on whether the key contains something to show and
+        // the prefix varies firstAtomd on whether the key contains something to show and
         // whether we're dealing with the last element in this collection
         // the extra "-" just makes things stand out more.
         line += (last ? "└" : "├") + particleFn(particle)
@@ -15484,13 +15471,13 @@ class Particle extends AbstractParticle {
   }
   // Note: Splits using a positive lookahead
   // this.split("foo").join("\n") === this.toString()
-  split(firstWord) {
+  split(firstAtom) {
     const constructor = this.constructor
     const ParticleBreakSymbol = this.particleBreakSymbol
-    const WordBreakSymbol = this.wordBreakSymbol
+    const AtomBreakSymbol = this.atomBreakSymbol
     // todo: cleanup. the escaping is wierd.
     return this.toString()
-      .split(new RegExp(`\\${ParticleBreakSymbol}(?=${firstWord}(?:${WordBreakSymbol}|\\${ParticleBreakSymbol}))`, "g"))
+      .split(new RegExp(`\\${ParticleBreakSymbol}(?=${firstAtom}(?:${AtomBreakSymbol}|\\${ParticleBreakSymbol}))`, "g"))
       .map(str => new constructor(str))
   }
   get asMarkdownTable() {
@@ -15513,7 +15500,7 @@ class Particle extends AbstractParticle {
   get particleBreakSymbol() {
     return TN_NODE_BREAK_SYMBOL
   }
-  get wordBreakSymbol() {
+  get atomBreakSymbol() {
     return TN_WORD_BREAK_SYMBOL
   }
   get edgeSymbolRegex() {
@@ -15541,7 +15528,7 @@ class Particle extends AbstractParticle {
   }
   _setLine(line = "") {
     this._line = line
-    if (this._words) delete this._words
+    if (this._atoms) delete this._atoms
     return this
   }
   _clearSubparticles() {
@@ -15567,33 +15554,33 @@ class Particle extends AbstractParticle {
     return this._setFromObject(content, circularCheckArray)
   }
   _setFromObject(content, circularCheckArray) {
-    for (let firstWord in content) {
-      if (!content.hasOwnProperty(firstWord)) continue
+    for (let firstAtom in content) {
+      if (!content.hasOwnProperty(firstAtom)) continue
       // Branch the circularCheckArray, as we only have same branch circular arrays
-      this._appendFromJavascriptObjectTuple(firstWord, content[firstWord], circularCheckArray.slice(0))
+      this._appendFromJavascriptObjectTuple(firstAtom, content[firstAtom], circularCheckArray.slice(0))
     }
     return this
   }
   // todo: refactor the below.
-  _appendFromJavascriptObjectTuple(firstWord, content, circularCheckArray) {
+  _appendFromJavascriptObjectTuple(firstAtom, content, circularCheckArray) {
     const type = typeof content
     let line
     let subparticles
-    if (content === null) line = firstWord + " " + null
-    else if (content === undefined) line = firstWord
+    if (content === null) line = firstAtom + " " + null
+    else if (content === undefined) line = firstAtom
     else if (type === "string") {
       const tuple = this._textToContentAndSubparticlesTuple(content)
-      line = firstWord + " " + tuple[0]
+      line = firstAtom + " " + tuple[0]
       subparticles = tuple[1]
-    } else if (type === "function") line = firstWord + " " + content.toString()
-    else if (type !== "object") line = firstWord + " " + content
-    else if (content instanceof Date) line = firstWord + " " + content.getTime().toString()
+    } else if (type === "function") line = firstAtom + " " + content.toString()
+    else if (type !== "object") line = firstAtom + " " + content
+    else if (content instanceof Date) line = firstAtom + " " + content.getTime().toString()
     else if (content instanceof Particle) {
-      line = firstWord
+      line = firstAtom
       subparticles = new Particle(content.subparticlesToString(), content.getLine())
     } else if (circularCheckArray.indexOf(content) === -1) {
       circularCheckArray.push(content)
-      line = firstWord
+      line = firstAtom
       const length = content instanceof Array ? content.length : Object.keys(content).length
       if (length) subparticles = new Particle()._setSubparticles(content, circularCheckArray)
     } else {
@@ -15636,8 +15623,8 @@ class Particle extends AbstractParticle {
     })
   }
   _getIndex() {
-    // StringMap<int> {firstWord: index}
-    // When there are multiple tails with the same firstWord, _index stores the last content.
+    // StringMap<int> {firstAtom: index}
+    // When there are multiple tails with the same firstAtom, _index stores the last content.
     // todo: change the above behavior: when a collision occurs, create an array.
     return this._index || this._makeIndex()
   }
@@ -15656,25 +15643,25 @@ class Particle extends AbstractParticle {
   getParticleByParser(parser) {
     return this.find(subparticle => subparticle instanceof parser)
   }
-  indexOfLast(firstWord) {
-    const result = this._getIndex()[firstWord]
+  indexOfLast(firstAtom) {
+    const result = this._getIndex()[firstAtom]
     return result === undefined ? -1 : result
   }
   // todo: renmae to indexOfFirst?
-  indexOf(firstWord) {
-    if (!this.has(firstWord)) return -1
+  indexOf(firstAtom) {
+    if (!this.has(firstAtom)) return -1
     const length = this.length
     const particles = this._getSubparticlesArray()
     for (let index = 0; index < length; index++) {
-      if (particles[index].firstWord === firstWord) return index
+      if (particles[index].firstAtom === firstAtom) return index
     }
   }
   // todo: rename this. it is a particular type of object.
   toObject() {
     return this._toObject()
   }
-  getFirstWords() {
-    return this.map(particle => particle.firstWord)
+  getFirstAtoms() {
+    return this.map(particle => particle.firstAtom)
   }
   _makeIndex(startAt = 0) {
     if (!this._index || !startAt) this._index = {}
@@ -15682,7 +15669,7 @@ class Particle extends AbstractParticle {
     const newIndex = this._index
     const length = particles.length
     for (let index = startAt; index < length; index++) {
-      newIndex[particles[index].firstWord] = index
+      newIndex[particles[index].firstAtom] = index
     }
     return newIndex
   }
@@ -15700,13 +15687,13 @@ class Particle extends AbstractParticle {
   clone(subparticles = this.subparticlesToString(), line = this.getLine()) {
     return new this.constructor(subparticles, line)
   }
-  hasFirstWord(firstWord) {
-    return this._hasFirstWord(firstWord)
+  hasFirstAtom(firstAtom) {
+    return this._hasFirstAtom(firstAtom)
   }
-  has(firstWordPath) {
+  has(firstAtomPath) {
     const edgeSymbol = this.edgeSymbol
-    if (!firstWordPath.includes(edgeSymbol)) return this.hasFirstWord(firstWordPath)
-    const parts = firstWordPath.split(edgeSymbol)
+    if (!firstAtomPath.includes(edgeSymbol)) return this.hasFirstAtom(firstAtomPath)
+    const parts = firstAtomPath.split(edgeSymbol)
     const next = this.getParticle(parts.shift())
     if (!next) return false
     return next.has(parts.join(edgeSymbol))
@@ -15715,8 +15702,8 @@ class Particle extends AbstractParticle {
     const needle = particle.toString()
     return this.getSubparticles().some(particle => particle.toString() === needle)
   }
-  _hasFirstWord(firstWord) {
-    return this._getIndex()[firstWord] !== undefined
+  _hasFirstAtom(firstAtom) {
+    return this._getIndex()[firstAtom] !== undefined
   }
   map(fn) {
     return this.getSubparticles().map(fn)
@@ -15781,8 +15768,8 @@ class Particle extends AbstractParticle {
     const paths = {}
     const result = new Particle()
     this.forEach(particle => {
-      const key = particle.getWord(0)
-      const parentKey = particle.getWord(1)
+      const key = particle.getAtom(0)
+      const parentKey = particle.getAtom(1)
       const parentPath = paths[parentKey]
       paths[key] = parentPath ? [parentPath, key].join(" ") : key
       result.touchParticle(paths[key])
@@ -15838,12 +15825,12 @@ class Particle extends AbstractParticle {
   _setVirtualAncestorParticlesByInheritanceViaColumnIndicesAndThenExpand(particles, thisIdColumnNumber, extendsIdColumnNumber) {
     const map = {}
     for (let particle of particles) {
-      const particleId = particle.getWord(thisIdColumnNumber)
+      const particleId = particle.getAtom(thisIdColumnNumber)
       if (map[particleId]) throw new Error(`Tried to define a particle with id "${particleId}" but one is already defined.`)
       map[particleId] = {
         particleId: particleId,
         particle: particle,
-        parentId: particle.getWord(extendsIdColumnNumber)
+        parentId: particle.getAtom(extendsIdColumnNumber)
       }
     }
     // Add parent Particles
@@ -15880,20 +15867,20 @@ class Particle extends AbstractParticle {
   // todo: this is slow.
   extend(particleOrStr) {
     const particle = particleOrStr instanceof Particle ? particleOrStr : new Particle(particleOrStr)
-    const usedFirstWords = new Set()
+    const usedFirstAtoms = new Set()
     particle.forEach(sourceParticle => {
-      const firstWord = sourceParticle.firstWord
+      const firstAtom = sourceParticle.firstAtom
       let targetParticle
-      const isAnArrayNotMap = usedFirstWords.has(firstWord)
-      if (!this.has(firstWord)) {
-        usedFirstWords.add(firstWord)
+      const isAnArrayNotMap = usedFirstAtoms.has(firstAtom)
+      if (!this.has(firstAtom)) {
+        usedFirstAtoms.add(firstAtom)
         this.appendLineAndSubparticles(sourceParticle.getLine(), sourceParticle.subparticlesToString())
         return true
       }
       if (isAnArrayNotMap) targetParticle = this.appendLine(sourceParticle.getLine())
       else {
-        targetParticle = this.touchParticle(firstWord).setContent(sourceParticle.content)
-        usedFirstWords.add(firstWord)
+        targetParticle = this.touchParticle(firstAtom).setContent(sourceParticle.content)
+        usedFirstAtoms.add(firstAtom)
       }
       if (sourceParticle.length) targetParticle.extend(sourceParticle)
     })
@@ -15906,25 +15893,25 @@ class Particle extends AbstractParticle {
     const clone = this.clone()
     const map = new Map()
     const lastParticle = clone.lastParticle()
-    lastParticle.getOlderSiblings().forEach(particle => map.set(particle.getWord(0), particle))
+    lastParticle.getOlderSiblings().forEach(particle => map.set(particle.getAtom(0), particle))
     lastParticle.topDownArray.forEach(particle => {
-      const replacement = map.get(particle.getWord(0))
+      const replacement = map.get(particle.getAtom(0))
       if (!replacement) return
       particle.replaceParticle(str => replacement.toString())
     })
     return lastParticle
   }
-  macroExpand(macroDefinitionWord, macroUsageWord) {
+  macroExpand(macroDefinitionAtom, macroUsageAtom) {
     const clone = this.clone()
-    const defs = clone.findParticles(macroDefinitionWord)
-    const allUses = clone.findParticles(macroUsageWord)
-    const wordBreakSymbol = clone.wordBreakSymbol
+    const defs = clone.findParticles(macroDefinitionAtom)
+    const allUses = clone.findParticles(macroUsageAtom)
+    const atomBreakSymbol = clone.atomBreakSymbol
     defs.forEach(def => {
-      const macroName = def.getWord(1)
-      const uses = allUses.filter(particle => particle.hasWord(1, macroName))
-      const params = def.getWordsFrom(2)
+      const macroName = def.getAtom(1)
+      const uses = allUses.filter(particle => particle.hasAtom(1, macroName))
+      const params = def.getAtomsFrom(2)
       const replaceFn = str => {
-        const paramValues = str.split(wordBreakSymbol).slice(2)
+        const paramValues = str.split(atomBreakSymbol).slice(2)
         let newParticle = def.subparticlesToString()
         params.forEach((param, index) => {
           newParticle = newParticle.replace(new RegExp(param, "g"), paramValues[index])
@@ -15944,11 +15931,11 @@ class Particle extends AbstractParticle {
   _updateLineModifiedTimeAndTriggerEvent() {
     this._lineModifiedTime = this._getProcessTimeInMilliseconds()
   }
-  insertWord(index, word) {
-    const wi = this.wordBreakSymbol
-    const words = this._getLine().split(wi)
-    words.splice(index, 0, word)
-    this.setLine(words.join(wi))
+  insertAtom(index, atom) {
+    const wi = this.atomBreakSymbol
+    const atoms = this._getLine().split(wi)
+    atoms.splice(index, 0, atom)
+    this.setLine(atoms.join(wi))
     return this
   }
   deleteDuplicates() {
@@ -15960,11 +15947,11 @@ class Particle extends AbstractParticle {
     })
     return this
   }
-  setWord(index, word) {
-    const wi = this.wordBreakSymbol
-    const words = this._getLine().split(wi)
-    words[index] = word
-    this.setLine(words.join(wi))
+  setAtom(index, atom) {
+    const wi = this.atomBreakSymbol
+    const atoms = this._getLine().split(wi)
+    atoms[index] = atom
+    this.setLine(atoms.join(wi))
     return this
   }
   deleteSubparticles() {
@@ -15972,13 +15959,13 @@ class Particle extends AbstractParticle {
   }
   setContent(content) {
     if (content === this.content) return this
-    const newArray = [this.firstWord]
+    const newArray = [this.firstAtom]
     if (content !== undefined) {
       content = content.toString()
       if (content.match(this.particleBreakSymbol)) return this.setContentWithSubparticles(content)
       newArray.push(content)
     }
-    this._setLine(newArray.join(this.wordBreakSymbol))
+    this._setLine(newArray.join(this.atomBreakSymbol))
     this._updateLineModifiedTimeAndTriggerEvent()
     return this
   }
@@ -16004,8 +15991,8 @@ class Particle extends AbstractParticle {
     this.setSubparticles(subparticles)
     return this
   }
-  setFirstWord(firstWord) {
-    return this.setWord(0, firstWord)
+  setFirstAtom(firstAtom) {
+    return this.setAtom(0, firstAtom)
   }
   setLine(line) {
     if (line === this.getLine()) return this
@@ -16026,8 +16013,8 @@ class Particle extends AbstractParticle {
   destroy() {
     this.parent._deleteParticle(this)
   }
-  set(firstWordPath, text) {
-    return this.touchParticle(firstWordPath).setContentWithSubparticles(text)
+  set(firstAtomPath, text) {
+    return this.touchParticle(firstAtomPath).setContentWithSubparticles(text)
   }
   setFromText(text) {
     if (this.toString() === text) return this
@@ -16119,57 +16106,57 @@ class Particle extends AbstractParticle {
     return this
   }
   invert() {
-    this.forEach(particle => particle.words.reverse())
+    this.forEach(particle => particle.atoms.reverse())
     return this
   }
-  _rename(oldFirstWord, newFirstWord) {
-    const index = this.indexOf(oldFirstWord)
+  _rename(oldFirstAtom, newFirstAtom) {
+    const index = this.indexOf(oldFirstAtom)
     if (index === -1) return this
     const particle = this._getSubparticlesArray()[index]
-    particle.setFirstWord(newFirstWord)
+    particle.setFirstAtom(newFirstAtom)
     this._clearIndex()
     return this
   }
   // Does not recurse.
   remap(map) {
     this.forEach(particle => {
-      const firstWord = particle.firstWord
-      if (map[firstWord] !== undefined) particle.setFirstWord(map[firstWord])
+      const firstAtom = particle.firstAtom
+      if (map[firstAtom] !== undefined) particle.setFirstAtom(map[firstAtom])
     })
     return this
   }
-  rename(oldFirstWord, newFirstWord) {
-    this._rename(oldFirstWord, newFirstWord)
+  rename(oldFirstAtom, newFirstAtom) {
+    this._rename(oldFirstAtom, newFirstAtom)
     return this
   }
   renameAll(oldName, newName) {
-    this.findParticles(oldName).forEach(particle => particle.setFirstWord(newName))
+    this.findParticles(oldName).forEach(particle => particle.setFirstAtom(newName))
     return this
   }
-  _deleteAllChildParticlesWithFirstWord(firstWord) {
-    if (!this.has(firstWord)) return this
+  _deleteAllChildParticlesWithFirstAtom(firstAtom) {
+    if (!this.has(firstAtom)) return this
     const allParticles = this._getSubparticlesArray()
     const indexesToDelete = []
     allParticles.forEach((particle, index) => {
-      if (particle.firstWord === firstWord) indexesToDelete.push(index)
+      if (particle.firstAtom === firstAtom) indexesToDelete.push(index)
     })
     return this._deleteByIndexes(indexesToDelete)
   }
   delete(path = "") {
     const edgeSymbol = this.edgeSymbol
-    if (!path.includes(edgeSymbol)) return this._deleteAllChildParticlesWithFirstWord(path)
+    if (!path.includes(edgeSymbol)) return this._deleteAllChildParticlesWithFirstAtom(path)
     const parts = path.split(edgeSymbol)
-    const nextFirstWord = parts.pop()
+    const nextFirstAtom = parts.pop()
     const targetParticle = this.getParticle(parts.join(edgeSymbol))
-    return targetParticle ? targetParticle._deleteAllChildParticlesWithFirstWord(nextFirstWord) : 0
+    return targetParticle ? targetParticle._deleteAllChildParticlesWithFirstAtom(nextFirstAtom) : 0
   }
-  deleteColumn(firstWord = "") {
-    this.forEach(particle => particle.delete(firstWord))
+  deleteColumn(firstAtom = "") {
+    this.forEach(particle => particle.delete(firstAtom))
     return this
   }
   _getNonMaps() {
-    const results = this.topDownArray.filter(particle => particle.hasDuplicateFirstWords())
-    if (this.hasDuplicateFirstWords()) results.unshift(this)
+    const results = this.topDownArray.filter(particle => particle.hasDuplicateFirstAtoms())
+    if (this.hasDuplicateFirstAtoms()) results.unshift(this)
     return results
   }
   replaceParticle(fn) {
@@ -16198,7 +16185,7 @@ class Particle extends AbstractParticle {
     while (this.has(index.toString())) {
       index++
     }
-    const line = index.toString() + (content === undefined ? "" : this.wordBreakSymbol + content)
+    const line = index.toString() + (content === undefined ? "" : this.atomBreakSymbol + content)
     return this.appendLineAndSubparticles(line, subparticles)
   }
   deleteBlanks() {
@@ -16208,13 +16195,13 @@ class Particle extends AbstractParticle {
     return this
   }
   // todo: add "globalReplace" method? Which runs a global regex or string replace on the Particle as a string?
-  firstWordSort(firstWordOrder) {
-    return this._firstWordSort(firstWordOrder)
+  firstAtomSort(firstAtomOrder) {
+    return this._firstAtomSort(firstAtomOrder)
   }
-  deleteWordAt(wordIndex) {
-    const words = this.words
-    words.splice(wordIndex, 1)
-    return this.setWords(words)
+  deleteAtomAt(atomIndex) {
+    const atoms = this.atoms
+    atoms.splice(atomIndex, 1)
+    return this.setAtoms(atoms)
   }
   trigger(event) {
     if (this._listeners && this._listeners.has(event.constructor)) {
@@ -16251,44 +16238,44 @@ class Particle extends AbstractParticle {
     this._listeners.get(eventClass).push(eventHandler)
     return this
   }
-  setWords(words) {
-    return this.setLine(words.join(this.wordBreakSymbol))
+  setAtoms(atoms) {
+    return this.setLine(atoms.join(this.atomBreakSymbol))
   }
-  setWordsFrom(index, words) {
-    this.setWords(this.words.slice(0, index).concat(words))
+  setAtomsFrom(index, atoms) {
+    this.setAtoms(this.atoms.slice(0, index).concat(atoms))
     return this
   }
-  appendWord(word) {
-    const words = this.words
-    words.push(word)
-    return this.setWords(words)
+  appendAtom(atom) {
+    const atoms = this.atoms
+    atoms.push(atom)
+    return this.setAtoms(atoms)
   }
-  _firstWordSort(firstWordOrder, secondarySortFn) {
+  _firstAtomSort(firstAtomOrder, secondarySortFn) {
     const particleAFirst = -1
     const particleBFirst = 1
     const map = {}
-    firstWordOrder.forEach((word, index) => {
-      map[word] = index
+    firstAtomOrder.forEach((atom, index) => {
+      map[atom] = index
     })
     this.sort((particleA, particleB) => {
-      const valA = map[particleA.firstWord]
-      const valB = map[particleB.firstWord]
+      const valA = map[particleA.firstAtom]
+      const valB = map[particleB.firstAtom]
       if (valA > valB) return particleBFirst
       if (valA < valB) return particleAFirst
       return secondarySortFn ? secondarySortFn(particleA, particleB) : 0
     })
     return this
   }
-  _touchParticle(firstWordPathArray) {
+  _touchParticle(firstAtomPathArray) {
     let contextParticle = this
-    firstWordPathArray.forEach(firstWord => {
-      contextParticle = contextParticle.getParticle(firstWord) || contextParticle.appendLine(firstWord)
+    firstAtomPathArray.forEach(firstAtom => {
+      contextParticle = contextParticle.getParticle(firstAtom) || contextParticle.appendLine(firstAtom)
     })
     return contextParticle
   }
   _touchParticleByString(str) {
     str = str.replace(this.particleBreakSymbolRegex, "") // todo: do we want to do this sanitization?
-    return this._touchParticle(str.split(this.wordBreakSymbol))
+    return this._touchParticle(str.split(this.atomBreakSymbol))
   }
   touchParticle(str) {
     return this._touchParticleByString(str)
@@ -16318,12 +16305,12 @@ class Particle extends AbstractParticle {
     const indices = indexOrIndices instanceof Array ? indexOrIndices : [indexOrIndices]
     const length = indices.length
     this.sort((particleA, particleB) => {
-      const wordsA = particleA.words
-      const wordsB = particleB.words
+      const atomsA = particleA.atoms
+      const atomsB = particleB.atoms
       for (let index = 0; index < length; index++) {
         const col = indices[index]
-        const av = wordsA[col]
-        const bv = wordsB[col]
+        const av = atomsA[col]
+        const bv = atomsB[col]
         if (av === undefined) return -1
         if (bv === undefined) return 1
         if (av > bv) return 1
@@ -16333,12 +16320,12 @@ class Particle extends AbstractParticle {
     })
     return this
   }
-  getWordsAsSet() {
-    return new Set(this.getWordsFrom(1))
+  getAtomsAsSet() {
+    return new Set(this.getAtomsFrom(1))
   }
-  appendWordIfMissing(word) {
-    if (this.getWordsAsSet().has(word)) return this
-    return this.appendWord(word)
+  appendAtomIfMissing(atom) {
+    if (this.getAtomsAsSet().has(atom)) return this
+    return this.appendAtom(atom)
   }
   // todo: check to ensure identical objects
   addObjectsAsDelimited(arrayOfObjects, delimiter = Utils._chooseDelimiter(new Particle(arrayOfObjects).toString())) {
@@ -16428,9 +16415,9 @@ class Particle extends AbstractParticle {
       else if (!particleA.length) return -1
       else if (!particleB.length) return 1
       for (let index = 0; index < length; index++) {
-        const firstWord = names[index]
-        const av = particleA.get(firstWord)
-        const bv = particleB.get(firstWord)
+        const firstAtom = names[index]
+        const av = particleA.get(firstAtom)
+        const bv = particleB.get(firstAtom)
         if (av > bv) return 1
         else if (av < bv) return -1
       }
@@ -16514,9 +16501,9 @@ class Particle extends AbstractParticle {
   }
   static serializedParticleToParticle(particle) {
     const language = new Particle()
-    const cellDelimiter = language.wordBreakSymbol
+    const atomDelimiter = language.atomBreakSymbol
     const particleDelimiter = language.particleBreakSymbol
-    const line = particle.cells ? particle.cells.join(cellDelimiter) : undefined
+    const line = particle.atoms ? particle.atoms.join(atomDelimiter) : undefined
     const newParticle = new Particle(undefined, line)
     if (particle.subparticles)
       particle.subparticles.forEach(subparticle => {
@@ -16530,9 +16517,9 @@ class Particle extends AbstractParticle {
   static fromGridJson(str) {
     const lines = JSON.parse(str)
     const language = new Particle()
-    const cellDelimiter = language.wordBreakSymbol
+    const atomDelimiter = language.atomBreakSymbol
     const particleDelimiter = language.particleBreakSymbol
-    return new Particle(lines.map(line => line.join(cellDelimiter)).join(particleDelimiter))
+    return new Particle(lines.map(line => line.join(atomDelimiter)).join(particleDelimiter))
   }
   static fromSsv(str) {
     return this.fromDelimited(str, " ", '"')
@@ -16557,7 +16544,7 @@ class Particle extends AbstractParticle {
     const rows = [[]]
     const newLine = "\n"
     const length = str.length
-    let currentCell = ""
+    let currentAtom = ""
     let inQuote = str.substr(0, 1) === quoteChar
     let currentPosition = inQuote ? 1 : 0
     let nextChar
@@ -16571,35 +16558,35 @@ class Particle extends AbstractParticle {
       nextChar = str[currentPosition + 1]
       isNextCharAQuote = nextChar === quoteChar
       if (inQuote) {
-        if (char !== quoteChar) currentCell += char
+        if (char !== quoteChar) currentAtom += char
         else if (isNextCharAQuote) {
           // Both the current and next char are ", so the " is escaped
-          currentCell += nextChar
+          currentAtom += nextChar
           currentPosition++ // Jump 2
         } else {
           // If the current char is a " and the next char is not, it's the end of the quotes
           inQuote = false
-          if (isLastChar) rows[currentRow].push(currentCell)
+          if (isLastChar) rows[currentRow].push(currentAtom)
         }
       } else {
         if (char === delimiter) {
-          rows[currentRow].push(currentCell)
-          currentCell = ""
+          rows[currentRow].push(currentAtom)
+          currentAtom = ""
           if (isNextCharAQuote) {
             inQuote = true
             currentPosition++ // Jump 2
           }
         } else if (char === newLine) {
-          rows[currentRow].push(currentCell)
-          currentCell = ""
+          rows[currentRow].push(currentAtom)
+          currentAtom = ""
           currentRow++
           if (nextChar) rows[currentRow] = []
           if (isNextCharAQuote) {
             inQuote = true
             currentPosition++ // Jump 2
           }
-        } else if (isLastChar) rows[currentRow].push(currentCell + char)
-        else currentCell += char
+        } else if (isLastChar) rows[currentRow].push(currentAtom + char)
+        else currentAtom += char
       }
       currentPosition++
     }
@@ -16633,8 +16620,8 @@ class Particle extends AbstractParticle {
         }
       }
       const obj = {}
-      row.forEach((cellValue, index) => {
-        obj[names[index]] = cellValue
+      row.forEach((atomValue, index) => {
+        obj[names[index]] = atomValue
       })
       particle.pushContentAndSubparticles(undefined, obj)
     }
@@ -16716,11 +16703,11 @@ class Particle extends AbstractParticle {
   static _getHeader(rows, hasHeaders) {
     const numberOfColumns = rows[0].length
     const headerRow = hasHeaders ? rows[0] : []
-    const WordBreakSymbol = " "
-    const ziRegex = new RegExp(WordBreakSymbol, "g")
+    const AtomBreakSymbol = " "
+    const ziRegex = new RegExp(AtomBreakSymbol, "g")
     if (hasHeaders) {
-      // Strip any WordBreakSymbols from column names in the header row.
-      // This makes the mapping not quite 1 to 1 if there are any WordBreakSymbols in names.
+      // Strip any AtomBreakSymbols from column names in the header row.
+      // This makes the mapping not quite 1 to 1 if there are any AtomBreakSymbols in names.
       for (let index = 0; index < numberOfColumns; index++) {
         headerRow[index] = headerRow[index].replace(ziRegex, "")
       }
@@ -16734,8 +16721,8 @@ class Particle extends AbstractParticle {
   }
   static nest(str, xValue) {
     const ParticleBreakSymbol = TN_NODE_BREAK_SYMBOL
-    const WordBreakSymbol = TN_WORD_BREAK_SYMBOL
-    const indent = ParticleBreakSymbol + WordBreakSymbol.repeat(xValue)
+    const AtomBreakSymbol = TN_WORD_BREAK_SYMBOL
+    const indent = ParticleBreakSymbol + AtomBreakSymbol.repeat(xValue)
     return str ? indent + str.replace(/\n/g, indent) : ""
   }
   static fromDisk(path) {
@@ -16774,11 +16761,11 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "86.0.0"
+Particle.getVersion = () => "87.0.0"
 class AbstractExtendibleParticle extends Particle {
-  _getFromExtended(firstWordPath) {
-    const hit = this._getParticleFromExtended(firstWordPath)
-    return hit ? hit.get(firstWordPath) : undefined
+  _getFromExtended(firstAtomPath) {
+    const hit = this._getParticleFromExtended(firstAtomPath)
+    return hit ? hit.get(firstAtomPath) : undefined
   }
   _getLineage() {
     const newParticle = new Particle()
@@ -16796,16 +16783,16 @@ class AbstractExtendibleParticle extends Particle {
   _getExtendedParent() {
     return this._getAncestorsArray()[1]
   }
-  _hasFromExtended(firstWordPath) {
-    return !!this._getParticleFromExtended(firstWordPath)
+  _hasFromExtended(firstAtomPath) {
+    return !!this._getParticleFromExtended(firstAtomPath)
   }
-  _getParticleFromExtended(firstWordPath) {
-    return this._getAncestorsArray().find(particle => particle.has(firstWordPath))
+  _getParticleFromExtended(firstAtomPath) {
+    return this._getAncestorsArray().find(particle => particle.has(firstAtomPath))
   }
-  _getConcatBlockStringFromExtended(firstWordPath) {
+  _getConcatBlockStringFromExtended(firstAtomPath) {
     return this._getAncestorsArray()
-      .filter(particle => particle.has(firstWordPath))
-      .map(particle => particle.getParticle(firstWordPath).subparticlesToString())
+      .filter(particle => particle.has(firstAtomPath))
+      .map(particle => particle.getParticle(firstAtomPath).subparticlesToString())
       .reverse()
       .join("\n")
   }
@@ -16850,14 +16837,14 @@ class ExtendibleParticle extends AbstractExtendibleParticle {
     return this._particleMapCache
   }
   get id() {
-    return this.getWord(0)
+    return this.getAtom(0)
   }
 }
 window.Particle = Particle
 window.ExtendibleParticle = ExtendibleParticle
 window.AbstractExtendibleParticle = AbstractExtendibleParticle
 window.ParticleEvents = ParticleEvents
-window.ParticleWord = ParticleWord
+window.ParticleAtom = ParticleAtom
 
 
 // Compiled language parsers will include these files:
@@ -16871,7 +16858,7 @@ var ParsersConstantsCompiler
 ;(function (ParsersConstantsCompiler) {
   ParsersConstantsCompiler["stringTemplate"] = "stringTemplate"
   ParsersConstantsCompiler["indentCharacter"] = "indentCharacter"
-  ParsersConstantsCompiler["catchAllCellDelimiter"] = "catchAllCellDelimiter"
+  ParsersConstantsCompiler["catchAllAtomDelimiter"] = "catchAllAtomDelimiter"
   ParsersConstantsCompiler["openSubparticles"] = "openSubparticles"
   ParsersConstantsCompiler["joinSubparticlesWith"] = "joinSubparticlesWith"
   ParsersConstantsCompiler["closeSubparticles"] = "closeSubparticles"
@@ -16880,17 +16867,17 @@ var ParsersConstantsMisc
 ;(function (ParsersConstantsMisc) {
   ParsersConstantsMisc["doNotSynthesize"] = "doNotSynthesize"
 })(ParsersConstantsMisc || (ParsersConstantsMisc = {}))
-var PreludeCellTypeIds
-;(function (PreludeCellTypeIds) {
-  PreludeCellTypeIds["anyCell"] = "anyCell"
-  PreludeCellTypeIds["keywordCell"] = "keywordCell"
-  PreludeCellTypeIds["extraWordCell"] = "extraWordCell"
-  PreludeCellTypeIds["floatCell"] = "floatCell"
-  PreludeCellTypeIds["numberCell"] = "numberCell"
-  PreludeCellTypeIds["bitCell"] = "bitCell"
-  PreludeCellTypeIds["boolCell"] = "boolCell"
-  PreludeCellTypeIds["intCell"] = "intCell"
-})(PreludeCellTypeIds || (PreludeCellTypeIds = {}))
+var PreludeAtomTypeIds
+;(function (PreludeAtomTypeIds) {
+  PreludeAtomTypeIds["anyAtom"] = "anyAtom"
+  PreludeAtomTypeIds["keywordAtom"] = "keywordAtom"
+  PreludeAtomTypeIds["extraAtomAtom"] = "extraAtomAtom"
+  PreludeAtomTypeIds["floatAtom"] = "floatAtom"
+  PreludeAtomTypeIds["numberAtom"] = "numberAtom"
+  PreludeAtomTypeIds["bitAtom"] = "bitAtom"
+  PreludeAtomTypeIds["boolAtom"] = "boolAtom"
+  PreludeAtomTypeIds["intAtom"] = "intAtom"
+})(PreludeAtomTypeIds || (PreludeAtomTypeIds = {}))
 var ParsersConstantsConstantTypes
 ;(function (ParsersConstantsConstantTypes) {
   ParsersConstantsConstantTypes["boolean"] = "boolean"
@@ -16906,27 +16893,27 @@ var ParsersBundleFiles
   ParsersBundleFiles["indexJs"] = "index.js"
   ParsersBundleFiles["testJs"] = "test.js"
 })(ParsersBundleFiles || (ParsersBundleFiles = {}))
-var ParsersCellParser
-;(function (ParsersCellParser) {
-  ParsersCellParser["prefix"] = "prefix"
-  ParsersCellParser["postfix"] = "postfix"
-  ParsersCellParser["omnifix"] = "omnifix"
-})(ParsersCellParser || (ParsersCellParser = {}))
+var ParsersAtomParser
+;(function (ParsersAtomParser) {
+  ParsersAtomParser["prefix"] = "prefix"
+  ParsersAtomParser["postfix"] = "postfix"
+  ParsersAtomParser["omnifix"] = "omnifix"
+})(ParsersAtomParser || (ParsersAtomParser = {}))
 var ParsersConstants
 ;(function (ParsersConstants) {
   // particle types
   ParsersConstants["extensions"] = "extensions"
   ParsersConstants["comment"] = "//"
   ParsersConstants["parser"] = "parser"
-  ParsersConstants["cellType"] = "cellType"
+  ParsersConstants["atomType"] = "atomType"
   ParsersConstants["parsersFileExtension"] = "parsers"
   ParsersConstants["abstractParserPrefix"] = "abstract"
   ParsersConstants["parserSuffix"] = "Parser"
-  ParsersConstants["cellTypeSuffix"] = "Cell"
+  ParsersConstants["atomTypeSuffix"] = "Atom"
   // error check time
   ParsersConstants["regex"] = "regex"
-  ParsersConstants["reservedWords"] = "reservedWords"
-  ParsersConstants["enumFromCellTypes"] = "enumFromCellTypes"
+  ParsersConstants["reservedAtoms"] = "reservedAtoms"
+  ParsersConstants["enumFromAtomTypes"] = "enumFromAtomTypes"
   ParsersConstants["enum"] = "enum"
   ParsersConstants["examples"] = "examples"
   ParsersConstants["min"] = "min"
@@ -16942,13 +16929,13 @@ var ParsersConstants
   ParsersConstants["cruxFromId"] = "cruxFromId"
   ParsersConstants["pattern"] = "pattern"
   ParsersConstants["inScope"] = "inScope"
-  ParsersConstants["cells"] = "cells"
+  ParsersConstants["atoms"] = "atoms"
   ParsersConstants["listDelimiter"] = "listDelimiter"
   ParsersConstants["contentKey"] = "contentKey"
   ParsersConstants["subparticlesKey"] = "subparticlesKey"
-  ParsersConstants["uniqueFirstWord"] = "uniqueFirstWord"
-  ParsersConstants["catchAllCellType"] = "catchAllCellType"
-  ParsersConstants["cellParser"] = "cellParser"
+  ParsersConstants["uniqueFirstAtom"] = "uniqueFirstAtom"
+  ParsersConstants["catchAllAtomType"] = "catchAllAtomType"
+  ParsersConstants["atomParser"] = "atomParser"
   ParsersConstants["catchAllParser"] = "catchAllParser"
   ParsersConstants["constants"] = "constants"
   ParsersConstants["required"] = "required"
@@ -16970,16 +16957,16 @@ var ParsersConstants
   ParsersConstants["popularity"] = "popularity"
   ParsersConstants["paint"] = "paint"
 })(ParsersConstants || (ParsersConstants = {}))
-class TypedWord extends ParticleWord {
-  constructor(particle, cellIndex, type) {
-    super(particle, cellIndex)
+class TypedAtom extends ParticleAtom {
+  constructor(particle, atomIndex, type) {
+    super(particle, atomIndex)
     this._type = type
   }
   get type() {
     return this._type
   }
   toString() {
-    return this.word + ":" + this.type
+    return this.atom + ":" + this.type
   }
 }
 // todo: can we merge these methods into base Particle and ditch this class?
@@ -16992,15 +16979,15 @@ class ParserBackedParticle extends Particle {
   get rootParsersParticles() {
     return this.definition.root
   }
-  getAutocompleteResults(partialWord, cellIndex) {
-    return cellIndex === 0 ? this._getAutocompleteResultsForFirstWord(partialWord) : this._getAutocompleteResultsForCell(partialWord, cellIndex)
+  getAutocompleteResults(partialAtom, atomIndex) {
+    return atomIndex === 0 ? this._getAutocompleteResultsForFirstAtom(partialAtom) : this._getAutocompleteResultsForAtom(partialAtom, atomIndex)
   }
   makeError(message) {
     return new ParserDefinedError(this, message)
   }
   get particleIndex() {
-    // StringMap<int> {firstWord: index}
-    // When there are multiple tails with the same firstWord, _index stores the last content.
+    // StringMap<int> {firstAtom: index}
+    // When there are multiple tails with the same firstAtom, _index stores the last content.
     // todo: change the above behavior: when a collision occurs, create an array.
     return this._particleIndex || this._makeParticleIndex()
   }
@@ -17033,15 +17020,15 @@ class ParserBackedParticle extends Particle {
     return this.definition._doesExtend(parserId)
   }
   _getErrorParserErrors() {
-    return [this.firstWord ? new UnknownParserError(this) : new BlankLineError(this)]
+    return [this.firstAtom ? new UnknownParserError(this) : new BlankLineError(this)]
   }
   _getBlobParserCatchAllParser() {
     return BlobParser
   }
-  _getAutocompleteResultsForFirstWord(partialWord) {
-    const keywordMap = this.definition.firstWordMapWithDefinitions
+  _getAutocompleteResultsForFirstAtom(partialAtom) {
+    const keywordMap = this.definition.firstAtomMapWithDefinitions
     let keywords = Object.keys(keywordMap)
-    if (partialWord) keywords = keywords.filter(keyword => keyword.includes(partialWord))
+    if (partialAtom) keywords = keywords.filter(keyword => keyword.includes(partialAtom))
     return keywords
       .map(keyword => {
         const def = keywordMap[keyword]
@@ -17054,10 +17041,10 @@ class ParserBackedParticle extends Particle {
       })
       .filter(i => i)
   }
-  _getAutocompleteResultsForCell(partialWord, cellIndex) {
+  _getAutocompleteResultsForAtom(partialAtom, atomIndex) {
     // todo: root should be [] correct?
-    const cell = this.parsedCells[cellIndex]
-    return cell ? cell.getAutoCompleteWords(partialWord) : []
+    const atom = this.parsedAtoms[atomIndex]
+    return atom ? atom.getAutoCompleteAtoms(partialAtom) : []
   }
   // note: this is overwritten by the root particle of a runtime parsers program.
   // some of the magic that makes this all work. but maybe there's a better way.
@@ -17065,58 +17052,58 @@ class ParserBackedParticle extends Particle {
     if (this.isRoot()) throw new Error(`Root particle without getHandParsersProgram defined.`)
     return this.root.handParsersProgram
   }
-  getRunTimeEnumOptions(cell) {
+  getRunTimeEnumOptions(atom) {
     return undefined
   }
-  getRunTimeEnumOptionsForValidation(cell) {
-    return this.getRunTimeEnumOptions(cell)
+  getRunTimeEnumOptionsForValidation(atom) {
+    return this.getRunTimeEnumOptions(atom)
   }
   _sortParticlesByInScopeOrder() {
     const parserOrder = this.definition._getMyInScopeParserIds()
     if (!parserOrder.length) return this
     const orderMap = {}
-    parserOrder.forEach((word, index) => (orderMap[word] = index))
+    parserOrder.forEach((atom, index) => (orderMap[atom] = index))
     this.sort(Utils.makeSortByFn(runtimeParticle => orderMap[runtimeParticle.definition.parserIdFromDefinition]))
     return this
   }
   get requiredParticleErrors() {
     const errors = []
-    Object.values(this.definition.firstWordMapWithDefinitions).forEach(def => {
+    Object.values(this.definition.firstAtomMapWithDefinitions).forEach(def => {
       if (def.isRequired() && !this.particleIndex[def.id]) errors.push(new MissingRequiredParserError(this, def.id))
     })
     return errors
   }
-  get programAsCells() {
+  get programAsAtoms() {
     // todo: what is this?
     return this.topDownArray.map(particle => {
-      const cells = particle.parsedCells
+      const atoms = particle.parsedAtoms
       let indents = particle.getIndentLevel() - 1
       while (indents) {
-        cells.unshift(undefined)
+        atoms.unshift(undefined)
         indents--
       }
-      return cells
+      return atoms
     })
   }
   get programWidth() {
-    return Math.max(...this.programAsCells.map(line => line.length))
+    return Math.max(...this.programAsAtoms.map(line => line.length))
   }
-  get allTypedWords() {
-    const words = []
-    this.topDownArray.forEach(particle => particle.wordTypes.forEach((cell, index) => words.push(new TypedWord(particle, index, cell.cellTypeId))))
-    return words
+  get allTypedAtoms() {
+    const atoms = []
+    this.topDownArray.forEach(particle => particle.atomTypes.forEach((atom, index) => atoms.push(new TypedAtom(particle, index, atom.atomTypeId))))
+    return atoms
   }
-  findAllWordsWithCellType(cellTypeId) {
-    return this.allTypedWords.filter(typedWord => typedWord.type === cellTypeId)
+  findAllAtomsWithAtomType(atomTypeId) {
+    return this.allTypedAtoms.filter(typedAtom => typedAtom.type === atomTypeId)
   }
   findAllParticlesWithParser(parserId) {
     return this.topDownArray.filter(particle => particle.definition.parserIdFromDefinition === parserId)
   }
-  toCellTypeParticles() {
-    return this.topDownArray.map(subparticle => subparticle.indentation + subparticle.lineCellTypes).join("\n")
+  toAtomTypeParticles() {
+    return this.topDownArray.map(subparticle => subparticle.indentation + subparticle.lineAtomTypes).join("\n")
   }
   getParseTable(maxColumnWidth = 40) {
-    const particle = new Particle(this.toCellTypeParticles())
+    const particle = new Particle(this.toAtomTypeParticles())
     return new Particle(
       particle.topDownArray.map((particle, lineNumber) => {
         const sourceParticle = this.particleAtLine(lineNumber)
@@ -17126,7 +17113,7 @@ class ParserBackedParticle extends Particle {
           lineNumber: lineNumber,
           source: sourceParticle.indentation + sourceParticle.getLine(),
           parser: sourceParticle.constructor.name,
-          cellTypes: particle.content,
+          atomTypes: particle.content,
           errorCount: errorCount
         }
         if (errorCount) obj.errorMessages = errs.map(err => err.message).join(";")
@@ -17140,18 +17127,18 @@ class ParserBackedParticle extends Particle {
       new Set(
         this.getAllErrors()
           .filter(err => err instanceof UnknownParserError)
-          .map(err => err.getParticle().firstWord)
+          .map(err => err.getParticle().firstAtom)
       )
     )
   }
-  _getAllAutoCompleteWords() {
-    return this.getAllWordBoundaryCoordinates().map(coordinate => {
+  _getAllAutoCompleteAtoms() {
+    return this.getAllAtomBoundaryCoordinates().map(coordinate => {
       const results = this.getAutocompleteResultsAt(coordinate.lineIndex, coordinate.charIndex)
       return {
         lineIndex: coordinate.lineIndex,
         charIndex: coordinate.charIndex,
-        wordIndex: coordinate.wordIndex,
-        word: results.word,
+        atomIndex: coordinate.atomIndex,
+        atom: results.atom,
         suggestions: results.matches
       }
     })
@@ -17159,17 +17146,17 @@ class ParserBackedParticle extends Particle {
   toAutoCompleteCube(fillChar = "") {
     const particles = [this.clone()]
     const filled = this.clone().fill(fillChar)
-    this._getAllAutoCompleteWords().forEach(hole => {
+    this._getAllAutoCompleteAtoms().forEach(hole => {
       hole.suggestions.forEach((suggestion, index) => {
         if (!particles[index + 1]) particles[index + 1] = filled.clone()
-        particles[index + 1].particleAtLine(hole.lineIndex).setWord(hole.wordIndex, suggestion.text)
+        particles[index + 1].particleAtLine(hole.lineIndex).setAtom(hole.atomIndex, suggestion.text)
       })
     })
     return new Particle(particles)
   }
   toAutoCompleteTable() {
     return new Particle(
-      this._getAllAutoCompleteWords().map(result => {
+      this._getAllAutoCompleteAtoms().map(result => {
         result.suggestions = result.suggestions.map(particle => particle.text).join(" ")
         return result
       })
@@ -17181,26 +17168,26 @@ class ParserBackedParticle extends Particle {
     // todo: add more tests
     // todo: second param this.subparticlesToString()
     // todo: change to getAutocomplete definitions
-    const wordIndex = lineParticle.getWordIndexAtCharacterIndex(charIndex)
-    const wordProperties = lineParticle.getWordProperties(wordIndex)
+    const atomIndex = lineParticle.getAtomIndexAtCharacterIndex(charIndex)
+    const atomProperties = lineParticle.getAtomProperties(atomIndex)
     return {
-      startCharIndex: wordProperties.startCharIndex,
-      endCharIndex: wordProperties.endCharIndex,
-      word: wordProperties.word,
-      matches: particleInScope.getAutocompleteResults(wordProperties.word, wordIndex)
+      startCharIndex: atomProperties.startCharIndex,
+      endCharIndex: atomProperties.endCharIndex,
+      atom: atomProperties.atom,
+      matches: particleInScope.getAutocompleteResults(atomProperties.atom, atomIndex)
     }
   }
   _sortWithParentParsersUpTop() {
     const lineage = new HandParsersProgram(this.toString()).parserLineage
     const rank = {}
     lineage.topDownArray.forEach((particle, index) => {
-      rank[particle.getWord(0)] = index
+      rank[particle.getAtom(0)] = index
     })
     const particleAFirst = -1
     const particleBFirst = 1
     this.sort((particleA, particleB) => {
-      const particleARank = rank[particleA.getWord(0)]
-      const particleBRank = rank[particleB.getWord(0)]
+      const particleARank = rank[particleA.getAtom(0)]
+      const particleBRank = rank[particleB.getAtom(0)]
       return particleARank < particleBRank ? particleAFirst : particleBFirst
     })
     return this
@@ -17222,12 +17209,12 @@ class ParserBackedParticle extends Particle {
     const usage = new Particle()
     const handParsersProgram = this.handParsersProgram
     handParsersProgram.validConcreteAndAbstractParserDefinitions.forEach(def => {
-      const requiredCellTypeIds = def.cellParser.getRequiredCellTypeIds()
-      usage.appendLine([def.parserIdFromDefinition, "line-id", "parser", requiredCellTypeIds.join(" ")].join(" "))
+      const requiredAtomTypeIds = def.atomParser.getRequiredAtomTypeIds()
+      usage.appendLine([def.parserIdFromDefinition, "line-id", "parser", requiredAtomTypeIds.join(" ")].join(" "))
     })
     this.topDownArray.forEach((particle, lineNumber) => {
       const stats = usage.getParticle(particle.parserId)
-      stats.appendLine([filepath + "-" + lineNumber, particle.words.join(" ")].join(" "))
+      stats.appendLine([filepath + "-" + lineNumber, particle.atoms.join(" ")].join(" "))
     })
     return usage
   }
@@ -17235,28 +17222,28 @@ class ParserBackedParticle extends Particle {
     return this.topDownArray.map(subparticle => subparticle.indentation + subparticle.getLinePaints()).join("\n")
   }
   toDefinitionLineNumberParticles() {
-    return this.topDownArray.map(subparticle => subparticle.definition.lineNumber + " " + subparticle.indentation + subparticle.cellDefinitionLineNumbers.join(" ")).join("\n")
+    return this.topDownArray.map(subparticle => subparticle.definition.lineNumber + " " + subparticle.indentation + subparticle.atomDefinitionLineNumbers.join(" ")).join("\n")
   }
-  get asCellTypeParticlesWithParserIds() {
-    return this.topDownArray.map(subparticle => subparticle.constructor.name + this.wordBreakSymbol + subparticle.indentation + subparticle.lineCellTypes).join("\n")
+  get asAtomTypeParticlesWithParserIds() {
+    return this.topDownArray.map(subparticle => subparticle.constructor.name + this.atomBreakSymbol + subparticle.indentation + subparticle.lineAtomTypes).join("\n")
   }
-  toPreludeCellTypeParticlesWithParserIds() {
-    return this.topDownArray.map(subparticle => subparticle.constructor.name + this.wordBreakSymbol + subparticle.indentation + subparticle.getLineCellPreludeTypes()).join("\n")
+  toPreludeAtomTypeParticlesWithParserIds() {
+    return this.topDownArray.map(subparticle => subparticle.constructor.name + this.atomBreakSymbol + subparticle.indentation + subparticle.getLineAtomPreludeTypes()).join("\n")
   }
   get asParticlesWithParsers() {
-    return this.topDownArray.map(subparticle => subparticle.constructor.name + this.wordBreakSymbol + subparticle.indentation + subparticle.getLine()).join("\n")
+    return this.topDownArray.map(subparticle => subparticle.constructor.name + this.atomBreakSymbol + subparticle.indentation + subparticle.getLine()).join("\n")
   }
-  getCellPaintAtPosition(lineIndex, wordIndex) {
-    this._initCellTypeCache()
+  getAtomPaintAtPosition(lineIndex, atomIndex) {
+    this._initAtomTypeCache()
     const typeParticle = this._cache_paintParticles.topDownArray[lineIndex - 1]
-    return typeParticle ? typeParticle.getWord(wordIndex - 1) : undefined
+    return typeParticle ? typeParticle.getAtom(atomIndex - 1) : undefined
   }
-  _initCellTypeCache() {
+  _initAtomTypeCache() {
     const particleMTime = this.getLineOrSubparticlesModifiedTime()
-    if (this._cache_programCellTypeStringMTime === particleMTime) return undefined
-    this._cache_typeParticles = new Particle(this.toCellTypeParticles())
+    if (this._cache_programAtomTypeStringMTime === particleMTime) return undefined
+    this._cache_typeParticles = new Particle(this.toAtomTypeParticles())
     this._cache_paintParticles = new Particle(this.toPaintParticles())
-    this._cache_programCellTypeStringMTime = particleMTime
+    this._cache_programAtomTypeStringMTime = particleMTime
   }
   createParserCombinator() {
     return this.isRoot() ? new Particle.ParserCombinator(BlobParser) : new Particle.ParserCombinator(this.parent._getParser()._getCatchAllParser(this.parent), {})
@@ -17264,13 +17251,13 @@ class ParserBackedParticle extends Particle {
   get parserId() {
     return this.definition.parserIdFromDefinition
   }
-  get wordTypes() {
-    return this.parsedCells.filter(cell => cell.getWord() !== undefined)
+  get atomTypes() {
+    return this.parsedAtoms.filter(atom => atom.getAtom() !== undefined)
   }
-  get cellErrors() {
-    const { parsedCells } = this // todo: speedup. takes ~3s on pldb.
+  get atomErrors() {
+    const { parsedAtoms } = this // todo: speedup. takes ~3s on pldb.
     // todo: speedup getErrorIfAny. takes ~3s on pldb.
-    return parsedCells.map(check => check.getErrorIfAny()).filter(identity => identity)
+    return parsedAtoms.map(check => check.getErrorIfAny()).filter(identity => identity)
   }
   get singleParserUsedTwiceErrors() {
     const errors = []
@@ -17306,29 +17293,29 @@ class ParserBackedParticle extends Particle {
     return errors
   }
   getErrors() {
-    return this.cellErrors.concat(this.scopeErrors)
+    return this.atomErrors.concat(this.scopeErrors)
   }
-  get parsedCells() {
-    return this.definition.cellParser.getCellArray(this)
+  get parsedAtoms() {
+    return this.definition.atomParser.getAtomArray(this)
   }
   // todo: just make a fn that computes proper spacing and then is given a particle to print
-  get lineCellTypes() {
-    return this.parsedCells.map(slot => slot.cellTypeId).join(" ")
+  get lineAtomTypes() {
+    return this.parsedAtoms.map(slot => slot.atomTypeId).join(" ")
   }
-  getLineCellPreludeTypes() {
-    return this.parsedCells
+  getLineAtomPreludeTypes() {
+    return this.parsedAtoms
       .map(slot => {
-        const def = slot.cellTypeDefinition
+        const def = slot.atomTypeDefinition
         //todo: cleanup
-        return def ? def.preludeKindId : PreludeCellTypeIds.anyCell
+        return def ? def.preludeKindId : PreludeAtomTypeIds.anyAtom
       })
       .join(" ")
   }
   getLinePaints(defaultScope = "source") {
-    return this.parsedCells.map(slot => slot.paint || defaultScope).join(" ")
+    return this.parsedAtoms.map(slot => slot.paint || defaultScope).join(" ")
   }
-  get cellDefinitionLineNumbers() {
-    return this.parsedCells.map(cell => cell.definitionLineNumber)
+  get atomDefinitionLineNumbers() {
+    return this.parsedAtoms.map(atom => atom.definitionLineNumber)
   }
   _getCompiledIndentation() {
     const indentCharacter = this.definition._getCompilerObject()[ParsersConstantsCompiler.indentCharacter]
@@ -17336,19 +17323,19 @@ class ParserBackedParticle extends Particle {
     return indentCharacter !== undefined ? indentCharacter.repeat(indent.length) : indent
   }
   _getFields() {
-    // fields are like cells
+    // fields are like atoms
     const fields = {}
     this.forEach(particle => {
       const def = particle.definition
-      if (def.isRequired() || def.isSingle) fields[particle.getWord(0)] = particle.content
+      if (def.isRequired() || def.isSingle) fields[particle.getAtom(0)] = particle.content
     })
     return fields
   }
   _getCompiledLine() {
     const compiler = this.definition._getCompilerObject()
-    const catchAllCellDelimiter = compiler[ParsersConstantsCompiler.catchAllCellDelimiter]
+    const catchAllAtomDelimiter = compiler[ParsersConstantsCompiler.catchAllAtomDelimiter]
     const str = compiler[ParsersConstantsCompiler.stringTemplate]
-    return str !== undefined ? Utils.formatStr(str, catchAllCellDelimiter, Object.assign(this._getFields(), this.cells)) : this.getLine()
+    return str !== undefined ? Utils.formatStr(str, catchAllAtomDelimiter, Object.assign(this._getFields(), this.atomsMap)) : this.getLine()
   }
   get listDelimiter() {
     return this.definition._getFromExtended(ParsersConstants.listDelimiter)
@@ -17363,21 +17350,21 @@ class ParserBackedParticle extends Particle {
     return this.definition._isBlobParser()
   }
   get isArrayElement() {
-    return this.definition._hasFromExtended(ParsersConstants.uniqueFirstWord) ? false : !this.definition.isSingle
+    return this.definition._hasFromExtended(ParsersConstants.uniqueFirstAtom) ? false : !this.definition.isSingle
   }
   get list() {
     return this.listDelimiter ? this.content.split(this.listDelimiter) : super.list
   }
   get typedContent() {
-    // todo: probably a better way to do this, perhaps by defining a cellDelimiter at the particle level
+    // todo: probably a better way to do this, perhaps by defining a atomDelimiter at the particle level
     // todo: this currently parse anything other than string types
     if (this.listDelimiter) return this.content.split(this.listDelimiter)
-    const cells = this.parsedCells
-    if (cells.length === 2) return cells[1].parsed
+    const atoms = this.parsedAtoms
+    if (atoms.length === 2) return atoms[1].parsed
     return this.content
   }
   get typedTuple() {
-    const key = this.firstWord
+    const key = this.firstAtom
     if (this.subparticlesAreTextBlob) return [key, this.subparticlesToString()]
     const { typedContent, contentKey, subparticlesKey } = this
     if (contentKey || subparticlesKey) {
@@ -17434,17 +17421,17 @@ ${compiledSubparticles}
 ${indent}${closeSubparticlesString}`
   }
   // todo: remove
-  get cells() {
-    const cells = {}
-    this.parsedCells.forEach(cell => {
-      const cellTypeId = cell.cellTypeId
-      if (!cell.isCatchAll()) cells[cellTypeId] = cell.parsed
+  get atomsMap() {
+    const atomsMap = {}
+    this.parsedAtoms.forEach(atom => {
+      const atomTypeId = atom.atomTypeId
+      if (!atom.isCatchAll()) atomsMap[atomTypeId] = atom.parsed
       else {
-        if (!cells[cellTypeId]) cells[cellTypeId] = []
-        cells[cellTypeId].push(cell.parsed)
+        if (!atomsMap[atomTypeId]) atomsMap[atomTypeId] = []
+        atomsMap[atomTypeId].push(atom.parsed)
       }
     })
-    return cells
+    return atomsMap
   }
 }
 class BlobParser extends ParserBackedParticle {
@@ -17465,71 +17452,71 @@ class UnknownParserParticle extends ParserBackedParticle {
   }
 }
 /*
-A cell contains a word but also the type information for that word.
+A atom contains a atom but also the type information for that atom.
 */
-class AbstractParsersBackedCell {
-  constructor(particle, index, typeDef, cellTypeId, isCatchAll, parserDefinitionParser) {
+class AbstractParsersBackedAtom {
+  constructor(particle, index, typeDef, atomTypeId, isCatchAll, parserDefinitionParser) {
     this._typeDef = typeDef
     this._particle = particle
     this._isCatchAll = isCatchAll
     this._index = index
-    this._cellTypeId = cellTypeId
+    this._atomTypeId = atomTypeId
     this._parserDefinitionParser = parserDefinitionParser
   }
-  getWord() {
-    return this._particle.getWord(this._index)
+  getAtom() {
+    return this._particle.getAtom(this._index)
   }
   get definitionLineNumber() {
     return this._typeDef.lineNumber
   }
-  get cellTypeId() {
-    return this._cellTypeId
+  get atomTypeId() {
+    return this._atomTypeId
   }
   getParticle() {
     return this._particle
   }
-  get cellIndex() {
+  get atomIndex() {
     return this._index
   }
   isCatchAll() {
     return this._isCatchAll
   }
   get min() {
-    return this.cellTypeDefinition.get(ParsersConstants.min) || "0"
+    return this.atomTypeDefinition.get(ParsersConstants.min) || "0"
   }
   get max() {
-    return this.cellTypeDefinition.get(ParsersConstants.max) || "100"
+    return this.atomTypeDefinition.get(ParsersConstants.max) || "100"
   }
   get placeholder() {
-    return this.cellTypeDefinition.get(ParsersConstants.examples) || ""
+    return this.atomTypeDefinition.get(ParsersConstants.examples) || ""
   }
   get paint() {
-    const definition = this.cellTypeDefinition
+    const definition = this.atomTypeDefinition
     if (definition) return definition.paint // todo: why the undefined?
   }
-  getAutoCompleteWords(partialWord = "") {
-    const cellDef = this.cellTypeDefinition
-    let words = cellDef ? cellDef._getAutocompleteWordOptions(this.getParticle().root) : []
+  getAutoCompleteAtoms(partialAtom = "") {
+    const atomDef = this.atomTypeDefinition
+    let atoms = atomDef ? atomDef._getAutocompleteAtomOptions(this.getParticle().root) : []
     const runTimeOptions = this.getParticle().getRunTimeEnumOptions(this)
-    if (runTimeOptions) words = runTimeOptions.concat(words)
-    if (partialWord) words = words.filter(word => word.includes(partialWord))
-    return words.map(word => {
+    if (runTimeOptions) atoms = runTimeOptions.concat(atoms)
+    if (partialAtom) atoms = atoms.filter(atom => atom.includes(partialAtom))
+    return atoms.map(atom => {
       return {
-        text: word,
-        displayText: word
+        text: atom,
+        displayText: atom
       }
     })
   }
-  synthesizeCell(seed = Date.now()) {
+  synthesizeAtom(seed = Date.now()) {
     // todo: cleanup
-    const cellDef = this.cellTypeDefinition
-    const enumOptions = cellDef._getFromExtended(ParsersConstants.enum)
+    const atomDef = this.atomTypeDefinition
+    const enumOptions = atomDef._getFromExtended(ParsersConstants.enum)
     if (enumOptions) return Utils.getRandomString(1, enumOptions.split(" "))
-    return this._synthesizeCell(seed)
+    return this._synthesizeAtom(seed)
   }
   _getStumpEnumInput(crux) {
-    const cellDef = this.cellTypeDefinition
-    const enumOptions = cellDef._getFromExtended(ParsersConstants.enum)
+    const atomDef = this.atomTypeDefinition
+    const enumOptions = atomDef._getFromExtended(ParsersConstants.enum)
     if (!enumOptions) return undefined
     const options = new Particle(
       enumOptions
@@ -17545,49 +17532,49 @@ ${options.toString(1)}`
     // todo: remove
     const enumInput = this._getStumpEnumInput(crux)
     if (enumInput) return enumInput
-    // todo: cleanup. We shouldn't have these dual cellType classes.
+    // todo: cleanup. We shouldn't have these dual atomType classes.
     return `input
  name ${crux}
  placeholder ${this.placeholder}`
   }
-  get cellTypeDefinition() {
+  get atomTypeDefinition() {
     return this._typeDef
   }
   _getErrorContext() {
-    return this.getParticle().getLine().split(" ")[0] // todo: WordBreakSymbol
+    return this.getParticle().getLine().split(" ")[0] // todo: AtomBreakSymbol
   }
   isValid() {
     const runTimeOptions = this.getParticle().getRunTimeEnumOptionsForValidation(this)
-    const word = this.getWord()
-    if (runTimeOptions) return runTimeOptions.includes(word)
-    return this.cellTypeDefinition.isValid(word, this.getParticle().root) && this._isValid()
+    const atom = this.getAtom()
+    if (runTimeOptions) return runTimeOptions.includes(atom)
+    return this.atomTypeDefinition.isValid(atom, this.getParticle().root) && this._isValid()
   }
   getErrorIfAny() {
-    const word = this.getWord()
-    if (word !== undefined && this.isValid()) return undefined
-    // todo: refactor invalidwordError. We want better error messages.
-    return word === undefined || word === "" ? new MissingWordError(this) : new InvalidWordError(this)
+    const atom = this.getAtom()
+    if (atom !== undefined && this.isValid()) return undefined
+    // todo: refactor invalidatomError. We want better error messages.
+    return atom === undefined || atom === "" ? new MissingAtomError(this) : new InvalidAtomError(this)
   }
 }
-AbstractParsersBackedCell.parserFunctionName = ""
-class ParsersBitCell extends AbstractParsersBackedCell {
+AbstractParsersBackedAtom.parserFunctionName = ""
+class ParsersBitAtom extends AbstractParsersBackedAtom {
   _isValid() {
-    const word = this.getWord()
-    return word === "0" || word === "1"
+    const atom = this.getAtom()
+    return atom === "0" || atom === "1"
   }
-  _synthesizeCell() {
+  _synthesizeAtom() {
     return Utils.getRandomString(1, "01".split(""))
   }
   get regexString() {
     return "[01]"
   }
   get parsed() {
-    const word = this.getWord()
-    return !!parseInt(word)
+    const atom = this.getAtom()
+    return !!parseInt(atom)
   }
 }
-ParsersBitCell.defaultPaint = "constant.numeric"
-class ParsersNumericCell extends AbstractParsersBackedCell {
+ParsersBitAtom.defaultPaint = "constant.numeric"
+class ParsersNumericAtom extends AbstractParsersBackedAtom {
   _toStumpInput(crux) {
     return `input
  name ${crux}
@@ -17597,58 +17584,58 @@ class ParsersNumericCell extends AbstractParsersBackedCell {
  max ${this.max}`
   }
 }
-class ParsersIntCell extends ParsersNumericCell {
+class ParsersIntAtom extends ParsersNumericAtom {
   _isValid() {
-    const word = this.getWord()
-    const num = parseInt(word)
+    const atom = this.getAtom()
+    const num = parseInt(atom)
     if (isNaN(num)) return false
-    return num.toString() === word
+    return num.toString() === atom
   }
-  _synthesizeCell(seed) {
+  _synthesizeAtom(seed) {
     return Utils.randomUniformInt(parseInt(this.min), parseInt(this.max), seed).toString()
   }
   get regexString() {
     return "-?[0-9]+"
   }
   get parsed() {
-    const word = this.getWord()
-    return parseInt(word)
+    const atom = this.getAtom()
+    return parseInt(atom)
   }
 }
-ParsersIntCell.defaultPaint = "constant.numeric.integer"
-ParsersIntCell.parserFunctionName = "parseInt"
-class ParsersFloatCell extends ParsersNumericCell {
+ParsersIntAtom.defaultPaint = "constant.numeric.integer"
+ParsersIntAtom.parserFunctionName = "parseInt"
+class ParsersFloatAtom extends ParsersNumericAtom {
   _isValid() {
-    const word = this.getWord()
-    const num = parseFloat(word)
-    return !isNaN(num) && /^-?\d*(\.\d+)?([eE][+-]?\d+)?$/.test(word)
+    const atom = this.getAtom()
+    const num = parseFloat(atom)
+    return !isNaN(num) && /^-?\d*(\.\d+)?([eE][+-]?\d+)?$/.test(atom)
   }
-  _synthesizeCell(seed) {
+  _synthesizeAtom(seed) {
     return Utils.randomUniformFloat(parseFloat(this.min), parseFloat(this.max), seed).toString()
   }
   get regexString() {
     return "-?d*(.d+)?"
   }
   get parsed() {
-    const word = this.getWord()
-    return parseFloat(word)
+    const atom = this.getAtom()
+    return parseFloat(atom)
   }
 }
-ParsersFloatCell.defaultPaint = "constant.numeric.float"
-ParsersFloatCell.parserFunctionName = "parseFloat"
-// ErrorCellType => parsers asks for a '' cell type here but the parsers does not specify a '' cell type. (todo: bring in didyoumean?)
-class ParsersBoolCell extends AbstractParsersBackedCell {
+ParsersFloatAtom.defaultPaint = "constant.numeric.float"
+ParsersFloatAtom.parserFunctionName = "parseFloat"
+// ErrorAtomType => parsers asks for a '' atom type here but the parsers does not specify a '' atom type. (todo: bring in didyoumean?)
+class ParsersBoolAtom extends AbstractParsersBackedAtom {
   constructor() {
     super(...arguments)
     this._trues = new Set(["1", "true", "t", "yes"])
     this._falses = new Set(["0", "false", "f", "no"])
   }
   _isValid() {
-    const word = this.getWord()
-    const str = word.toLowerCase()
+    const atom = this.getAtom()
+    const str = atom.toLowerCase()
     return this._trues.has(str) || this._falses.has(str)
   }
-  _synthesizeCell() {
+  _synthesizeAtom() {
     return Utils.getRandomString(1, ["1", "true", "t", "yes", "0", "false", "f", "no"])
   }
   _getOptions() {
@@ -17658,17 +17645,17 @@ class ParsersBoolCell extends AbstractParsersBackedCell {
     return "(?:" + this._getOptions().join("|") + ")"
   }
   get parsed() {
-    const word = this.getWord()
-    return this._trues.has(word.toLowerCase())
+    const atom = this.getAtom()
+    return this._trues.has(atom.toLowerCase())
   }
 }
-ParsersBoolCell.defaultPaint = "constant.numeric"
-class ParsersAnyCell extends AbstractParsersBackedCell {
+ParsersBoolAtom.defaultPaint = "constant.numeric"
+class ParsersAnyAtom extends AbstractParsersBackedAtom {
   _isValid() {
     return true
   }
-  _synthesizeCell() {
-    const examples = this.cellTypeDefinition._getFromExtended(ParsersConstants.examples)
+  _synthesizeAtom() {
+    const examples = this.atomTypeDefinition._getFromExtended(ParsersConstants.examples)
     if (examples) return Utils.getRandomString(1, examples.split(" "))
     return this._parserDefinitionParser.parserIdFromDefinition + "-" + this.constructor.name
   }
@@ -17676,49 +17663,49 @@ class ParsersAnyCell extends AbstractParsersBackedCell {
     return "[^ ]+"
   }
   get parsed() {
-    return this.getWord()
+    return this.getAtom()
   }
 }
-class ParsersKeywordCell extends ParsersAnyCell {
-  _synthesizeCell() {
+class ParsersKeywordAtom extends ParsersAnyAtom {
+  _synthesizeAtom() {
     return this._parserDefinitionParser.cruxIfAny
   }
 }
-ParsersKeywordCell.defaultPaint = "keyword"
-class ParsersExtraWordCellTypeCell extends AbstractParsersBackedCell {
+ParsersKeywordAtom.defaultPaint = "keyword"
+class ParsersExtraAtomAtomTypeAtom extends AbstractParsersBackedAtom {
   _isValid() {
     return false
   }
-  synthesizeCell() {
-    throw new Error(`Trying to synthesize a ParsersExtraWordCellTypeCell`)
-    return this._synthesizeCell()
+  synthesizeAtom() {
+    throw new Error(`Trying to synthesize a ParsersExtraAtomAtomTypeAtom`)
+    return this._synthesizeAtom()
   }
-  _synthesizeCell() {
-    return "extraWord" // should never occur?
+  _synthesizeAtom() {
+    return "extraAtom" // should never occur?
   }
   get parsed() {
-    return this.getWord()
+    return this.getAtom()
   }
   getErrorIfAny() {
-    return new ExtraWordError(this)
+    return new ExtraAtomError(this)
   }
 }
-class ParsersUnknownCellTypeCell extends AbstractParsersBackedCell {
+class ParsersUnknownAtomTypeAtom extends AbstractParsersBackedAtom {
   _isValid() {
     return false
   }
-  synthesizeCell() {
-    throw new Error(`Trying to synthesize an ParsersUnknownCellTypeCell`)
-    return this._synthesizeCell()
+  synthesizeAtom() {
+    throw new Error(`Trying to synthesize an ParsersUnknownAtomTypeAtom`)
+    return this._synthesizeAtom()
   }
-  _synthesizeCell() {
-    return "extraWord" // should never occur?
+  _synthesizeAtom() {
+    return "extraAtom" // should never occur?
   }
   get parsed() {
-    return this.getWord()
+    return this.getAtom()
   }
   getErrorIfAny() {
-    return new UnknownCellTypeError(this)
+    return new UnknownAtomTypeError(this)
   }
 }
 class AbstractParticleError {
@@ -17731,18 +17718,18 @@ class AbstractParticleError {
   get lineNumber() {
     return this.getParticle()._getLineNumber() // todo: handle sourcemaps
   }
-  isCursorOnWord(lineIndex, characterIndex) {
-    return lineIndex === this.getLineIndex() && this._doesCharacterIndexFallOnWord(characterIndex)
+  isCursorOnAtom(lineIndex, characterIndex) {
+    return lineIndex === this.getLineIndex() && this._doesCharacterIndexFallOnAtom(characterIndex)
   }
-  _doesCharacterIndexFallOnWord(characterIndex) {
-    return this.cellIndex === this.getParticle().getWordIndexAtCharacterIndex(characterIndex)
+  _doesCharacterIndexFallOnAtom(characterIndex) {
+    return this.atomIndex === this.getParticle().getAtomIndexAtCharacterIndex(characterIndex)
   }
   // convenience method. may be removed.
   isBlankLineError() {
     return false
   }
   // convenience method. may be removed.
-  isMissingWordError() {
+  isMissingAtomError() {
     return false
   }
   getIndent() {
@@ -17750,17 +17737,17 @@ class AbstractParticleError {
   }
   getCodeMirrorLineWidgetElement(onApplySuggestionCallBack = () => {}) {
     const suggestion = this.suggestionMessage
-    if (this.isMissingWordError()) return this._getCodeMirrorLineWidgetElementCellTypeHints()
+    if (this.isMissingAtomError()) return this._getCodeMirrorLineWidgetElementAtomTypeHints()
     if (suggestion) return this._getCodeMirrorLineWidgetElementWithSuggestion(onApplySuggestionCallBack, suggestion)
     return this._getCodeMirrorLineWidgetElementWithoutSuggestion()
   }
   get parserId() {
     return this.getParticle().definition.parserIdFromDefinition
   }
-  _getCodeMirrorLineWidgetElementCellTypeHints() {
+  _getCodeMirrorLineWidgetElementAtomTypeHints() {
     const el = document.createElement("div")
     el.appendChild(document.createTextNode(this.getIndent() + this.getParticle().definition.lineHints))
-    el.className = "LintCellTypeHints"
+    el.className = "LintAtomTypeHints"
     return el
   }
   _getCodeMirrorLineWidgetElementWithoutSuggestion() {
@@ -17791,16 +17778,16 @@ class AbstractParticleError {
   get errorTypeName() {
     return this.constructor.name.replace("Error", "")
   }
-  get cellIndex() {
+  get atomIndex() {
     return 0
   }
   toObject() {
     return {
       type: this.errorTypeName,
       line: this.lineNumber,
-      cell: this.cellIndex,
+      atom: this.atomIndex,
       suggestion: this.suggestionMessage,
-      path: this.getParticle().getFirstWordPath(),
+      path: this.getParticle().getFirstAtomPath(),
       message: this.message
     }
   }
@@ -17815,24 +17802,24 @@ class AbstractParticleError {
   }
   applySuggestion() {}
   get message() {
-    return `${this.errorTypeName} at line ${this.lineNumber} cell ${this.cellIndex}.`
+    return `${this.errorTypeName} at line ${this.lineNumber} atom ${this.atomIndex}.`
   }
 }
-class AbstractCellError extends AbstractParticleError {
-  constructor(cell) {
-    super(cell.getParticle())
-    this._cell = cell
+class AbstractAtomError extends AbstractParticleError {
+  constructor(atom) {
+    super(atom.getParticle())
+    this._atom = atom
   }
-  get cell() {
-    return this._cell
+  get atom() {
+    return this._atom
   }
-  get cellIndex() {
-    return this._cell.cellIndex
+  get atomIndex() {
+    return this._atom.atomIndex
   }
-  get wordSuggestion() {
+  get atomSuggestion() {
     return Utils.didYouMean(
-      this.cell.getWord(),
-      this.cell.getAutoCompleteWords().map(option => option.text)
+      this.atom.getAtom(),
+      this.atom.getAutoCompleteAtoms().map(option => option.text)
     )
   }
 }
@@ -17840,26 +17827,26 @@ class UnknownParserError extends AbstractParticleError {
   get message() {
     const particle = this.getParticle()
     const parentParticle = particle.parent
-    const options = parentParticle._getParser().getFirstWordOptions()
-    return super.message + ` Invalid parser "${particle.firstWord}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
+    const options = parentParticle._getParser().getFirstAtomOptions()
+    return super.message + ` Invalid parser "${particle.firstAtom}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
   }
-  get wordSuggestion() {
+  get atomSuggestion() {
     const particle = this.getParticle()
     const parentParticle = particle.parent
     return Utils.didYouMean(
-      particle.firstWord,
+      particle.firstAtom,
       parentParticle.getAutocompleteResults("", 0).map(option => option.text)
     )
   }
   get suggestionMessage() {
-    const suggestion = this.wordSuggestion
+    const suggestion = this.atomSuggestion
     const particle = this.getParticle()
-    if (suggestion) return `Change "${particle.firstWord}" to "${suggestion}"`
+    if (suggestion) return `Change "${particle.firstAtom}" to "${suggestion}"`
     return ""
   }
   applySuggestion() {
-    const suggestion = this.wordSuggestion
-    if (suggestion) this.getParticle().setWord(this.cellIndex, suggestion)
+    const suggestion = this.atomSuggestion
+    if (suggestion) this.getParticle().setAtom(this.atomIndex, suggestion)
     return this
   }
 }
@@ -17900,7 +17887,7 @@ class MissingRequiredParserError extends AbstractParticleError {
 }
 class ParserUsedMultipleTimesError extends AbstractParticleError {
   get message() {
-    return super.message + ` Multiple "${this.getParticle().firstWord}" found.`
+    return super.message + ` Multiple "${this.getParticle().firstAtom}" found.`
   }
   get suggestionMessage() {
     return `Delete line ${this.lineNumber}`
@@ -17920,101 +17907,101 @@ class LineAppearsMultipleTimesError extends AbstractParticleError {
     return this.getParticle().destroy()
   }
 }
-class UnknownCellTypeError extends AbstractCellError {
+class UnknownAtomTypeError extends AbstractAtomError {
   get message() {
-    return super.message + ` No cellType "${this.cell.cellTypeId}" found. Language parsers for "${this.getExtension()}" may need to be fixed.`
+    return super.message + ` No atomType "${this.atom.atomTypeId}" found. Language parsers for "${this.getExtension()}" may need to be fixed.`
   }
 }
-class InvalidWordError extends AbstractCellError {
+class InvalidAtomError extends AbstractAtomError {
   get message() {
-    return super.message + ` "${this.cell.getWord()}" does not fit in cellType "${this.cell.cellTypeId}".`
+    return super.message + ` "${this.atom.getAtom()}" does not fit in atomType "${this.atom.atomTypeId}".`
   }
   get suggestionMessage() {
-    const suggestion = this.wordSuggestion
-    if (suggestion) return `Change "${this.cell.getWord()}" to "${suggestion}"`
+    const suggestion = this.atomSuggestion
+    if (suggestion) return `Change "${this.atom.getAtom()}" to "${suggestion}"`
     return ""
   }
   applySuggestion() {
-    const suggestion = this.wordSuggestion
-    if (suggestion) this.getParticle().setWord(this.cellIndex, suggestion)
+    const suggestion = this.atomSuggestion
+    if (suggestion) this.getParticle().setAtom(this.atomIndex, suggestion)
     return this
   }
 }
-class ExtraWordError extends AbstractCellError {
+class ExtraAtomError extends AbstractAtomError {
   get message() {
-    return super.message + ` Extra word "${this.cell.getWord()}" in ${this.parserId}.`
+    return super.message + ` Extra atom "${this.atom.getAtom()}" in ${this.parserId}.`
   }
   get suggestionMessage() {
-    return `Delete word "${this.cell.getWord()}" at cell ${this.cellIndex}`
+    return `Delete atom "${this.atom.getAtom()}" at atom ${this.atomIndex}`
   }
   applySuggestion() {
-    return this.getParticle().deleteWordAt(this.cellIndex)
+    return this.getParticle().deleteAtomAt(this.atomIndex)
   }
 }
-class MissingWordError extends AbstractCellError {
+class MissingAtomError extends AbstractAtomError {
   // todo: autocomplete suggestion
   get message() {
-    return super.message + ` Missing word for cell "${this.cell.cellTypeId}".`
+    return super.message + ` Missing atom for atom "${this.atom.atomTypeId}".`
   }
-  isMissingWordError() {
+  isMissingAtomError() {
     return true
   }
 }
 // todo: add standard types, enum types, from disk types
-class AbstractParsersWordTestParser extends Particle {}
-class ParsersRegexTestParser extends AbstractParsersWordTestParser {
+class AbstractParsersAtomTestParser extends Particle {}
+class ParsersRegexTestParser extends AbstractParsersAtomTestParser {
   isValid(str) {
     if (!this._regex) this._regex = new RegExp("^" + this.content + "$")
     return !!str.match(this._regex)
   }
 }
-class ParsersReservedWordsTestParser extends AbstractParsersWordTestParser {
+class ParsersReservedAtomsTestParser extends AbstractParsersAtomTestParser {
   isValid(str) {
     if (!this._set) this._set = new Set(this.content.split(" "))
     return !this._set.has(str)
   }
 }
-// todo: remove in favor of custom word type constructors
-class EnumFromCellTypesTestParser extends AbstractParsersWordTestParser {
-  _getEnumFromCellTypes(programRootParticle) {
-    const cellTypeIds = this.getWordsFrom(1)
-    const enumGroup = cellTypeIds.join(" ")
+// todo: remove in favor of custom atom type constructors
+class EnumFromAtomTypesTestParser extends AbstractParsersAtomTestParser {
+  _getEnumFromAtomTypes(programRootParticle) {
+    const atomTypeIds = this.getAtomsFrom(1)
+    const enumGroup = atomTypeIds.join(" ")
     // note: hack where we store it on the program. otherwise has global effects.
     if (!programRootParticle._enumMaps) programRootParticle._enumMaps = {}
     if (programRootParticle._enumMaps[enumGroup]) return programRootParticle._enumMaps[enumGroup]
-    const wordIndex = 1
+    const atomIndex = 1
     const map = {}
-    const cellTypeMap = {}
-    cellTypeIds.forEach(typeId => (cellTypeMap[typeId] = true))
-    programRootParticle.allTypedWords
-      .filter(typedWord => cellTypeMap[typedWord.type])
-      .forEach(typedWord => {
-        map[typedWord.word] = true
+    const atomTypeMap = {}
+    atomTypeIds.forEach(typeId => (atomTypeMap[typeId] = true))
+    programRootParticle.allTypedAtoms
+      .filter(typedAtom => atomTypeMap[typedAtom.type])
+      .forEach(typedAtom => {
+        map[typedAtom.atom] = true
       })
     programRootParticle._enumMaps[enumGroup] = map
     return map
   }
   // todo: remove
   isValid(str, programRootParticle) {
-    return this._getEnumFromCellTypes(programRootParticle)[str] === true
+    return this._getEnumFromAtomTypes(programRootParticle)[str] === true
   }
 }
-class ParsersEnumTestParticle extends AbstractParsersWordTestParser {
+class ParsersEnumTestParticle extends AbstractParsersAtomTestParser {
   isValid(str) {
     // enum c c++ java
     return !!this.getOptions()[str]
   }
   getOptions() {
-    if (!this._map) this._map = Utils.arrayToMap(this.getWordsFrom(1))
+    if (!this._map) this._map = Utils.arrayToMap(this.getAtomsFrom(1))
     return this._map
   }
 }
-class cellTypeDefinitionParser extends AbstractExtendibleParticle {
+class atomTypeDefinitionParser extends AbstractExtendibleParticle {
   createParserCombinator() {
     const types = {}
     types[ParsersConstants.regex] = ParsersRegexTestParser
-    types[ParsersConstants.reservedWords] = ParsersReservedWordsTestParser
-    types[ParsersConstants.enumFromCellTypes] = EnumFromCellTypesTestParser
+    types[ParsersConstants.reservedAtoms] = ParsersReservedAtomsTestParser
+    types[ParsersConstants.enumFromAtomTypes] = EnumFromAtomTypesTestParser
     types[ParsersConstants.enum] = ParsersEnumTestParticle
     types[ParsersConstants.paint] = Particle
     types[ParsersConstants.comment] = Particle
@@ -18026,37 +18013,37 @@ class cellTypeDefinitionParser extends AbstractExtendibleParticle {
     return new Particle.ParserCombinator(undefined, types)
   }
   get id() {
-    return this.getWord(0)
+    return this.getAtom(0)
   }
   get idToParticleMap() {
-    return this.parent.cellTypeDefinitions
+    return this.parent.atomTypeDefinitions
   }
-  getGetter(wordIndex) {
-    const wordToNativeJavascriptTypeParser = this.getCellConstructor().parserFunctionName
-    return `get ${this.cellTypeId}() {
-      return ${wordToNativeJavascriptTypeParser ? wordToNativeJavascriptTypeParser + `(this.getWord(${wordIndex}))` : `this.getWord(${wordIndex})`}
+  getGetter(atomIndex) {
+    const atomToNativeJavascriptTypeParser = this.getAtomConstructor().parserFunctionName
+    return `get ${this.atomTypeId}() {
+      return ${atomToNativeJavascriptTypeParser ? atomToNativeJavascriptTypeParser + `(this.getAtom(${atomIndex}))` : `this.getAtom(${atomIndex})`}
     }`
   }
-  getCatchAllGetter(wordIndex) {
-    const wordToNativeJavascriptTypeParser = this.getCellConstructor().parserFunctionName
-    return `get ${this.cellTypeId}() {
-      return ${wordToNativeJavascriptTypeParser ? `this.getWordsFrom(${wordIndex}).map(val => ${wordToNativeJavascriptTypeParser}(val))` : `this.getWordsFrom(${wordIndex})`}
+  getCatchAllGetter(atomIndex) {
+    const atomToNativeJavascriptTypeParser = this.getAtomConstructor().parserFunctionName
+    return `get ${this.atomTypeId}() {
+      return ${atomToNativeJavascriptTypeParser ? `this.getAtomsFrom(${atomIndex}).map(val => ${atomToNativeJavascriptTypeParser}(val))` : `this.getAtomsFrom(${atomIndex})`}
     }`
   }
-  // `this.getWordsFrom(${requireds.length + 1})`
+  // `this.getAtomsFrom(${requireds.length + 1})`
   // todo: cleanup typings. todo: remove this hidden logic. have a "baseType" property?
-  getCellConstructor() {
-    return this.preludeKind || ParsersAnyCell
+  getAtomConstructor() {
+    return this.preludeKind || ParsersAnyAtom
   }
   get preludeKind() {
-    return PreludeKinds[this.getWord(0)] || PreludeKinds[this._getExtendedCellTypeId()]
+    return PreludeKinds[this.getAtom(0)] || PreludeKinds[this._getExtendedAtomTypeId()]
   }
   get preludeKindId() {
-    if (PreludeKinds[this.getWord(0)]) return this.getWord(0)
-    else if (PreludeKinds[this._getExtendedCellTypeId()]) return this._getExtendedCellTypeId()
-    return PreludeCellTypeIds.anyCell
+    if (PreludeKinds[this.getAtom(0)]) return this.getAtom(0)
+    else if (PreludeKinds[this._getExtendedAtomTypeId()]) return this._getExtendedAtomTypeId()
+    return PreludeAtomTypeIds.anyAtom
   }
-  _getExtendedCellTypeId() {
+  _getExtendedAtomTypeId() {
     const arr = this._getAncestorsArray()
     return arr[arr.length - 1].id
   }
@@ -18074,12 +18061,12 @@ class cellTypeDefinitionParser extends AbstractExtendibleParticle {
     options.sort((a, b) => b.length - a.length)
     return options
   }
-  _getEnumFromCellTypeOptions(program) {
-    const particle = this._getParticleFromExtended(ParsersConstants.enumFromCellTypes)
-    return particle ? Object.keys(particle.getParticle(ParsersConstants.enumFromCellTypes)._getEnumFromCellTypes(program)) : undefined
+  _getEnumFromAtomTypeOptions(program) {
+    const particle = this._getParticleFromExtended(ParsersConstants.enumFromAtomTypes)
+    return particle ? Object.keys(particle.getParticle(ParsersConstants.enumFromAtomTypes)._getEnumFromAtomTypes(program)) : undefined
   }
-  _getAutocompleteWordOptions(program) {
-    return this._getEnumOptions() || this._getEnumFromCellTypeOptions(program) || []
+  _getAutocompleteAtomOptions(program) {
+    return this._getEnumOptions() || this._getEnumFromAtomTypeOptions(program) || []
   }
   get regexString() {
     // todo: enum
@@ -18087,113 +18074,113 @@ class cellTypeDefinitionParser extends AbstractExtendibleParticle {
     return this._getFromExtended(ParsersConstants.regex) || (enumOptions ? "(?:" + enumOptions.join("|") + ")" : "[^ ]*")
   }
   _getAllTests() {
-    return this._getSubparticlesByParserInExtended(AbstractParsersWordTestParser)
+    return this._getSubparticlesByParserInExtended(AbstractParsersAtomTestParser)
   }
   isValid(str, programRootParticle) {
     return this._getAllTests().every(particle => particle.isValid(str, programRootParticle))
   }
-  get cellTypeId() {
-    return this.getWord(0)
+  get atomTypeId() {
+    return this.getAtom(0)
   }
 }
-class AbstractCellParser {
+class AbstractAtomParser {
   constructor(definition) {
     this._definition = definition
   }
-  get catchAllCellTypeId() {
-    return this._definition._getFromExtended(ParsersConstants.catchAllCellType)
+  get catchAllAtomTypeId() {
+    return this._definition._getFromExtended(ParsersConstants.catchAllAtomType)
   }
   // todo: improve layout (use bold?)
   get lineHints() {
-    const catchAllCellTypeId = this.catchAllCellTypeId
+    const catchAllAtomTypeId = this.catchAllAtomTypeId
     const parserId = this._definition.cruxIfAny || this._definition.id // todo: cleanup
-    return `${parserId}: ${this.getRequiredCellTypeIds().join(" ")}${catchAllCellTypeId ? ` ${catchAllCellTypeId}...` : ""}`
+    return `${parserId}: ${this.getRequiredAtomTypeIds().join(" ")}${catchAllAtomTypeId ? ` ${catchAllAtomTypeId}...` : ""}`
   }
-  getRequiredCellTypeIds() {
-    if (!this._requiredCellTypeIds) {
-      const parameters = this._definition._getFromExtended(ParsersConstants.cells)
-      this._requiredCellTypeIds = parameters ? parameters.split(" ") : []
+  getRequiredAtomTypeIds() {
+    if (!this._requiredAtomTypeIds) {
+      const parameters = this._definition._getFromExtended(ParsersConstants.atoms)
+      this._requiredAtomTypeIds = parameters ? parameters.split(" ") : []
     }
-    return this._requiredCellTypeIds
+    return this._requiredAtomTypeIds
   }
-  _getCellTypeId(cellIndex, requiredCellTypeIds, totalWordCount) {
-    return requiredCellTypeIds[cellIndex]
+  _getAtomTypeId(atomIndex, requiredAtomTypeIds, totalAtomCount) {
+    return requiredAtomTypeIds[atomIndex]
   }
-  _isCatchAllCell(cellIndex, numberOfRequiredCells, totalWordCount) {
-    return cellIndex >= numberOfRequiredCells
+  _isCatchAllAtom(atomIndex, numberOfRequiredAtoms, totalAtomCount) {
+    return atomIndex >= numberOfRequiredAtoms
   }
-  getCellArray(particle = undefined) {
-    const wordCount = particle ? particle.words.length : 0
+  getAtomArray(particle = undefined) {
+    const atomCount = particle ? particle.atoms.length : 0
     const def = this._definition
     const parsersProgram = def.languageDefinitionProgram
-    const requiredCellTypeIds = this.getRequiredCellTypeIds()
-    const numberOfRequiredCells = requiredCellTypeIds.length
-    const actualWordCountOrRequiredCellCount = Math.max(wordCount, numberOfRequiredCells)
-    const cells = []
-    // A for loop instead of map because "numberOfCellsToFill" can be longer than words.length
-    for (let cellIndex = 0; cellIndex < actualWordCountOrRequiredCellCount; cellIndex++) {
-      const isCatchAll = this._isCatchAllCell(cellIndex, numberOfRequiredCells, wordCount)
-      let cellTypeId = isCatchAll ? this.catchAllCellTypeId : this._getCellTypeId(cellIndex, requiredCellTypeIds, wordCount)
-      let cellTypeDefinition = parsersProgram.getCellTypeDefinitionById(cellTypeId)
-      let cellConstructor
-      if (cellTypeDefinition) cellConstructor = cellTypeDefinition.getCellConstructor()
-      else if (cellTypeId) cellConstructor = ParsersUnknownCellTypeCell
+    const requiredAtomTypeIds = this.getRequiredAtomTypeIds()
+    const numberOfRequiredAtoms = requiredAtomTypeIds.length
+    const actualAtomCountOrRequiredAtomCount = Math.max(atomCount, numberOfRequiredAtoms)
+    const atoms = []
+    // A for loop instead of map because "numberOfAtomsToFill" can be longer than atoms.length
+    for (let atomIndex = 0; atomIndex < actualAtomCountOrRequiredAtomCount; atomIndex++) {
+      const isCatchAll = this._isCatchAllAtom(atomIndex, numberOfRequiredAtoms, atomCount)
+      let atomTypeId = isCatchAll ? this.catchAllAtomTypeId : this._getAtomTypeId(atomIndex, requiredAtomTypeIds, atomCount)
+      let atomTypeDefinition = parsersProgram.getAtomTypeDefinitionById(atomTypeId)
+      let atomConstructor
+      if (atomTypeDefinition) atomConstructor = atomTypeDefinition.getAtomConstructor()
+      else if (atomTypeId) atomConstructor = ParsersUnknownAtomTypeAtom
       else {
-        cellConstructor = ParsersExtraWordCellTypeCell
-        cellTypeId = PreludeCellTypeIds.extraWordCell
-        cellTypeDefinition = parsersProgram.getCellTypeDefinitionById(cellTypeId)
+        atomConstructor = ParsersExtraAtomAtomTypeAtom
+        atomTypeId = PreludeAtomTypeIds.extraAtomAtom
+        atomTypeDefinition = parsersProgram.getAtomTypeDefinitionById(atomTypeId)
       }
-      const anyCellConstructor = cellConstructor
-      cells[cellIndex] = new anyCellConstructor(particle, cellIndex, cellTypeDefinition, cellTypeId, isCatchAll, def)
+      const anyAtomConstructor = atomConstructor
+      atoms[atomIndex] = new anyAtomConstructor(particle, atomIndex, atomTypeDefinition, atomTypeId, isCatchAll, def)
     }
-    return cells
+    return atoms
   }
 }
-class PrefixCellParser extends AbstractCellParser {}
-class PostfixCellParser extends AbstractCellParser {
-  _isCatchAllCell(cellIndex, numberOfRequiredCells, totalWordCount) {
-    return cellIndex < totalWordCount - numberOfRequiredCells
+class PrefixAtomParser extends AbstractAtomParser {}
+class PostfixAtomParser extends AbstractAtomParser {
+  _isCatchAllAtom(atomIndex, numberOfRequiredAtoms, totalAtomCount) {
+    return atomIndex < totalAtomCount - numberOfRequiredAtoms
   }
-  _getCellTypeId(cellIndex, requiredCellTypeIds, totalWordCount) {
-    const catchAllWordCount = Math.max(totalWordCount - requiredCellTypeIds.length, 0)
-    return requiredCellTypeIds[cellIndex - catchAllWordCount]
+  _getAtomTypeId(atomIndex, requiredAtomTypeIds, totalAtomCount) {
+    const catchAllAtomCount = Math.max(totalAtomCount - requiredAtomTypeIds.length, 0)
+    return requiredAtomTypeIds[atomIndex - catchAllAtomCount]
   }
 }
-class OmnifixCellParser extends AbstractCellParser {
-  getCellArray(particle = undefined) {
-    const cells = []
+class OmnifixAtomParser extends AbstractAtomParser {
+  getAtomArray(particle = undefined) {
+    const atomsArr = []
     const def = this._definition
     const program = particle ? particle.root : undefined
     const parsersProgram = def.languageDefinitionProgram
-    const words = particle ? particle.words : []
-    const requiredCellTypeDefs = this.getRequiredCellTypeIds().map(cellTypeId => parsersProgram.getCellTypeDefinitionById(cellTypeId))
-    const catchAllCellTypeId = this.catchAllCellTypeId
-    const catchAllCellTypeDef = catchAllCellTypeId && parsersProgram.getCellTypeDefinitionById(catchAllCellTypeId)
-    words.forEach((word, wordIndex) => {
-      let cellConstructor
-      for (let index = 0; index < requiredCellTypeDefs.length; index++) {
-        const cellTypeDefinition = requiredCellTypeDefs[index]
-        if (cellTypeDefinition.isValid(word, program)) {
-          // todo: cleanup cellIndex/wordIndex stuff
-          cellConstructor = cellTypeDefinition.getCellConstructor()
-          cells.push(new cellConstructor(particle, wordIndex, cellTypeDefinition, cellTypeDefinition.id, false, def))
-          requiredCellTypeDefs.splice(index, 1)
+    const atoms = particle ? particle.atoms : []
+    const requiredAtomTypeDefs = this.getRequiredAtomTypeIds().map(atomTypeId => parsersProgram.getAtomTypeDefinitionById(atomTypeId))
+    const catchAllAtomTypeId = this.catchAllAtomTypeId
+    const catchAllAtomTypeDef = catchAllAtomTypeId && parsersProgram.getAtomTypeDefinitionById(catchAllAtomTypeId)
+    atoms.forEach((atom, atomIndex) => {
+      let atomConstructor
+      for (let index = 0; index < requiredAtomTypeDefs.length; index++) {
+        const atomTypeDefinition = requiredAtomTypeDefs[index]
+        if (atomTypeDefinition.isValid(atom, program)) {
+          // todo: cleanup atomIndex/atomIndex stuff
+          atomConstructor = atomTypeDefinition.getAtomConstructor()
+          atomsArr.push(new atomConstructor(particle, atomIndex, atomTypeDefinition, atomTypeDefinition.id, false, def))
+          requiredAtomTypeDefs.splice(index, 1)
           return true
         }
       }
-      if (catchAllCellTypeDef && catchAllCellTypeDef.isValid(word, program)) {
-        cellConstructor = catchAllCellTypeDef.getCellConstructor()
-        cells.push(new cellConstructor(particle, wordIndex, catchAllCellTypeDef, catchAllCellTypeId, true, def))
+      if (catchAllAtomTypeDef && catchAllAtomTypeDef.isValid(atom, program)) {
+        atomConstructor = catchAllAtomTypeDef.getAtomConstructor()
+        atomsArr.push(new atomConstructor(particle, atomIndex, catchAllAtomTypeDef, catchAllAtomTypeId, true, def))
         return true
       }
-      cells.push(new ParsersUnknownCellTypeCell(particle, wordIndex, undefined, undefined, false, def))
+      atomsArr.push(new ParsersUnknownAtomTypeAtom(particle, atomIndex, undefined, undefined, false, def))
     })
-    const wordCount = words.length
-    requiredCellTypeDefs.forEach((cellTypeDef, index) => {
-      let cellConstructor = cellTypeDef.getCellConstructor()
-      cells.push(new cellConstructor(particle, wordCount + index, cellTypeDef, cellTypeDef.id, false, def))
+    const atomCount = atoms.length
+    requiredAtomTypeDefs.forEach((atomTypeDef, index) => {
+      let atomConstructor = atomTypeDef.getAtomConstructor()
+      atomsArr.push(new atomConstructor(particle, atomCount + index, atomTypeDef, atomTypeDef.id, false, def))
     })
-    return cells
+    return atomsArr
   }
 }
 class ParsersExampleParser extends Particle {}
@@ -18202,7 +18189,7 @@ class ParsersCompilerParser extends Particle {
     const types = [
       ParsersConstantsCompiler.stringTemplate,
       ParsersConstantsCompiler.indentCharacter,
-      ParsersConstantsCompiler.catchAllCellDelimiter,
+      ParsersConstantsCompiler.catchAllAtomDelimiter,
       ParsersConstantsCompiler.joinSubparticlesWith,
       ParsersConstantsCompiler.openSubparticles,
       ParsersConstantsCompiler.closeSubparticles
@@ -18223,11 +18210,11 @@ class AbstractParserConstantParser extends Particle {
     return `get ${this.identifier}() { return ${this.constantValueAsJsText} }`
   }
   get identifier() {
-    return this.getWord(1)
+    return this.getAtom(1)
   }
   get constantValueAsJsText() {
-    const words = this.getWordsFrom(2)
-    return words.length > 1 ? `[${words.join(",")}]` : words[0]
+    const atoms = this.getAtomsFrom(2)
+    return atoms.length > 1 ? `[${atoms.join(",")}]` : atoms[0]
   }
   get constantValue() {
     return JSON.parse(this.constantValueAsJsText)
@@ -18239,7 +18226,7 @@ class ParsersParserConstantString extends AbstractParserConstantParser {
     return "`" + Utils.escapeBackTicks(this.constantValue) + "`"
   }
   get constantValue() {
-    return this.length ? this.subparticlesToString() : this.getWordsFrom(2).join(" ")
+    return this.length ? this.subparticlesToString() : this.getAtomsFrom(2).join(" ")
   }
 }
 class ParsersParserConstantFloat extends AbstractParserConstantParser {}
@@ -18250,12 +18237,12 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
     const types = [
       ParsersConstants.popularity,
       ParsersConstants.inScope,
-      ParsersConstants.cells,
+      ParsersConstants.atoms,
       ParsersConstants.extends,
       ParsersConstants.description,
       ParsersConstants.catchAllParser,
-      ParsersConstants.catchAllCellType,
-      ParsersConstants.cellParser,
+      ParsersConstants.catchAllAtomType,
+      ParsersConstants.atomParser,
       ParsersConstants.extensions,
       ParsersConstants.tags,
       ParsersConstants.crux,
@@ -18263,7 +18250,7 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
       ParsersConstants.listDelimiter,
       ParsersConstants.contentKey,
       ParsersConstants.subparticlesKey,
-      ParsersConstants.uniqueFirstWord,
+      ParsersConstants.uniqueFirstAtom,
       ParsersConstants.uniqueLine,
       ParsersConstants.pattern,
       ParsersConstants.baseParser,
@@ -18291,12 +18278,12 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
   toTypeScriptInterface(used = new Set()) {
     let subparticlesInterfaces = []
     let properties = []
-    const inScope = this.firstWordMapWithDefinitions
+    const inScope = this.firstAtomMapWithDefinitions
     const thisId = this.id
     used.add(thisId)
     Object.keys(inScope).forEach(key => {
       const def = inScope[key]
-      const map = def.firstWordMapWithDefinitions
+      const map = def.firstAtomMapWithDefinitions
       const id = def.id
       const optionalTag = def.isRequired() ? "" : "?"
       const escapedKey = key.match(/\?/) ? `"${key}"` : key
@@ -18316,7 +18303,7 @@ ${properties.join("\n")}
 }`.trim()
   }
   get id() {
-    return this.getWord(0)
+    return this.getAtom(0)
   }
   get idWithoutSuffix() {
     return this.id.replace(HandParsersProgram.parserSuffixRegex, "")
@@ -18337,7 +18324,7 @@ ${properties.join("\n")}
     return this._getSubparticlesByParserInExtended(ParsersExampleParser)
   }
   get parserIdFromDefinition() {
-    return this.getWord(0)
+    return this.getAtom(0)
   }
   // todo: remove? just reused parserId
   get generatedClassName() {
@@ -18355,9 +18342,9 @@ ${properties.join("\n")}
   get regexMatch() {
     return this.get(ParsersConstants.pattern)
   }
-  get firstCellEnumOptions() {
-    const firstCellDef = this._getMyCellTypeDefs()[0]
-    return firstCellDef ? firstCellDef._getEnumOptions() : undefined
+  get firstAtomEnumOptions() {
+    const firstAtomDef = this._getMyAtomTypeDefs()[0]
+    return firstAtomDef ? firstAtomDef._getEnumOptions() : undefined
   }
   get languageDefinitionProgram() {
     return this.root
@@ -18366,38 +18353,38 @@ ${properties.join("\n")}
     const hasJsCode = this.has(ParsersConstants.javascript)
     return hasJsCode ? this.getParticle(ParsersConstants.javascript).subparticlesToString() : ""
   }
-  get firstWordMapWithDefinitions() {
-    if (!this._cache_firstWordToParticleDefMap) this._cache_firstWordToParticleDefMap = this._createParserInfo(this._getInScopeParserIds()).firstWordMap
-    return this._cache_firstWordToParticleDefMap
+  get firstAtomMapWithDefinitions() {
+    if (!this._cache_firstAtomToParticleDefMap) this._cache_firstAtomToParticleDefMap = this._createParserInfo(this._getInScopeParserIds()).firstAtomMap
+    return this._cache_firstAtomToParticleDefMap
   }
   // todo: remove
-  get runTimeFirstWordsInScope() {
-    return this._getParser().getFirstWordOptions()
+  get runTimeFirstAtomsInScope() {
+    return this._getParser().getFirstAtomOptions()
   }
-  _getMyCellTypeDefs() {
-    const requiredCells = this.get(ParsersConstants.cells)
-    if (!requiredCells) return []
+  _getMyAtomTypeDefs() {
+    const requiredAtoms = this.get(ParsersConstants.atoms)
+    if (!requiredAtoms) return []
     const parsersProgram = this.languageDefinitionProgram
-    return requiredCells.split(" ").map(cellTypeId => {
-      const cellTypeDef = parsersProgram.getCellTypeDefinitionById(cellTypeId)
-      if (!cellTypeDef) throw new Error(`No cellType "${cellTypeId}" found`)
-      return cellTypeDef
+    return requiredAtoms.split(" ").map(atomTypeId => {
+      const atomTypeDef = parsersProgram.getAtomTypeDefinitionById(atomTypeId)
+      if (!atomTypeDef) throw new Error(`No atomType "${atomTypeId}" found`)
+      return atomTypeDef
     })
   }
-  // todo: what happens when you have a cell getter and constant with same name?
-  get cellGettersAndParserConstants() {
-    // todo: add cellType parsings
+  // todo: what happens when you have a atom getter and constant with same name?
+  get atomGettersAndParserConstants() {
+    // todo: add atomType parsings
     const parsersProgram = this.languageDefinitionProgram
-    const getters = this._getMyCellTypeDefs().map((cellTypeDef, index) => cellTypeDef.getGetter(index))
-    const catchAllCellTypeId = this.get(ParsersConstants.catchAllCellType)
-    if (catchAllCellTypeId) getters.push(parsersProgram.getCellTypeDefinitionById(catchAllCellTypeId).getCatchAllGetter(getters.length))
+    const getters = this._getMyAtomTypeDefs().map((atomTypeDef, index) => atomTypeDef.getGetter(index))
+    const catchAllAtomTypeId = this.get(ParsersConstants.catchAllAtomType)
+    if (catchAllAtomTypeId) getters.push(parsersProgram.getAtomTypeDefinitionById(catchAllAtomTypeId).getCatchAllGetter(getters.length))
     // Constants
     Object.values(this._getUniqueConstantParticles(false)).forEach(particle => getters.push(particle.getGetter()))
     return getters.join("\n")
   }
   _createParserInfo(parserIdsInScope) {
     const result = {
-      firstWordMap: {},
+      firstAtomMap: {},
       regexTests: []
     }
     if (!parserIdsInScope.length) return result
@@ -18411,17 +18398,17 @@ ${properties.join("\n")}
         const def = allProgramParserDefinitionsMap[parserId]
         const regex = def.regexMatch
         const crux = def.cruxIfAny
-        const enumOptions = def.firstCellEnumOptions
+        const enumOptions = def.firstAtomEnumOptions
         if (regex) result.regexTests.push({ regex: regex, parser: def.parserIdFromDefinition })
-        else if (crux) result.firstWordMap[crux] = def
+        else if (crux) result.firstAtomMap[crux] = def
         else if (enumOptions) {
-          enumOptions.forEach(option => (result.firstWordMap[option] = def))
+          enumOptions.forEach(option => (result.firstAtomMap[option] = def))
         }
       })
     return result
   }
   get topParserDefinitions() {
-    const arr = Object.values(this.firstWordMapWithDefinitions)
+    const arr = Object.values(this.firstAtomMapWithDefinitions)
     arr.sort(Utils.makeSortByFn(definition => definition.popularity))
     arr.reverse()
     return arr
@@ -18429,7 +18416,7 @@ ${properties.join("\n")}
   _getMyInScopeParserIds(target = this) {
     const parsersParticle = target.getParticle(ParsersConstants.inScope)
     const scopedDefinitionIds = target.myScopedParserDefinitions.map(def => def.id)
-    return parsersParticle ? parsersParticle.getWordsFrom(1).concat(scopedDefinitionIds) : scopedDefinitionIds
+    return parsersParticle ? parsersParticle.getAtomsFrom(1).concat(scopedDefinitionIds) : scopedDefinitionIds
   }
   _getInScopeParserIds() {
     // todo: allow multiple of these if we allow mixins?
@@ -18487,16 +18474,16 @@ ${properties.join("\n")}
       // todo: do we need this?
       return "createParserCombinator() { return new Particle.ParserCombinator(this._getBlobParserCatchAllParser())}"
     const parserInfo = this._createParserInfo(this._getMyInScopeParserIds())
-    const myFirstWordMap = parserInfo.firstWordMap
+    const myFirstAtomMap = parserInfo.firstAtomMap
     const regexRules = parserInfo.regexTests
-    // todo: use constants in first word maps?
+    // todo: use constants in first atom maps?
     // todo: cache the super extending?
-    const firstWords = Object.keys(myFirstWordMap)
-    const hasFirstWords = firstWords.length
+    const firstAtoms = Object.keys(myFirstAtomMap)
+    const hasFirstAtoms = firstAtoms.length
     const catchAllParser = this.catchAllParserToJavascript
-    if (!hasFirstWords && !catchAllParser && !regexRules.length) return ""
-    const firstWordsStr = hasFirstWords
-      ? `Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {` + firstWords.map(firstWord => `"${firstWord}" : ${myFirstWordMap[firstWord].parserIdFromDefinition}`).join(",\n") + "})"
+    if (!hasFirstAtoms && !catchAllParser && !regexRules.length) return ""
+    const firstAtomsStr = hasFirstAtoms
+      ? `Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {` + firstAtoms.map(firstAtom => `"${firstAtom}" : ${myFirstAtomMap[firstAtom].parserIdFromDefinition}`).join(",\n") + "})"
       : "undefined"
     const regexStr = regexRules.length
       ? `[${regexRules
@@ -18508,7 +18495,7 @@ ${properties.join("\n")}
     const catchAllStr = catchAllParser ? catchAllParser : this._amIRoot() ? `this._getBlobParserCatchAllParser()` : "undefined"
     const scopedParserJavascript = this.myScopedParserDefinitions.map(def => def.asJavascriptClass).join("\n\n")
     return `createParserCombinator() {${scopedParserJavascript}
-  return new Particle.ParserCombinator(${catchAllStr}, ${firstWordsStr}, ${regexStr})
+  return new Particle.ParserCombinator(${catchAllStr}, ${firstAtomsStr}, ${regexStr})
   }`
   }
   get myScopedParserDefinitions() {
@@ -18522,7 +18509,7 @@ ${properties.join("\n")}
     return particleDef.generatedClassName
   }
   get asJavascriptClass() {
-    const components = [this.parserAsJavascript, this.errorMethodToJavascript, this.cellGettersAndParserConstants, this.customJavascriptMethods].filter(identity => identity)
+    const components = [this.parserAsJavascript, this.errorMethodToJavascript, this.atomGettersAndParserConstants, this.customJavascriptMethods].filter(identity => identity)
     const thisClassName = this.generatedClassName
     if (this._amIRoot()) {
       components.push(`static cachedHandParsersProgramRoot = new HandParsersProgram(\`${Utils.escapeBackTicks(this.parent.toString().replace(/\\/g, "\\\\"))}\`)
@@ -18550,11 +18537,11 @@ ${properties.join("\n")}
   }
   // todo: improve layout (use bold?)
   get lineHints() {
-    return this.cellParser.lineHints
+    return this.atomParser.lineHints
   }
-  isOrExtendsAParserInScope(firstWordsInScope) {
+  isOrExtendsAParserInScope(firstAtomsInScope) {
     const chain = this._getParserInheritanceSet()
-    return firstWordsInScope.some(firstWord => chain.has(firstWord))
+    return firstAtomsInScope.some(firstAtom => chain.has(firstAtom))
   }
   isTerminalParser() {
     return !this._getFromExtended(ParsersConstants.inScope) && !this._getFromExtended(ParsersConstants.catchAllParser)
@@ -18564,34 +18551,34 @@ ${properties.join("\n")}
     if (regexMatch) return `'${regexMatch}'`
     const cruxMatch = this.cruxIfAny
     if (cruxMatch) return `'^ *${Utils.escapeRegExp(cruxMatch)}(?: |$)'`
-    const enumOptions = this.firstCellEnumOptions
+    const enumOptions = this.firstAtomEnumOptions
     if (enumOptions) return `'^ *(${Utils.escapeRegExp(enumOptions.join("|"))})(?: |$)'`
   }
-  // todo: refactor. move some parts to cellParser?
+  // todo: refactor. move some parts to atomParser?
   _toSublimeMatchBlock() {
     const defaultPaint = "source"
     const program = this.languageDefinitionProgram
-    const cellParser = this.cellParser
-    const requiredCellTypeIds = cellParser.getRequiredCellTypeIds()
-    const catchAllCellTypeId = cellParser.catchAllCellTypeId
-    const firstCellTypeDef = program.getCellTypeDefinitionById(requiredCellTypeIds[0])
-    const firstWordPaint = (firstCellTypeDef ? firstCellTypeDef.paint : defaultPaint) + "." + this.parserIdFromDefinition
+    const atomParser = this.atomParser
+    const requiredAtomTypeIds = atomParser.getRequiredAtomTypeIds()
+    const catchAllAtomTypeId = atomParser.catchAllAtomTypeId
+    const firstAtomTypeDef = program.getAtomTypeDefinitionById(requiredAtomTypeIds[0])
+    const firstAtomPaint = (firstAtomTypeDef ? firstAtomTypeDef.paint : defaultPaint) + "." + this.parserIdFromDefinition
     const topHalf = ` '${this.parserIdFromDefinition}':
   - match: ${this.sublimeMatchLine}
-    scope: ${firstWordPaint}`
-    if (catchAllCellTypeId) requiredCellTypeIds.push(catchAllCellTypeId)
-    if (!requiredCellTypeIds.length) return topHalf
-    const captures = requiredCellTypeIds
-      .map((cellTypeId, index) => {
-        const cellTypeDefinition = program.getCellTypeDefinitionById(cellTypeId) // todo: cleanup
-        if (!cellTypeDefinition) throw new Error(`No ${ParsersConstants.cellType} ${cellTypeId} found`) // todo: standardize error/capture error at parsers time
-        return `        ${index + 1}: ${(cellTypeDefinition.paint || defaultPaint) + "." + cellTypeDefinition.cellTypeId}`
+    scope: ${firstAtomPaint}`
+    if (catchAllAtomTypeId) requiredAtomTypeIds.push(catchAllAtomTypeId)
+    if (!requiredAtomTypeIds.length) return topHalf
+    const captures = requiredAtomTypeIds
+      .map((atomTypeId, index) => {
+        const atomTypeDefinition = program.getAtomTypeDefinitionById(atomTypeId) // todo: cleanup
+        if (!atomTypeDefinition) throw new Error(`No ${ParsersConstants.atomType} ${atomTypeId} found`) // todo: standardize error/capture error at parsers time
+        return `        ${index + 1}: ${(atomTypeDefinition.paint || defaultPaint) + "." + atomTypeDefinition.atomTypeId}`
       })
       .join("\n")
-    const cellTypesToRegex = cellTypeIds => cellTypeIds.map(cellTypeId => `({{${cellTypeId}}})?`).join(" ?")
+    const atomTypesToRegex = atomTypeIds => atomTypeIds.map(atomTypeId => `({{${atomTypeId}}})?`).join(" ?")
     return `${topHalf}
     push:
-     - match: ${cellTypesToRegex(requiredCellTypeIds)}
+     - match: ${atomTypesToRegex(requiredAtomTypeIds)}
        captures:
 ${captures}
      - match: $
@@ -18634,14 +18621,14 @@ ${captures}
   }
   _toStumpString() {
     const crux = this.cruxIfAny
-    const cellArray = this.cellParser.getCellArray().filter((item, index) => index) // for now this only works for keyword langs
-    if (!cellArray.length)
-      // todo: remove this! just doing it for now until we refactor getCellArray to handle catchAlls better.
+    const atomArray = this.atomParser.getAtomArray().filter((item, index) => index) // for now this only works for keyword langs
+    if (!atomArray.length)
+      // todo: remove this! just doing it for now until we refactor getAtomArray to handle catchAlls better.
       return ""
-    const cells = new Particle(cellArray.map((cell, index) => cell._toStumpInput(crux)).join("\n"))
+    const atoms = new Particle(atomArray.map((atom, index) => atom._toStumpInput(crux)).join("\n"))
     return `div
  label ${crux}
-${cells.toString(1)}`
+${atoms.toString(1)}`
   }
   toStumpString() {
     const particleBreakSymbol = "\n"
@@ -18653,9 +18640,9 @@ ${cells.toString(1)}`
   _generateSimulatedLine(seed) {
     // todo: generate simulated data from catch all
     const crux = this.cruxIfAny
-    return this.cellParser
-      .getCellArray()
-      .map((cell, index) => (!index && crux ? crux : cell.synthesizeCell(seed)))
+    return this.atomParser
+      .getAtomArray()
+      .map((atom, index) => (!index && crux ? crux : atom.synthesizeAtom(seed)))
       .join(" ")
   }
   _shouldSynthesize(def, parserChain) {
@@ -18726,14 +18713,14 @@ ${cells.toString(1)}`
     }
     return lines
   }
-  get cellParser() {
-    if (!this._cellParser) {
-      const cellParsingStrategy = this._getFromExtended(ParsersConstants.cellParser)
-      if (cellParsingStrategy === ParsersCellParser.postfix) this._cellParser = new PostfixCellParser(this)
-      else if (cellParsingStrategy === ParsersCellParser.omnifix) this._cellParser = new OmnifixCellParser(this)
-      else this._cellParser = new PrefixCellParser(this)
+  get atomParser() {
+    if (!this._atomParser) {
+      const atomParsingStrategy = this._getFromExtended(ParsersConstants.atomParser)
+      if (atomParsingStrategy === ParsersAtomParser.postfix) this._atomParser = new PostfixAtomParser(this)
+      else if (atomParsingStrategy === ParsersAtomParser.omnifix) this._atomParser = new OmnifixAtomParser(this)
+      else this._atomParser = new PrefixAtomParser(this)
     }
-    return this._cellParser
+    return this._atomParser
   }
 }
 // todo: remove?
@@ -18747,7 +18734,7 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
     return new Particle.ParserCombinator(UnknownParserParticle, map, [
       { regex: HandParsersProgram.blankLineRegex, parser: Particle },
       { regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser },
-      { regex: HandParsersProgram.cellTypeFullRegex, parser: cellTypeDefinitionParser }
+      { regex: HandParsersProgram.atomTypeFullRegex, parser: atomTypeDefinitionParser }
     ])
   }
   // rootParser
@@ -18875,14 +18862,14 @@ class HandParsersProgram extends AbstractParserDefinitionParser {
   toReadMe() {
     const languageName = this.extensionName
     const rootParticleDef = this.rootParserDefinition
-    const cellTypes = this.cellTypeDefinitions
+    const atomTypes = this.atomTypeDefinitions
     const parserLineage = this.parserLineage
     const exampleParticle = rootParticleDef.examples[0]
     return `title2 ${languageName} stats
 
 list
  - ${languageName} has ${parserLineage.topDownArray.length} parsers.
- - ${languageName} has ${Object.keys(cellTypes).length} cell types.
+ - ${languageName} has ${Object.keys(atomTypes).length} atom types.
  - The source code for ${languageName} is ${this.topDownArray.length} lines long.
 `
   }
@@ -18932,17 +18919,17 @@ ${testCode}`
   get targetExtension() {
     return this.rootParserDefinition.get(ParsersConstants.compilesTo)
   }
-  get cellTypeDefinitions() {
-    if (this._cache_cellTypes) return this._cache_cellTypes
+  get atomTypeDefinitions() {
+    if (this._cache_atomTypes) return this._cache_atomTypes
     const types = {}
-    // todo: add built in word types?
-    this.getSubparticlesByParser(cellTypeDefinitionParser).forEach(type => (types[type.cellTypeId] = type))
-    this._cache_cellTypes = types
+    // todo: add built in atom types?
+    this.getSubparticlesByParser(atomTypeDefinitionParser).forEach(type => (types[type.atomTypeId] = type))
+    this._cache_atomTypes = types
     return types
   }
-  getCellTypeDefinitionById(cellTypeId) {
-    // todo: return unknownCellTypeDefinition? or is that handled somewhere else?
-    return this.cellTypeDefinitions[cellTypeId]
+  getAtomTypeDefinitionById(atomTypeId) {
+    // todo: return unknownAtomTypeDefinition? or is that handled somewhere else?
+    return this.atomTypeDefinitions[atomTypeId]
   }
   get parserLineage() {
     const newParticle = new Particle()
@@ -18998,7 +18985,7 @@ ${testCode}`
   }
   _getInScopeParserIds() {
     const parsersParticle = this.rootParserDefinition.getParticle(ParsersConstants.inScope)
-    return parsersParticle ? parsersParticle.getWordsFrom(1) : []
+    return parsersParticle ? parsersParticle.getAtomsFrom(1) : []
   }
   makeProgramParserDefinitionCache() {
     const cache = {}
@@ -19055,9 +19042,9 @@ ${exportScript}
 `
   }
   toSublimeSyntaxFile() {
-    const cellTypeDefs = this.cellTypeDefinitions
-    const variables = Object.keys(cellTypeDefs)
-      .map(name => ` ${name}: '${cellTypeDefs[name].regexString}'`)
+    const atomTypeDefs = this.atomTypeDefinitions
+    const variables = Object.keys(atomTypeDefs)
+      .map(name => ` ${name}: '${atomTypeDefs[name].regexString}'`)
       .join("\n")
     const defs = this.validConcreteAndAbstractParserDefinitions.filter(kw => !kw._isAbstract())
     const parserContexts = defs.map(def => def._toSublimeMatchBlock()).join("\n\n")
@@ -19079,96 +19066,96 @@ ${parserContexts}`
   }
 }
 HandParsersProgram.makeParserId = str => Utils._replaceNonAlphaNumericCharactersWithCharCodes(str).replace(HandParsersProgram.parserSuffixRegex, "") + ParsersConstants.parserSuffix
-HandParsersProgram.makeCellTypeId = str => Utils._replaceNonAlphaNumericCharactersWithCharCodes(str).replace(HandParsersProgram.cellTypeSuffixRegex, "") + ParsersConstants.cellTypeSuffix
+HandParsersProgram.makeAtomTypeId = str => Utils._replaceNonAlphaNumericCharactersWithCharCodes(str).replace(HandParsersProgram.atomTypeSuffixRegex, "") + ParsersConstants.atomTypeSuffix
 HandParsersProgram.parserSuffixRegex = new RegExp(ParsersConstants.parserSuffix + "$")
 HandParsersProgram.parserFullRegex = new RegExp("^[a-zA-Z0-9_]+" + ParsersConstants.parserSuffix + "$")
 HandParsersProgram.blankLineRegex = new RegExp("^$")
-HandParsersProgram.cellTypeSuffixRegex = new RegExp(ParsersConstants.cellTypeSuffix + "$")
-HandParsersProgram.cellTypeFullRegex = new RegExp("^[a-zA-Z0-9_]+" + ParsersConstants.cellTypeSuffix + "$")
+HandParsersProgram.atomTypeSuffixRegex = new RegExp(ParsersConstants.atomTypeSuffix + "$")
+HandParsersProgram.atomTypeFullRegex = new RegExp("^[a-zA-Z0-9_]+" + ParsersConstants.atomTypeSuffix + "$")
 HandParsersProgram._languages = {}
 HandParsersProgram._parsers = {}
 const PreludeKinds = {}
-PreludeKinds[PreludeCellTypeIds.anyCell] = ParsersAnyCell
-PreludeKinds[PreludeCellTypeIds.keywordCell] = ParsersKeywordCell
-PreludeKinds[PreludeCellTypeIds.floatCell] = ParsersFloatCell
-PreludeKinds[PreludeCellTypeIds.numberCell] = ParsersFloatCell
-PreludeKinds[PreludeCellTypeIds.bitCell] = ParsersBitCell
-PreludeKinds[PreludeCellTypeIds.boolCell] = ParsersBoolCell
-PreludeKinds[PreludeCellTypeIds.intCell] = ParsersIntCell
+PreludeKinds[PreludeAtomTypeIds.anyAtom] = ParsersAnyAtom
+PreludeKinds[PreludeAtomTypeIds.keywordAtom] = ParsersKeywordAtom
+PreludeKinds[PreludeAtomTypeIds.floatAtom] = ParsersFloatAtom
+PreludeKinds[PreludeAtomTypeIds.numberAtom] = ParsersFloatAtom
+PreludeKinds[PreludeAtomTypeIds.bitAtom] = ParsersBitAtom
+PreludeKinds[PreludeAtomTypeIds.boolAtom] = ParsersBoolAtom
+PreludeKinds[PreludeAtomTypeIds.intAtom] = ParsersIntAtom
 class UnknownParsersProgram extends Particle {
   _inferRootParticleForAPrefixLanguage(parsersName) {
     parsersName = HandParsersProgram.makeParserId(parsersName)
     const rootParticle = new Particle(`${parsersName}
  ${ParsersConstants.root}`)
-    // note: right now we assume 1 global cellTypeMap and parserMap per parsers. But we may have scopes in the future?
-    const rootParticleNames = this.getFirstWords()
+    // note: right now we assume 1 global atomTypeMap and parserMap per parsers. But we may have scopes in the future?
+    const rootParticleNames = this.getFirstAtoms()
       .filter(identity => identity)
-      .map(word => HandParsersProgram.makeParserId(word))
+      .map(atom => HandParsersProgram.makeParserId(atom))
     rootParticle
       .particleAt(0)
       .touchParticle(ParsersConstants.inScope)
-      .setWordsFrom(1, Array.from(new Set(rootParticleNames)))
+      .setAtomsFrom(1, Array.from(new Set(rootParticleNames)))
     return rootParticle
   }
   _renameIntegerKeywords(clone) {
     // todo: why are we doing this?
     for (let particle of clone.getTopDownArrayIterator()) {
-      const firstWordIsAnInteger = !!particle.firstWord.match(/^\d+$/)
-      const parentFirstWord = particle.parent.firstWord
-      if (firstWordIsAnInteger && parentFirstWord) particle.setFirstWord(HandParsersProgram.makeParserId(parentFirstWord + UnknownParsersProgram._subparticleSuffix))
+      const firstAtomIsAnInteger = !!particle.firstAtom.match(/^\d+$/)
+      const parentFirstAtom = particle.parent.firstAtom
+      if (firstAtomIsAnInteger && parentFirstAtom) particle.setFirstAtom(HandParsersProgram.makeParserId(parentFirstAtom + UnknownParsersProgram._subparticleSuffix))
     }
   }
   _getKeywordMaps(clone) {
     const keywordsToChildKeywords = {}
     const keywordsToParticleInstances = {}
     for (let particle of clone.getTopDownArrayIterator()) {
-      const firstWord = particle.firstWord
-      if (!keywordsToChildKeywords[firstWord]) keywordsToChildKeywords[firstWord] = {}
-      if (!keywordsToParticleInstances[firstWord]) keywordsToParticleInstances[firstWord] = []
-      keywordsToParticleInstances[firstWord].push(particle)
-      particle.forEach(subparticle => (keywordsToChildKeywords[firstWord][subparticle.firstWord] = true))
+      const firstAtom = particle.firstAtom
+      if (!keywordsToChildKeywords[firstAtom]) keywordsToChildKeywords[firstAtom] = {}
+      if (!keywordsToParticleInstances[firstAtom]) keywordsToParticleInstances[firstAtom] = []
+      keywordsToParticleInstances[firstAtom].push(particle)
+      particle.forEach(subparticle => (keywordsToChildKeywords[firstAtom][subparticle.firstAtom] = true))
     }
     return { keywordsToChildKeywords: keywordsToChildKeywords, keywordsToParticleInstances: keywordsToParticleInstances }
   }
-  _inferParserDef(firstWord, globalCellTypeMap, subparticleFirstWords, instances) {
+  _inferParserDef(firstAtom, globalAtomTypeMap, subparticleFirstAtoms, instances) {
     const edgeSymbol = this.edgeSymbol
-    const parserId = HandParsersProgram.makeParserId(firstWord)
+    const parserId = HandParsersProgram.makeParserId(firstAtom)
     const particleDefParticle = new Particle(parserId).particleAt(0)
-    const subparticleParserIds = subparticleFirstWords.map(word => HandParsersProgram.makeParserId(word))
-    if (subparticleParserIds.length) particleDefParticle.touchParticle(ParsersConstants.inScope).setWordsFrom(1, subparticleParserIds)
-    const cellsForAllInstances = instances
+    const subparticleParserIds = subparticleFirstAtoms.map(atom => HandParsersProgram.makeParserId(atom))
+    if (subparticleParserIds.length) particleDefParticle.touchParticle(ParsersConstants.inScope).setAtomsFrom(1, subparticleParserIds)
+    const atomsForAllInstances = instances
       .map(line => line.content)
       .filter(identity => identity)
       .map(line => line.split(edgeSymbol))
-    const instanceCellCounts = new Set(cellsForAllInstances.map(cells => cells.length))
-    const maxCellsOnLine = Math.max(...Array.from(instanceCellCounts))
-    const minCellsOnLine = Math.min(...Array.from(instanceCellCounts))
-    let catchAllCellType
-    let cellTypeIds = []
-    for (let cellIndex = 0; cellIndex < maxCellsOnLine; cellIndex++) {
-      const cellType = this._getBestCellType(
-        firstWord,
+    const instanceAtomCounts = new Set(atomsForAllInstances.map(atoms => atoms.length))
+    const maxAtomsOnLine = Math.max(...Array.from(instanceAtomCounts))
+    const minAtomsOnLine = Math.min(...Array.from(instanceAtomCounts))
+    let catchAllAtomType
+    let atomTypeIds = []
+    for (let atomIndex = 0; atomIndex < maxAtomsOnLine; atomIndex++) {
+      const atomType = this._getBestAtomType(
+        firstAtom,
         instances.length,
-        maxCellsOnLine,
-        cellsForAllInstances.map(cells => cells[cellIndex])
+        maxAtomsOnLine,
+        atomsForAllInstances.map(atoms => atoms[atomIndex])
       )
-      if (!globalCellTypeMap.has(cellType.cellTypeId)) globalCellTypeMap.set(cellType.cellTypeId, cellType.cellTypeDefinition)
-      cellTypeIds.push(cellType.cellTypeId)
+      if (!globalAtomTypeMap.has(atomType.atomTypeId)) globalAtomTypeMap.set(atomType.atomTypeId, atomType.atomTypeDefinition)
+      atomTypeIds.push(atomType.atomTypeId)
     }
-    if (maxCellsOnLine > minCellsOnLine) {
+    if (maxAtomsOnLine > minAtomsOnLine) {
       //columns = columns.slice(0, min)
-      catchAllCellType = cellTypeIds.pop()
-      while (cellTypeIds[cellTypeIds.length - 1] === catchAllCellType) {
-        cellTypeIds.pop()
+      catchAllAtomType = atomTypeIds.pop()
+      while (atomTypeIds[atomTypeIds.length - 1] === catchAllAtomType) {
+        atomTypeIds.pop()
       }
     }
-    const needsCruxProperty = !firstWord.endsWith(UnknownParsersProgram._subparticleSuffix + ParsersConstants.parserSuffix) // todo: cleanup
-    if (needsCruxProperty) particleDefParticle.set(ParsersConstants.crux, firstWord)
-    if (catchAllCellType) particleDefParticle.set(ParsersConstants.catchAllCellType, catchAllCellType)
-    const cellLine = cellTypeIds.slice()
-    cellLine.unshift(PreludeCellTypeIds.keywordCell)
-    if (cellLine.length > 0) particleDefParticle.set(ParsersConstants.cells, cellLine.join(edgeSymbol))
-    //if (!catchAllCellType && cellTypeIds.length === 1) particleDefParticle.set(ParsersConstants.cells, cellTypeIds[0])
+    const needsCruxProperty = !firstAtom.endsWith(UnknownParsersProgram._subparticleSuffix + ParsersConstants.parserSuffix) // todo: cleanup
+    if (needsCruxProperty) particleDefParticle.set(ParsersConstants.crux, firstAtom)
+    if (catchAllAtomType) particleDefParticle.set(ParsersConstants.catchAllAtomType, catchAllAtomType)
+    const atomLine = atomTypeIds.slice()
+    atomLine.unshift(PreludeAtomTypeIds.keywordAtom)
+    if (atomLine.length > 0) particleDefParticle.set(ParsersConstants.atoms, atomLine.join(edgeSymbol))
+    //if (!catchAllAtomType && atomTypeIds.length === 1) particleDefParticle.set(ParsersConstants.atoms, atomTypeIds[0])
     // Todo: add conditional frequencies
     return particleDefParticle.parent.toString()
   }
@@ -19176,27 +19163,27 @@ class UnknownParsersProgram extends Particle {
   //     parsersName = HandParsersProgram.makeParserId(parsersName)
   //    const rootParticle = new Particle(`${parsersName}
   // ${ParsersConstants.root}`)
-  //    // note: right now we assume 1 global cellTypeMap and parserMap per parsers. But we may have scopes in the future?
-  //    const rootParticleNames = this.getFirstWords().map(word => HandParsersProgram.makeParserId(word))
+  //    // note: right now we assume 1 global atomTypeMap and parserMap per parsers. But we may have scopes in the future?
+  //    const rootParticleNames = this.getFirstAtoms().map(atom => HandParsersProgram.makeParserId(atom))
   //    rootParticle
   //      .particleAt(0)
   //      .touchParticle(ParsersConstants.inScope)
-  //      .setWordsFrom(1, Array.from(new Set(rootParticleNames)))
+  //      .setAtomsFrom(1, Array.from(new Set(rootParticleNames)))
   //    return rootParticle
   //  }
   inferParsersFileForAKeywordLanguage(parsersName) {
     const clone = this.clone()
     this._renameIntegerKeywords(clone)
     const { keywordsToChildKeywords, keywordsToParticleInstances } = this._getKeywordMaps(clone)
-    const globalCellTypeMap = new Map()
-    globalCellTypeMap.set(PreludeCellTypeIds.keywordCell, undefined)
+    const globalAtomTypeMap = new Map()
+    globalAtomTypeMap.set(PreludeAtomTypeIds.keywordAtom, undefined)
     const parserDefs = Object.keys(keywordsToChildKeywords)
       .filter(identity => identity)
-      .map(firstWord => this._inferParserDef(firstWord, globalCellTypeMap, Object.keys(keywordsToChildKeywords[firstWord]), keywordsToParticleInstances[firstWord]))
-    const cellTypeDefs = []
-    globalCellTypeMap.forEach((def, id) => cellTypeDefs.push(def ? def : id))
+      .map(firstAtom => this._inferParserDef(firstAtom, globalAtomTypeMap, Object.keys(keywordsToChildKeywords[firstAtom]), keywordsToParticleInstances[firstAtom]))
+    const atomTypeDefs = []
+    globalAtomTypeMap.forEach((def, id) => atomTypeDefs.push(def ? def : id))
     const particleBreakSymbol = this.particleBreakSymbol
-    return this._formatCode([this._inferRootParticleForAPrefixLanguage(parsersName).toString(), cellTypeDefs.join(particleBreakSymbol), parserDefs.join(particleBreakSymbol)].filter(identity => identity).join("\n"))
+    return this._formatCode([this._inferRootParticleForAPrefixLanguage(parsersName).toString(), atomTypeDefs.join(particleBreakSymbol), parserDefs.join(particleBreakSymbol)].filter(identity => identity).join("\n"))
   }
   _formatCode(code) {
     // todo: make this run in browser too
@@ -19206,7 +19193,7 @@ class UnknownParsersProgram extends Particle {
     const program = new rootParser(code)
     return program.format().toString()
   }
-  _getBestCellType(firstWord, instanceCount, maxCellsOnLine, allValues) {
+  _getBestAtomType(firstAtom, instanceCount, maxAtomsOnLine, allValues) {
     const asSet = new Set(allValues)
     const edgeSymbol = this.edgeSymbol
     const values = Array.from(asSet).filter(identity => identity)
@@ -19216,7 +19203,7 @@ class UnknownParsersProgram extends Particle {
       }
       return true
     }
-    if (every(str => str === "0" || str === "1")) return { cellTypeId: PreludeCellTypeIds.bitCell }
+    if (every(str => str === "0" || str === "1")) return { atomTypeId: PreludeAtomTypeIds.bitAtom }
     if (
       every(str => {
         const num = parseInt(str)
@@ -19224,25 +19211,25 @@ class UnknownParsersProgram extends Particle {
         return num.toString() === str
       })
     ) {
-      return { cellTypeId: PreludeCellTypeIds.intCell }
+      return { atomTypeId: PreludeAtomTypeIds.intAtom }
     }
-    if (every(str => str.match(/^-?\d*.?\d+$/))) return { cellTypeId: PreludeCellTypeIds.floatCell }
+    if (every(str => str.match(/^-?\d*.?\d+$/))) return { atomTypeId: PreludeAtomTypeIds.floatAtom }
     const bools = new Set(["1", "0", "true", "false", "t", "f", "yes", "no"])
-    if (every(str => bools.has(str.toLowerCase()))) return { cellTypeId: PreludeCellTypeIds.boolCell }
+    if (every(str => bools.has(str.toLowerCase()))) return { atomTypeId: PreludeAtomTypeIds.boolAtom }
     // todo: cleanup
     const enumLimit = 30
-    if (instanceCount > 1 && maxCellsOnLine === 1 && allValues.length > asSet.size && asSet.size < enumLimit)
+    if (instanceCount > 1 && maxAtomsOnLine === 1 && allValues.length > asSet.size && asSet.size < enumLimit)
       return {
-        cellTypeId: HandParsersProgram.makeCellTypeId(firstWord),
-        cellTypeDefinition: `${HandParsersProgram.makeCellTypeId(firstWord)}
+        atomTypeId: HandParsersProgram.makeAtomTypeId(firstAtom),
+        atomTypeDefinition: `${HandParsersProgram.makeAtomTypeId(firstAtom)}
  enum ${values.join(edgeSymbol)}`
       }
-    return { cellTypeId: PreludeCellTypeIds.anyCell }
+    return { atomTypeId: PreludeAtomTypeIds.anyAtom }
   }
 }
 UnknownParsersProgram._subparticleSuffix = "Subparticle"
 window.ParsersConstants = ParsersConstants
-window.PreludeCellTypeIds = PreludeCellTypeIds
+window.PreludeAtomTypeIds = PreludeAtomTypeIds
 window.HandParsersProgram = HandParsersProgram
 window.ParserBackedParticle = ParserBackedParticle
 window.UnknownParserError = UnknownParserError
@@ -19521,8 +19508,8 @@ class ParsersCodeMirrorMode {
     const cursor = cmInstance.getDoc().getCursor()
     const codeMirrorLib = this._getCodeMirrorLib()
     const result = await this._getParsedProgram().getAutocompleteResultsAt(cursor.line, cursor.ch)
-    // It seems to be better UX if there's only 1 result, and its the word the user entered, to close autocomplete
-    if (result.matches.length === 1 && result.matches[0].text === result.word) return null
+    // It seems to be better UX if there's only 1 result, and its the atom the user entered, to close autocomplete
+    if (result.matches.length === 1 && result.matches[0].text === result.atom) return null
     return result.matches.length
       ? {
           list: result.matches,
@@ -19540,49 +19527,49 @@ class ParsersCodeMirrorMode {
   _advanceStreamAndReturnTokenType(stream, state) {
     let nextCharacter = stream.next()
     const lineNumber = stream.lineOracle.line + 1 // state.lineIndex
-    const WordBreakSymbol = " "
+    const AtomBreakSymbol = " "
     const ParticleBreakSymbol = "\n"
     while (typeof nextCharacter === "string") {
       const peek = stream.peek()
-      if (nextCharacter === WordBreakSymbol) {
+      if (nextCharacter === AtomBreakSymbol) {
         if (peek === undefined || peek === ParticleBreakSymbol) {
           stream.skipToEnd() // advance string to end
           this._incrementLine(state)
         }
-        if (peek === WordBreakSymbol && state.cellIndex) {
-          // If we are missing a cell.
-          // TODO: this is broken for a blank 1st cell. We need to track WordBreakSymbol level.
-          state.cellIndex++
+        if (peek === AtomBreakSymbol && state.atomIndex) {
+          // If we are missing a atom.
+          // TODO: this is broken for a blank 1st atom. We need to track AtomBreakSymbol level.
+          state.atomIndex++
         }
         return "bracket"
       }
-      if (peek === WordBreakSymbol) {
-        state.cellIndex++
-        return this._getCellStyle(lineNumber, state.cellIndex)
+      if (peek === AtomBreakSymbol) {
+        state.atomIndex++
+        return this._getAtomStyle(lineNumber, state.atomIndex)
       }
       nextCharacter = stream.next()
     }
-    state.cellIndex++
-    const style = this._getCellStyle(lineNumber, state.cellIndex)
+    state.atomIndex++
+    const style = this._getAtomStyle(lineNumber, state.atomIndex)
     this._incrementLine(state)
     return style
   }
-  _getCellStyle(lineIndex, cellIndex) {
+  _getAtomStyle(lineIndex, atomIndex) {
     const program = this._getParsedProgram()
-    // todo: if the current word is an error, don't show red?
-    if (!program.getCellPaintAtPosition) console.log(program)
-    const paint = program.getCellPaintAtPosition(lineIndex, cellIndex)
+    // todo: if the current atom is an error, don't show red?
+    if (!program.getAtomPaintAtPosition) console.log(program)
+    const paint = program.getAtomPaintAtPosition(lineIndex, atomIndex)
     const style = paint ? textMateScopeToCodeMirrorStyle(paint.split(".")) : undefined
     return style || "noPaintDefinedInParsers"
   }
   // todo: remove.
   startState() {
     return {
-      cellIndex: 0
+      atomIndex: 0
     }
   }
   _incrementLine(state) {
-    state.cellIndex = 0
+    state.atomIndex = 0
   }
 }
 window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
@@ -19593,7 +19580,7 @@ window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
     createParserCombinator() {
       return new Particle.ParserCombinator(
         errorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {
           blockquote: htmlTagParser,
           colgroup: htmlTagParser,
           datalist: htmlTagParser,
@@ -19717,30 +19704,30 @@ window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
     _getHtmlJoinByCharacter() {
       return ""
     }
-    static cachedHandParsersProgramRoot = new HandParsersProgram(`// Cell parsers
-anyCell
-keywordCell
-emptyCell
-extraCell
+    static cachedHandParsersProgramRoot = new HandParsersProgram(`// Atom parsers
+anyAtom
+keywordAtom
+emptyAtom
+extraAtom
  paint invalid
-anyHtmlContentCell
+anyHtmlContentAtom
  paint string
-attributeValueCell
+attributeValueAtom
  paint constant.language
-componentTagNameCell
+componentTagNameAtom
  paint variable.function
- extends keywordCell
-htmlTagNameCell
+ extends keywordAtom
+htmlTagNameAtom
  paint variable.function
- extends keywordCell
+ extends keywordAtom
  enum a abbr address area article aside b base bdi bdo blockquote body br button canvas caption code col colgroup datalist dd del details dfn dialog div dl dt em embed fieldset figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd keygen label legend li link main map mark menu menuitem meta meter nav noscript object ol optgroup option output p param pre progress q rb rp rt rtc ruby s samp script section select small source span strong styleTag sub summary sup table tbody td template textarea tfoot th thead time titleTag tr track u ul var video wbr
-htmlAttributeNameCell
+htmlAttributeNameAtom
  paint entity.name.type
- extends keywordCell
+ extends keywordAtom
  enum accept accept-charset accesskey action align alt async autocomplete autofocus autoplay bgcolor border charset checked class color cols colspan content contenteditable controls coords datetime default defer dir dirname disabled download draggable dropzone enctype for formaction headers height hidden high href hreflang http-equiv id ismap kind lang list loop low max maxlength media method min multiple muted name novalidate onabort onafterprint onbeforeprint onbeforeunload onblur oncanplay oncanplaythrough onchange onclick oncontextmenu oncopy oncuechange oncut ondblclick ondrag ondragend ondragenter ondragleave ondragover ondragstart ondrop ondurationchange onemptied onended onerror onfocus onhashchange oninput oninvalid onkeydown onkeypress onkeyup onload onloadeddata onloadedmetadata onloadstart onmousedown onmousemove onmouseout onmouseover onmouseup onmousewheel onoffline ononline onpagehide onpageshow onpaste onpause onplay onplaying onpopstate onprogress onratechange onreset onresize onscroll onsearch onseeked onseeking onselect onstalled onstorage onsubmit onsuspend ontimeupdate ontoggle onunload onvolumechange onwaiting onwheel open optimum pattern placeholder poster preload property readonly rel required reversed rows rowspan sandbox scope selected shape size sizes spellcheck src srcdoc srclang srcset start step style tabindex target title translate type usemap value width wrap
-bernKeywordCell
+bernKeywordAtom
  enum bern
- extends keywordCell
+ extends keywordAtom
 
 // Line parsers
 stumpParser
@@ -19762,7 +19749,7 @@ stumpParser
 blankLineParser
  pattern ^$
  tags doNotSynthesize
- cells emptyCell
+ atoms emptyAtom
  javascript
   _toHtml() {
    return ""
@@ -19770,18 +19757,18 @@ blankLineParser
   getTextContent() {return ""}
 htmlTagParser
  inScope bernParser htmlTagParser htmlAttributeParser blankLineParser
- catchAllCellType anyHtmlContentCell
- cells htmlTagNameCell
+ catchAllAtomType anyHtmlContentAtom
+ atoms htmlTagNameAtom
  javascript
   isHtmlTagParser = true
   getTag() {
    // we need to remove the "Tag" bit to handle the style and title attribute/tag conflict.
-   const firstWord = this.firstWord
+   const firstAtom = this.firstAtom
    const map = {
     titleTag: "title",
     styleTag: "style"
    }
-   return map[firstWord] || firstWord
+   return map[firstAtom] || firstAtom
   }
   _getHtmlJoinByCharacter() {
    return ""
@@ -19790,8 +19777,8 @@ htmlTagParser
    return this._toHtml(undefined, true)
   }
   _getOneLiner() {
-   const oneLinerWords = this.getWordsFrom(1)
-   return oneLinerWords.length ? oneLinerWords.join(" ") : ""
+   const oneLinerAtoms = this.getAtomsFrom(1)
+   return oneLinerAtoms.length ? oneLinerAtoms.join(" ") : ""
   }
   getTextContent() {
     return this._getOneLiner()
@@ -19803,7 +19790,7 @@ htmlTagParser
     var elem = document.createElement(this.getTag())
     elem.setAttribute("stumpUid", this._getUid())
     this.filter(particle => particle.isAttributeParser)
-      .forEach(subparticle => elem.setAttribute(subparticle.firstWord, subparticle.content))
+      .forEach(subparticle => elem.setAttribute(subparticle.firstAtom, subparticle.content))
     elem.innerHTML = this.has("bern") ? this.getParticle("bern").subparticlesToString() : this._getOneLiner()
     this.filter(particle => particle.isHtmlTagParser)
       .forEach(subparticle => elem.appendChild(subparticle.domElement))
@@ -19834,19 +19821,19 @@ htmlTagParser
   }
   addClassToStumpParticle(className) {
    const classParser = this.touchParticle("class")
-   const words = classParser.getWordsFrom(1)
+   const atoms = classParser.getAtomsFrom(1)
    // note: we call add on shadow regardless, because at the moment stump may have gotten out of
    // sync with shadow, if things modified the dom. todo: cleanup.
    this.getShadow().addClassToShadow(className)
-   if (words.includes(className)) return this
-   words.push(className)
-   classParser.setContent(words.join(this.wordBreakSymbol))
+   if (atoms.includes(className)) return this
+   atoms.push(className)
+   classParser.setContent(atoms.join(this.atomBreakSymbol))
    return this
   }
   removeClassFromStumpParticle(className) {
    const classParser = this.getParticle("class")
    if (!classParser) return this
-   const newClasses = classParser.words.filter(word => word !== className)
+   const newClasses = classParser.atoms.filter(atom => atom !== className)
    if (!newClasses.length) classParser.destroy()
    else classParser.setContent(newClasses.join(" "))
    this.getShadow().removeClassFromShadow(className)
@@ -19854,7 +19841,7 @@ htmlTagParser
   }
   stumpParticleHasClass(className) {
    const classParser = this.getParticle("class")
-   return classParser && classParser.words.includes(className) ? true : false
+   return classParser && classParser.atoms.includes(className) ? true : false
   }
   isStumpParticleCheckbox() {
    return this.get("type") === "checkbox"
@@ -19890,11 +19877,11 @@ htmlTagParser
      .includes(line)
    )
   }
-  findStumpParticleByFirstWord(firstWord) {
-   return this._findStumpParticlesByBase(firstWord)[0]
+  findStumpParticleByFirstAtom(firstAtom) {
+   return this._findStumpParticlesByBase(firstAtom)[0]
   }
-  _findStumpParticlesByBase(firstWord) {
-   return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstWord === firstWord)
+  _findStumpParticlesByBase(firstAtom) {
+   return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstAtom === firstAtom)
   }
   hasLine(line) {
    return this.getSubparticles().some(particle => particle.getLine() === line)
@@ -19909,7 +19896,7 @@ htmlTagParser
      particle.has("class") &&
      particle
       .getParticle("class")
-      .words
+      .atoms
       .includes(className)
    )
   }
@@ -19943,7 +19930,7 @@ errorParser
 componentDefinitionParser
  extends htmlTagParser
  pattern ^[a-zA-Z0-9_]+Component
- cells componentTagNameCell
+ atoms componentTagNameAtom
  javascript
   getTag() {
    return "div"
@@ -19955,24 +19942,24 @@ htmlAttributeParser
   }
   getTextContent() {return ""}
   getAttribute() {
-   return \` \${this.firstWord}="\${this.content}"\`
+   return \` \${this.firstAtom}="\${this.content}"\`
   }
  boolean isAttributeParser true
  boolean isTileAttribute true
  catchAllParser errorParser
- catchAllCellType attributeValueCell
- cells htmlAttributeNameCell
-stumpExtendedAttributeNameCell
- extends htmlAttributeNameCell
+ catchAllAtomType attributeValueAtom
+ atoms htmlAttributeNameAtom
+stumpExtendedAttributeNameAtom
+ extends htmlAttributeNameAtom
  enum collapse blurCommand changeCommand clickCommand contextMenuCommand doubleClickCommand keyUpCommand lineClickCommand lineShiftClickCommand shiftClickCommand
 stumpExtendedAttributeParser
  description Parser types not present in HTML but included in stump.
  extends htmlAttributeParser
- cells stumpExtendedAttributeNameCell
+ atoms stumpExtendedAttributeNameAtom
 lineOfHtmlContentParser
  boolean isTileAttribute true
  catchAllParser lineOfHtmlContentParser
- catchAllCellType anyHtmlContentCell
+ catchAllAtomType anyHtmlContentAtom
  javascript
   getTextContent() {return this.getLine()}
 bernParser
@@ -19985,7 +19972,7 @@ bernParser
    return this.subparticlesToString()
   }
   getTextContent() {return ""}
- cells bernKeywordCell`)
+ atoms bernKeywordAtom`)
     get handParsersProgram() {
       return this.constructor.cachedHandParsersProgramRoot
     }
@@ -19993,8 +19980,8 @@ bernParser
   }
 
   class blankLineParser extends ParserBackedParticle {
-    get emptyCell() {
-      return this.getWord(0)
+    get emptyAtom() {
+      return this.getAtom(0)
     }
     _toHtml() {
       return ""
@@ -20008,7 +19995,7 @@ bernParser
     createParserCombinator() {
       return new Particle.ParserCombinator(
         undefined,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {
           blockquote: htmlTagParser,
           colgroup: htmlTagParser,
           datalist: htmlTagParser,
@@ -20300,21 +20287,21 @@ bernParser
         ]
       )
     }
-    get htmlTagNameCell() {
-      return this.getWord(0)
+    get htmlTagNameAtom() {
+      return this.getAtom(0)
     }
-    get anyHtmlContentCell() {
-      return this.getWordsFrom(1)
+    get anyHtmlContentAtom() {
+      return this.getAtomsFrom(1)
     }
     isHtmlTagParser = true
     getTag() {
       // we need to remove the "Tag" bit to handle the style and title attribute/tag conflict.
-      const firstWord = this.firstWord
+      const firstAtom = this.firstAtom
       const map = {
         titleTag: "title",
         styleTag: "style"
       }
-      return map[firstWord] || firstWord
+      return map[firstAtom] || firstAtom
     }
     _getHtmlJoinByCharacter() {
       return ""
@@ -20323,8 +20310,8 @@ bernParser
       return this._toHtml(undefined, true)
     }
     _getOneLiner() {
-      const oneLinerWords = this.getWordsFrom(1)
-      return oneLinerWords.length ? oneLinerWords.join(" ") : ""
+      const oneLinerAtoms = this.getAtomsFrom(1)
+      return oneLinerAtoms.length ? oneLinerAtoms.join(" ") : ""
     }
     getTextContent() {
       return this._getOneLiner()
@@ -20335,7 +20322,7 @@ bernParser
     get domElement() {
       var elem = document.createElement(this.getTag())
       elem.setAttribute("stumpUid", this._getUid())
-      this.filter(particle => particle.isAttributeParser).forEach(subparticle => elem.setAttribute(subparticle.firstWord, subparticle.content))
+      this.filter(particle => particle.isAttributeParser).forEach(subparticle => elem.setAttribute(subparticle.firstAtom, subparticle.content))
       elem.innerHTML = this.has("bern") ? this.getParticle("bern").subparticlesToString() : this._getOneLiner()
       this.filter(particle => particle.isHtmlTagParser).forEach(subparticle => elem.appendChild(subparticle.domElement))
       return elem
@@ -20365,19 +20352,19 @@ bernParser
     }
     addClassToStumpParticle(className) {
       const classParser = this.touchParticle("class")
-      const words = classParser.getWordsFrom(1)
+      const atoms = classParser.getAtomsFrom(1)
       // note: we call add on shadow regardless, because at the moment stump may have gotten out of
       // sync with shadow, if things modified the dom. todo: cleanup.
       this.getShadow().addClassToShadow(className)
-      if (words.includes(className)) return this
-      words.push(className)
-      classParser.setContent(words.join(this.wordBreakSymbol))
+      if (atoms.includes(className)) return this
+      atoms.push(className)
+      classParser.setContent(atoms.join(this.atomBreakSymbol))
       return this
     }
     removeClassFromStumpParticle(className) {
       const classParser = this.getParticle("class")
       if (!classParser) return this
-      const newClasses = classParser.words.filter(word => word !== className)
+      const newClasses = classParser.atoms.filter(atom => atom !== className)
       if (!newClasses.length) classParser.destroy()
       else classParser.setContent(newClasses.join(" "))
       this.getShadow().removeClassFromShadow(className)
@@ -20385,7 +20372,7 @@ bernParser
     }
     stumpParticleHasClass(className) {
       const classParser = this.getParticle("class")
-      return classParser && classParser.words.includes(className) ? true : false
+      return classParser && classParser.atoms.includes(className) ? true : false
     }
     isStumpParticleCheckbox() {
       return this.get("type") === "checkbox"
@@ -20421,11 +20408,11 @@ bernParser
           .includes(line)
       )
     }
-    findStumpParticleByFirstWord(firstWord) {
-      return this._findStumpParticlesByBase(firstWord)[0]
+    findStumpParticleByFirstAtom(firstAtom) {
+      return this._findStumpParticlesByBase(firstAtom)[0]
     }
-    _findStumpParticlesByBase(firstWord) {
-      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstWord === firstWord)
+    _findStumpParticlesByBase(firstAtom) {
+      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstAtom === firstAtom)
     }
     hasLine(line) {
       return this.getSubparticles().some(particle => particle.getLine() === line)
@@ -20434,7 +20421,7 @@ bernParser
       return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.hasLine(line))
     }
     findStumpParticlesWithClass(className) {
-      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.has("class") && particle.getParticle("class").words.includes(className))
+      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.has("class") && particle.getParticle("class").atoms.includes(className))
     }
     getShadowClass() {
       return this.parent.getShadowClass()
@@ -20470,8 +20457,8 @@ bernParser
   }
 
   class componentDefinitionParser extends htmlTagParser {
-    get componentTagNameCell() {
-      return this.getWord(0)
+    get componentTagNameAtom() {
+      return this.getAtom(0)
     }
     getTag() {
       return "div"
@@ -20482,11 +20469,11 @@ bernParser
     createParserCombinator() {
       return new Particle.ParserCombinator(errorParser, undefined, undefined)
     }
-    get htmlAttributeNameCell() {
-      return this.getWord(0)
+    get htmlAttributeNameAtom() {
+      return this.getAtom(0)
     }
-    get attributeValueCell() {
-      return this.getWordsFrom(1)
+    get attributeValueAtom() {
+      return this.getAtomsFrom(1)
     }
     get isTileAttribute() {
       return true
@@ -20501,13 +20488,13 @@ bernParser
       return ""
     }
     getAttribute() {
-      return ` ${this.firstWord}="${this.content}"`
+      return ` ${this.firstAtom}="${this.content}"`
     }
   }
 
   class stumpExtendedAttributeParser extends htmlAttributeParser {
-    get stumpExtendedAttributeNameCell() {
-      return this.getWord(0)
+    get stumpExtendedAttributeNameAtom() {
+      return this.getAtom(0)
     }
   }
 
@@ -20515,8 +20502,8 @@ bernParser
     createParserCombinator() {
       return new Particle.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
     }
-    get anyHtmlContentCell() {
-      return this.getWordsFrom(0)
+    get anyHtmlContentAtom() {
+      return this.getAtomsFrom(0)
     }
     get isTileAttribute() {
       return true
@@ -20530,8 +20517,8 @@ bernParser
     createParserCombinator() {
       return new Particle.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
     }
-    get bernKeywordCell() {
-      return this.getWord(0)
+    get bernKeywordAtom() {
+      return this.getAtom(0)
     }
     get isTileAttribute() {
       return true
@@ -20551,7 +20538,7 @@ bernParser
 {
   class hakonParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new Particle.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), { comment: commentParser }), undefined)
+      return new Particle.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), { comment: commentParser }), undefined)
     }
     getSelector() {
       return ""
@@ -20562,33 +20549,33 @@ bernParser
         .map(subparticle => subparticle.compile())
         .join("")
     }
-    static cachedHandParsersProgramRoot = new HandParsersProgram(`// Cell Parsers
-anyCell
-keywordCell
-commentKeywordCell
- extends keywordCell
+    static cachedHandParsersProgramRoot = new HandParsersProgram(`// Atom Parsers
+anyAtom
+keywordAtom
+commentKeywordAtom
+ extends keywordAtom
  paint comment
  enum comment
-extraCell
+extraAtom
  paint invalid
-cssValueCell
+cssValueAtom
  paint constant.numeric
-selectorCell
+selectorAtom
  paint keyword.control
  examples body h1
  // todo add html tags, css and ids selector regexes, etc
-vendorPrefixPropertyKeywordCell
+vendorPrefixPropertyKeywordAtom
  description Properties like -moz-column-fill
  paint variable.function
- extends keywordCell
-propertyKeywordCell
+ extends keywordAtom
+propertyKeywordAtom
  paint variable.function
- extends keywordCell
+ extends keywordAtom
  // todo Where are these coming from? Can we add a url link
- enum align-content align-items align-self all animation animation-delay animation-direction animation-duration animation-fill-mode animation-iteration-count animation-name animation-play-state animation-timing-function backface-visibility background background-attachment background-blend-mode background-clip background-color background-image background-origin background-position background-repeat background-size border border-bottom border-bottom-color border-bottom-left-radius border-bottom-right-radius border-bottom-style border-bottom-width border-collapse border-color border-image border-image-outset border-image-repeat border-image-slice border-image-source border-image-width border-left border-left-color border-left-style border-left-width border-radius border-right border-right-color border-right-style border-right-width border-spacing border-style border-top border-top-color border-top-left-radius border-top-right-radius border-top-style border-top-width border-width bottom box-shadow box-sizing break-inside caption-side clear clip color column-count column-fill column-gap column-rule column-rule-color column-rule-style column-rule-width column-span column-width columns content counter-increment counter-reset cursor direction display empty-cells fill filter flex flex-basis flex-direction flex-flow flex-grow flex-shrink flex-wrap float font @font-face font-family font-size font-size-adjust font-stretch font-style font-variant font-weight  hanging-punctuation height hyphens justify-content @keyframes left letter-spacing line-height list-style list-style-image list-style-position list-style-type margin margin-bottom margin-left margin-right margin-top max-height max-width @media min-height min-width nav-down nav-index nav-left nav-right nav-up opacity order outline outline-color outline-offset outline-style outline-width overflow overflow-x overflow-y padding padding-bottom padding-left padding-right padding-top page-break-after page-break-before page-break-inside perspective perspective-origin position quotes resize right tab-size table-layout text-align text-align-last text-decoration text-decoration-color text-decoration-line text-decoration-style text-indent text-justify text-overflow text-shadow text-transform top transform transform-origin transform-style transition transition-delay transition-duration transition-property transition-timing-function unicode-bidi vertical-align visibility white-space width word-break word-spacing word-wrap z-index overscroll-behavior-x user-select -ms-touch-action -webkit-user-select -webkit-touch-callout -moz-user-select touch-action -ms-user-select -khtml-user-select gap grid-auto-flow grid-column grid-column-end grid-column-gap grid-column-start grid-gap grid-row grid-row-end grid-row-gap grid-row-start grid-template-columns grid-template-rows justify-items justify-self
-errorCell
+ enum align-content align-items align-self all animation animation-delay animation-direction animation-duration animation-fill-mode animation-iteration-count animation-name animation-play-state animation-timing-function backface-visibility background background-attachment background-blend-mode background-clip background-color background-image background-origin background-position background-repeat background-size border border-bottom border-bottom-color border-bottom-left-radius border-bottom-right-radius border-bottom-style border-bottom-width border-collapse border-color border-image border-image-outset border-image-repeat border-image-slice border-image-source border-image-width border-left border-left-color border-left-style border-left-width border-radius border-right border-right-color border-right-style border-right-width border-spacing border-style border-top border-top-color border-top-left-radius border-top-right-radius border-top-style border-top-width border-width bottom box-shadow box-sizing break-inside caption-side clear clip color column-count column-fill column-gap column-rule column-rule-color column-rule-style column-rule-width column-span column-width columns content counter-increment counter-reset cursor direction display empty-atoms fill filter flex flex-basis flex-direction flex-flow flex-grow flex-shrink flex-wrap float font @font-face font-family font-size font-size-adjust font-stretch font-style font-variant font-weight  hanging-punctuation height hyphens justify-content @keyframes left letter-spacing line-height list-style list-style-image list-style-position list-style-type margin margin-bottom margin-left margin-right margin-top max-height max-width @media min-height min-width nav-down nav-index nav-left nav-right nav-up opacity order outline outline-color outline-offset outline-style outline-width overflow overflow-x overflow-y padding padding-bottom padding-left padding-right padding-top page-break-after page-break-before page-break-inside perspective perspective-origin position quotes resize right tab-size table-layout text-align text-align-last text-decoration text-decoration-color text-decoration-line text-decoration-style text-indent text-justify text-overflow text-shadow text-transform top transform transform-origin transform-style transition transition-delay transition-duration transition-property transition-timing-function unicode-bidi vertical-align visibility white-space width atom-break atom-spacing atom-wrap z-index overscroll-behavior-x user-select -ms-touch-action -webkit-user-select -webkit-touch-callout -moz-user-select touch-action -ms-user-select -khtml-user-select gap grid-auto-flow grid-column grid-column-end grid-column-gap grid-column-start grid-gap grid-row grid-row-end grid-row-gap grid-row-start grid-template-columns grid-template-rows justify-items justify-self
+errorAtom
  paint invalid
-commentCell
+commentAtom
  paint comment
 
 // Line Parsers
@@ -20619,27 +20606,27 @@ hakonParser
     color blue
     font-size 17px
 propertyParser
- catchAllCellType cssValueCell
+ catchAllAtomType cssValueAtom
  catchAllParser errorParser
  javascript
   compile(spaces) {
-   return \`\${spaces}\${this.firstWord}: \${this.content};\`
+   return \`\${spaces}\${this.firstAtom}: \${this.content};\`
   }
- cells propertyKeywordCell
+ atoms propertyKeywordAtom
 variableParser
  extends propertyParser
  pattern --
 browserPrefixPropertyParser
  extends propertyParser
  pattern ^\\-\\w.+
- cells vendorPrefixPropertyKeywordCell
+ atoms vendorPrefixPropertyKeywordAtom
 errorParser
  catchAllParser errorParser
- catchAllCellType errorCell
+ catchAllAtomType errorAtom
  baseParser errorParser
 commentParser
- cells commentKeywordCell
- catchAllCellType commentCell
+ atoms commentKeywordAtom
+ catchAllAtomType commentAtom
  catchAllParser commentParser
 selectorParser
  inScope propertyParser variableParser commentParser
@@ -20648,7 +20635,7 @@ selectorParser
  javascript
   getSelector() {
    const parentSelector = this.parent.getSelector()
-   return this.firstWord
+   return this.firstAtom
     .split(",")
     .map(part => {
      if (part.startsWith("&")) return parentSelector + part.substr(1)
@@ -20664,7 +20651,7 @@ selectorParser
   \${propertyParsers.map(subparticle => subparticle.compile(spaces)).join("\\n")}
   }\\n\`
   }
- cells selectorCell`)
+ atoms selectorAtom`)
     get handParsersProgram() {
       return this.constructor.cachedHandParsersProgramRoot
     }
@@ -20675,22 +20662,22 @@ selectorParser
     createParserCombinator() {
       return new Particle.ParserCombinator(errorParser, undefined, undefined)
     }
-    get propertyKeywordCell() {
-      return this.getWord(0)
+    get propertyKeywordAtom() {
+      return this.getAtom(0)
     }
-    get cssValueCell() {
-      return this.getWordsFrom(1)
+    get cssValueAtom() {
+      return this.getAtomsFrom(1)
     }
     compile(spaces) {
-      return `${spaces}${this.firstWord}: ${this.content};`
+      return `${spaces}${this.firstAtom}: ${this.content};`
     }
   }
 
   class variableParser extends propertyParser {}
 
   class browserPrefixPropertyParser extends propertyParser {
-    get vendorPrefixPropertyKeywordCell() {
-      return this.getWord(0)
+    get vendorPrefixPropertyKeywordAtom() {
+      return this.getAtom(0)
     }
   }
 
@@ -20701,8 +20688,8 @@ selectorParser
     getErrors() {
       return this._getErrorParserErrors()
     }
-    get errorCell() {
-      return this.getWordsFrom(0)
+    get errorAtom() {
+      return this.getAtomsFrom(0)
     }
   }
 
@@ -20710,11 +20697,11 @@ selectorParser
     createParserCombinator() {
       return new Particle.ParserCombinator(commentParser, undefined, undefined)
     }
-    get commentKeywordCell() {
-      return this.getWord(0)
+    get commentKeywordAtom() {
+      return this.getAtom(0)
     }
-    get commentCell() {
-      return this.getWordsFrom(1)
+    get commentAtom() {
+      return this.getAtomsFrom(1)
     }
   }
 
@@ -20722,7 +20709,7 @@ selectorParser
     createParserCombinator() {
       return new Particle.ParserCombinator(
         selectorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstWordMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {
           "border-bottom-right-radius": propertyParser,
           "transition-timing-function": propertyParser,
           "animation-iteration-count": propertyParser,
@@ -20836,7 +20823,7 @@ selectorParser
           "table-layout": propertyParser,
           "text-justify": propertyParser,
           "unicode-bidi": propertyParser,
-          "word-spacing": propertyParser,
+          "atom-spacing": propertyParser,
           "touch-action": propertyParser,
           "grid-row-end": propertyParser,
           "grid-row-gap": propertyParser,
@@ -20846,7 +20833,7 @@ selectorParser
           "column-fill": propertyParser,
           "column-rule": propertyParser,
           "column-span": propertyParser,
-          "empty-cells": propertyParser,
+          "empty-atoms": propertyParser,
           "flex-shrink": propertyParser,
           "font-family": propertyParser,
           "font-weight": propertyParser,
@@ -20878,7 +20865,7 @@ selectorParser
           "text-align": propertyParser,
           transition: propertyParser,
           visibility: propertyParser,
-          "word-break": propertyParser,
+          "atom-break": propertyParser,
           animation: propertyParser,
           direction: propertyParser,
           "flex-flow": propertyParser,
@@ -20890,7 +20877,7 @@ selectorParser
           "nav-index": propertyParser,
           "nav-right": propertyParser,
           transform: propertyParser,
-          "word-wrap": propertyParser,
+          "atom-wrap": propertyParser,
           "nav-down": propertyParser,
           "nav-left": propertyParser,
           overflow: propertyParser,
@@ -20939,15 +20926,15 @@ selectorParser
         ]
       )
     }
-    get selectorCell() {
-      return this.getWord(0)
+    get selectorAtom() {
+      return this.getAtom(0)
     }
     get isSelectorParser() {
       return true
     }
     getSelector() {
       const parentSelector = this.parent.getSelector()
-      return this.firstWord
+      return this.firstAtom
         .split(",")
         .map(part => {
           if (part.startsWith("&")) return parentSelector + part.substr(1)
@@ -21368,14 +21355,14 @@ class AbstractWillowBrowser extends stumpParser {
   }
   async appendScript(url) {}
   getWindowTitle() {
-    // todo: deep getParticleByBase/withBase/type/word or something?
+    // todo: deep getParticleByBase/withBase/type/atom or something?
     const particles = this.topDownArray
-    const titleParticle = particles.find(particle => particle.firstWord === WillowConstants.titleTag)
+    const titleParticle = particles.find(particle => particle.firstAtom === WillowConstants.titleTag)
     return titleParticle ? titleParticle.content : ""
   }
   setWindowTitle(value) {
     const particles = this.topDownArray
-    const headParticle = particles.find(particle => particle.firstWord === WillowConstants.tags.head)
+    const headParticle = particles.find(particle => particle.firstAtom === WillowConstants.tags.head)
     headParticle.touchParticle(WillowConstants.titleTag).setContent(value)
     return this
   }
@@ -21936,7 +21923,7 @@ class AbstractParticleComponentParser extends ParserBackedParticle {
   _getHtmlOnlyParticles() {
     const particles = []
     this.willowBrowser.getHtmlStumpParticle().deepVisit(particle => {
-      if (particle.firstWord === "styleTag" || (particle.content || "").startsWith("<svg ")) return false
+      if (particle.firstAtom === "styleTag" || (particle.content || "").startsWith("<svg ")) return false
       particles.push(particle)
     })
     return particles
@@ -21945,7 +21932,7 @@ class AbstractParticleComponentParser extends ParserBackedParticle {
     // todo: cleanup. feels hacky.
     const clone = new Particle(this.willowBrowser.getHtmlStumpParticle().toString())
     clone.topDownArray.forEach(particle => {
-      if (particle.firstWord === "styleTag" || (particle.content || "").startsWith("<svg ")) particle.destroy()
+      if (particle.firstAtom === "styleTag" || (particle.content || "").startsWith("<svg ")) particle.destroy()
     })
     return clone.toString()
   }
@@ -21956,7 +21943,7 @@ class AbstractParticleComponentParser extends ParserBackedParticle {
       .join("\n")
   }
   getCommandNames() {
-    return Object.getOwnPropertyNames(Object.getPrototypeOf(this)).filter(word => word.endsWith("Command"))
+    return Object.getOwnPropertyNames(Object.getPrototypeOf(this)).filter(atom => atom.endsWith("Command"))
   }
   async _executeCommandOnStumpParticle(stumpParticle, commandMethod) {
     const params = this._getCommandArgumentsFromStumpParticle(stumpParticle, commandMethod)
@@ -22167,21 +22154,21 @@ ${new stumpParser(this.toStumpCode()).compile()}
     return this.destroy()
   }
   // todo: move to keyword particle class?
-  toggle(firstWord, contentOptions) {
-    const currentParticle = this.getParticle(firstWord)
-    if (!contentOptions) return currentParticle ? currentParticle.unmountAndDestroy() : this.appendLine(firstWord)
+  toggle(firstAtom, contentOptions) {
+    const currentParticle = this.getParticle(firstAtom)
+    if (!contentOptions) return currentParticle ? currentParticle.unmountAndDestroy() : this.appendLine(firstAtom)
     const currentContent = currentParticle === undefined ? undefined : currentParticle.content
     const index = contentOptions.indexOf(currentContent)
     const newContent = index === -1 || index + 1 === contentOptions.length ? contentOptions[0] : contentOptions[index + 1]
-    this.delete(firstWord)
-    if (newContent) this.touchParticle(firstWord).setContent(newContent)
+    this.delete(firstAtom)
+    if (newContent) this.touchParticle(firstAtom).setContent(newContent)
     return newContent
   }
   isMounted() {
     return !!this._htmlStumpParticle
   }
-  toggleAndRender(firstWord, contentOptions) {
-    this.toggle(firstWord, contentOptions)
+  toggleAndRender(firstAtom, contentOptions) {
+    this.toggle(firstAtom, contentOptions)
     this.root.renderAndGetRenderReport()
   }
   _getFirstOutdatedDependency(lastRenderedTime = this._getLastRenderedTime() || 0) {
@@ -22229,7 +22216,7 @@ ${new stumpParser(this.toStumpCode()).compile()}
     })
   }
   toStumpLoadingCode() {
-    return `div Loading ${this.firstWord}...
+    return `div Loading ${this.firstAtom}...
  class ${this.getCssClassNames().join(" ")}
  id ${this.getParticleComponentId()}`
   }
@@ -22308,7 +22295,7 @@ ${new stumpParser(this.toStumpCode()).compile()}
         console.error(err)
       }
     }
-    let str = `${this.getWord(0) || this.constructor.name} ${isUpdateOp ? "update" : "mount"} ${particleComponentUpdateReport.shouldUpdate} ${particleComponentUpdateReport.reason}`
+    let str = `${this.getAtom(0) || this.constructor.name} ${isUpdateOp ? "update" : "mount"} ${particleComponentUpdateReport.shouldUpdate} ${particleComponentUpdateReport.reason}`
     subparticleResults.forEach(subparticle => (str += "\n" + subparticle.toString(1)))
     return new Particle(str)
   }

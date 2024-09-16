@@ -207,7 +207,7 @@ app.get("/create/:folderName(*)", createLimiter, (req, res) => {
 				} catch (err) {
 					return handleCreateError(res, { errorMessage: `Invalid template url.`, folderName: rawInput })
 				}
-				execSync(`git clone ${template} ${folderName}`, { cwd: rootFolder })
+				execSync(`git clone ${template} ${folderName} && cd ${folderName} && scroll build`, { cwd: rootFolder })
 			} else {
 				template = sanitizeFolderName(template)
 				const templatePath = path.join(rootFolder, template)
