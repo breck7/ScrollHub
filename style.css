@@ -31,8 +31,13 @@ body {
   margin: auto;
   padding: 0.5rem;
 }
-.historyLink {
+.historyLink,
+.duplicateButton {
   color: rgba(204, 204, 204, 0.8);
+}
+.duplicateButton:hover {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .darkText {

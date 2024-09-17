@@ -179,8 +179,16 @@ class EditorApp {
 		const serverName = window.location.hostname
 		document.getElementById("folderNameLink").innerHTML = `${serverName}/${this.folderName}`
 		document.getElementById("folderNameLink").href = this.folderName
-		document.getElementById("gitClone").innerHTML = `<a class="historyLink" href="/history/${this.folderName}">history</a> · git clone http://${serverName}/git/${this.folderName} --origin scrollhub`
+		document.getElementById(
+			"gitClone"
+		).innerHTML = `<a class="historyLink" href="/history/${this.folderName}">history</a> · <a onclick="app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/git/${this.folderName} --origin scrollhub`
 		document.title = `Editing ${serverName}/${this.folderName}`
+	}
+
+	duplicate() {
+		const newFolderName = prompt("Folder name")
+		if (!newFolderName) return
+		window.location.href = `/createFromForm?folderName=${newFolderName}~${this.folderName}`
 	}
 
 	fetchAndDisplayFileList() {
