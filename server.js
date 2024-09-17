@@ -319,6 +319,7 @@ app.post("/git/:repo/*", async (req, res) => {
 		ps.on("close", async code => {
 			if (code === 0 && service.action === "push") {
 				await execAsync(`scroll build`, { cwd: repoPath })
+				updateFolder(folderName)
 			}
 		})
 	})
@@ -384,6 +385,7 @@ const writeFile = async (res, filePath, content) => {
 		await execAsync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
+		updateFolder(folderName)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send(`An error occurred while writing the file or rebuilding the folder:\n ${error.toString().replace(/</g, "&lt;")}`)
@@ -438,6 +440,7 @@ app.post("/upload", async (req, res) => {
 		await execAsync(`git add ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.send("File uploaded successfully")
+		updateFolder(folderName)
 	} catch (err) {
 		console.error(err)
 		res.status(500).send("An error occurred while uploading or processing the file.")
