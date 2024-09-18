@@ -12,22 +12,7 @@ Watch the video
 
 br 3
 
-<form method="get" action="createFromForm">
-<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Publish</button>
-<div style="color:red; flex: 100%; padding: 30px 8px 0; display:none;" id="errorMessage"></div>
-<script>
- {
- const el = document.getElementById("errorMessage")
- const params = new URLSearchParams(window.location.search)
- const errorMessage = params.get('errorMessage') || ''
- el.textContent = errorMessage
- el.style.display = errorMessage ? 'block' : "none"
- const folderName = params.get('folderName') || ''
- if (folderName)
- 	document.getElementById("folderName").value = folderName
- }
- </script>
-</form>
+createForm.scroll
 
 br 3
 

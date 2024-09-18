@@ -21,16 +21,20 @@ class EditorApp {
 		return `${this.folderName}/${this.fileName}`
 	}
 
-	main() {
+	async main() {
 		const urlParams = new URLSearchParams(window.location.search)
 		this.folderName = urlParams.get("folderName")
-		this.fileName = urlParams.get("fileName")
+		if (!this.folderName) return this.showError("Folder name not provided in the query string")
 		this.fileList = document.getElementById("fileList")
+		this.fileName = urlParams.get("fileName")
+		if (!this.fileName) {
+			await this.fetchAndDisplayFileList()
+			this.fileName = this.scrollFiles.includes("index.scroll") ? "index.scroll" : this.scrollFiles[0]
+		} else {
+			this.fetchAndDisplayFileList()
+		}
 
 		this.updatePreviewIFrame()
-		if (!this.folderName) return this.showError("Folder name not provided in the query string")
-
-		this.fetchAndDisplayFileList()
 
 		this.fileEditor = document.getElementById("fileEditor")
 		document.getElementById("filePathInput").value = this.filePath
@@ -45,6 +49,7 @@ class EditorApp {
 		dropZone.addEventListener("dragleave", this.handleDragLeave.bind(this))
 		dropZone.addEventListener("drop", this.handleDrop.bind(this))
 		this.bindKeyboardShortcuts()
+
 		return this
 	}
 
@@ -191,26 +196,16 @@ class EditorApp {
 		window.location.href = `/createFromForm?folderName=${newFolderName}~${this.folderName}`
 	}
 
-	fetchAndDisplayFileList() {
-		if (!this.folderName) {
-			console.error("Folder name is missing")
-			return
+	async fetchAndDisplayFileList() {
+		try {
+			const response = await fetch(`/ls${this.auth}`)
+			if (!response.ok) throw new Error(await response.text())
+			const data = await response.text()
+			const files = data.split("\n")
+			this.updateFileList(files)
+		} catch (error) {
+			console.error("There was a problem with the fetch operation:", error.message)
 		}
-
-		fetch(`/ls${this.auth}`)
-			.then(response => {
-				if (!response.ok) {
-					throw new Error(response.text())
-				}
-				return response.text()
-			})
-			.then(data => {
-				const files = data.split("\n")
-				this.updateFileList(files)
-			})
-			.catch(error => {
-				console.error("There was a problem with the fetch operation:", error.message)
-			})
 	}
 
 	updateFileList(files) {
@@ -222,6 +217,7 @@ class EditorApp {
 				: `<a class="nonScrollFile" target="preview" href="/${this.folderName}/${file}">${file}</a>`
 		)
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
+		this.scrollFiles = scrollFiles
 	}
 
 	createFileCommand() {

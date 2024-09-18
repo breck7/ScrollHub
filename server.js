@@ -19,6 +19,7 @@ const httpBackend = require("git-http-backend")
 
 // PPS
 const { Particle } = require("scrollsdk/products/Particle.js")
+const { stamps } = require("./templates.js")
 
 const app = express()
 const port = 80
@@ -100,7 +101,7 @@ const updateFolder = async folder => {
 	folderCache[folder] = {
 		folder,
 		folderLink: folder + "/",
-		editUrl: `edit.html?folderName=${folder}&fileName=index.scroll`,
+		editUrl: `edit.html?folderName=${folder}`,
 		ctime,
 		mtime,
 		files: fileCount,
@@ -146,97 +147,84 @@ scrollVersionLink`
 	await execAsync(`scroll build`, { cwd: __dirname })
 }
 
-app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}`))
-
-// ideas: single page, blog, knowledge base.
-const stamps = {
-	bare: `stamp
- header.scroll
-  importOnly
-  buildHtml
-  buildTxt
-  metaTags
-  gazetteCss
-  homeButton
-  viewSourceButton
-  printTitle
-  mediumColumns 1
- index.scroll
-  header.scroll
-  title Hello world
-  
-  Welcome to my folder.
-  
-  scrollVersionLink
- .gitignore
-  *.html
-  *.txt
-  *.xml`
-}
+app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}?template=${req.query.template}`))
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create/:folderName(*)", createLimiter, async (req, res) => {
+app.get("/create/:folderName", createLimiter, async (req, res) => {
 	const rawInput = req.params.folderName
-	let inputFolderName = rawInput
-	let template = ""
-
-	if (rawInput.includes("~")) {
-		const particle = new Particle(rawInput.replace(/~/g, "\n"))
-		inputFolderName = particle.particleAt(0).getLine()
-		template = particle.particleAt(1).getLine()
-	}
-
-	const folderName = sanitizeFolderName(inputFolderName)
-	const folderPath = path.join(rootFolder, folderName)
+	const template = req.query.template || "blank"
+	const folderName = sanitizeFolderName(rawInput)
 
 	if (!isValidFolderName(folderName))
 		return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and pass a few other checks.`, folderName: rawInput })
 
-	if (folderCache[folderName]) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName: rawInput })
+	if (folderCache[folderName]) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName })
 
 	try {
-		if (template) {
-			const isUrl = template.startsWith("https") || template.startsWith("http")
-			if (isUrl) {
-				try {
-					new URL(template)
-				} catch (err) {
-					return handleCreateError(res, { errorMessage: `Invalid template url.`, folderName: rawInput })
-				}
-				await execAsync(`git clone ${template} ${folderName} && cd ${folderName} && scroll build`, { cwd: rootFolder })
-			} else {
-				template = sanitizeFolderName(template)
-				const templatePath = path.join(rootFolder, template)
-				try {
-					await fsp.access(templatePath)
-				} catch (err) {
-					return handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName: rawInput })
-				}
-				await execAsync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
-			}
-		} else await execAsync(`mv ${path.join(__dirname, "blankTemplate")} ${folderPath}`)
+		const isUrl = template.startsWith("https:") || template.startsWith("http:")
+		if (isUrl) {
+			const aborted = await buildFromUrl(template, folderName, res)
+			if (aborted) return aborted
+		} else {
+			const aborted = await buildFromTemplate(template, folderName, res)
+			if (aborted) return aborted
+		}
 
-		res.redirect(`/edit.html?folderName=${folderName}&fileName=index.scroll`)
-		prepNext(folderName)
+		res.redirect(`/edit.html?folderName=${folderName}`)
+		prepNext(folderName, template)
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("Sorry, an error occurred while creating the folder:", error)
 	}
 })
 
+const buildFromUrl = async (url, folderName, res) => {
+	try {
+		new URL(url)
+	} catch (err) {
+		handleCreateError(res, { errorMessage: `Invalid template url.`, folderName, template: url })
+		return true
+	}
+	await execAsync(`git clone ${url} ${folderName} && cd ${folderName} && scroll build`, { cwd: rootFolder })
+	return false
+}
+
+const buildFromTemplate = async (template, folderName, res) => {
+	const folderPath = path.join(rootFolder, folderName)
+	if (stamps[template]) {
+		await execAsync(`mv ${path.join(hotTemplatesPath, template)} ${folderPath}`)
+		return false
+	}
+
+	template = sanitizeFolderName(template)
+	const templatePath = path.join(rootFolder, template)
+	try {
+		await fsp.access(templatePath)
+	} catch (err) {
+		handleCreateError(res, { errorMessage: `Sorry, template folder "${template}" does not exist.`, folderName, template })
+		return true
+	}
+	await execAsync(`cp -R ${templatePath} ${folderPath};`, { cwd: rootFolder })
+	return false
+}
+
 const updateFolderAndBuildList = async folderName => {
 	await updateFolder(folderName)
 	buildListFile()
 }
 
-const prepNext = async folderName => {
-	cookNext()
+const prepNext = async (folderName, template) => {
+	cookNext(template)
 	updateFolderAndBuildList(folderName)
 }
 
-const cookNext = async () => {
-	const folderPath = path.join(__dirname, "blankTemplate")
+const hotTemplatesPath = path.join(__dirname, "hotTemplates")
+
+const cookNext = async templateName => {
+	const stamp = stamps[templateName]
+	if (!stamp) return
+	const folderPath = path.join(hotTemplatesPath, templateName)
 	const folderExists = await fsp
 		.access(folderPath)
 		.then(() => true)
@@ -246,12 +234,11 @@ const cookNext = async () => {
 
 	await fsp.mkdir(folderPath, { recursive: true })
 
-	const stamp = stamps.bare
 	await fsp.writeFile(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
 
-	await execAsync("scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit'; scroll build", { cwd: folderPath })
+	await execAsync(`scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit from ${templateName} template'; scroll build`, { cwd: folderPath })
 }
-cookNext()
+Object.keys(stamps).map(cookNext)
 app.get("/ls", async (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)

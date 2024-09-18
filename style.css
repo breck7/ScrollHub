@@ -21,6 +21,31 @@ body {
   padding: 10px;
 }
 
+#errorMessage {
+  color: red;
+  flex: 100%;
+  padding: 30px 8px 0;
+  display: none;
+}
+
+.templateButton {
+  flex: 100%;
+  padding: 20px 0 0 0px;
+  font-size: 0.8em;
+  color: rgba(204, 204, 204, 0.8);
+}
+
+#templateOptions a {
+  color: rgba(204, 204, 204, 0.8);
+}
+#templateOptions a:hover {
+  cursor: pointer;
+  color: rgba(154, 154, 154, 1);
+}
+#templateOptions a.selected {
+  color: rgba(154, 154, 154, 1);
+}
+
 .darkText,
 .greyText {
   color: rgba(204, 204, 204, 0.8);
@@ -88,6 +113,9 @@ form {
   align-items: top;
   margin: 0 auto;
   max-width: 600px;
+}
+#createForm {
+  padding-bottom: 20px;
 }
 #importForm {
   margin-top: 20px;
