@@ -186,14 +186,14 @@ class EditorApp {
 		document.getElementById("folderNameLink").href = this.folderName
 		document.getElementById(
 			"gitClone"
-		).innerHTML = `<a class="historyLink" href="/history/${this.folderName}">history</a> · <a onclick="app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/git/${this.folderName} --origin scrollhub`
+		).innerHTML = `<a class="historyLink" href="/history/${this.folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/git/${this.folderName} --origin scrollhub`
 		document.title = `Editing ${serverName}/${this.folderName}`
 	}
 
 	duplicate() {
 		const newFolderName = prompt("Folder name")
 		if (!newFolderName) return
-		window.location.href = `/createFromForm?folderName=${newFolderName}~${this.folderName}`
+		window.location.href = `/createFromForm?folderName=${newFolderName}&template=${this.folderName}`
 	}
 
 	async fetchAndDisplayFileList() {
@@ -257,4 +257,7 @@ class EditorApp {
 }
 
 // Initialize the app when the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", () => (window.app = new EditorApp().main()))
+document.addEventListener("DOMContentLoaded", () => {
+	window.app = new EditorApp()
+	window.app.main()
+})

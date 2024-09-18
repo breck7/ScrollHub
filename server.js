@@ -19,7 +19,9 @@ const httpBackend = require("git-http-backend")
 
 // PPS
 const { Particle } = require("scrollsdk/products/Particle.js")
-const { stamps } = require("./templates.js")
+const hotTemplatesPath = path.join(__dirname, "hotTemplates")
+const templatesFolder = path.join(__dirname, "templates")
+const templates = new Set(fs.readdirSync(templatesFolder).filter(file => fs.statSync(path.join(templatesFolder, file)).isDirectory()))
 
 const app = express()
 const port = 80
@@ -32,6 +34,7 @@ const rootFolder = path.join(__dirname, "folders")
 app.use(express.urlencoded({ extended: true }))
 app.use(fileUpload({ limits: { fileSize: maxSize } }))
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
+if (!fs.existsSync(hotTemplatesPath)) fs.mkdirSync(hotTemplatesPath)
 
 const createLimiter = rateLimit({
 	windowMs: rateLimit * 1000,
@@ -192,7 +195,7 @@ const buildFromUrl = async (url, folderName, res) => {
 
 const buildFromTemplate = async (template, folderName, res) => {
 	const folderPath = path.join(rootFolder, folderName)
-	if (stamps[template]) {
+	if (templates.has(template)) {
 		await execAsync(`mv ${path.join(hotTemplatesPath, template)} ${folderPath}`)
 		return false
 	}
@@ -219,11 +222,8 @@ const prepNext = async (folderName, template) => {
 	updateFolderAndBuildList(folderName)
 }
 
-const hotTemplatesPath = path.join(__dirname, "hotTemplates")
-
 const cookNext = async templateName => {
-	const stamp = stamps[templateName]
-	if (!stamp) return
+	if (!templates.has(templateName)) return
 	const folderPath = path.join(hotTemplatesPath, templateName)
 	const folderExists = await fsp
 		.access(folderPath)
@@ -232,13 +232,10 @@ const cookNext = async templateName => {
 
 	if (folderExists) return
 
-	await fsp.mkdir(folderPath, { recursive: true })
-
-	await fsp.writeFile(path.join(folderPath, "stamp.scroll"), stamp, "utf8")
-
+	await execAsync(`cp -R ${templatesFolder}/${templateName} ${folderPath};`, { cwd: rootFolder })
 	await execAsync(`scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit from ${templateName} template'; scroll build`, { cwd: folderPath })
 }
-Object.keys(stamps).map(cookNext)
+Array.from(templates).map(cookNext)
 app.get("/ls", async (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)
