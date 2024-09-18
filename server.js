@@ -24,7 +24,7 @@ const app = express()
 const port = 80
 const rateLimitSeconds = 0.1
 const maxSize = 10 * 1000 * 1024
-const allowedExtensions = "scroll parsers txt html htm css js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
+const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
 const hostname = os.hostname()
 const rootFolder = path.join(__dirname, "folders")
 
