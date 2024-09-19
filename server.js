@@ -285,47 +285,37 @@ app.get("/build.htm", (req, res) => runCommand(req, res, "build"))
 app.get("/format.htm", (req, res) => runCommand(req, res, "format"))
 app.get("/test.htm", (req, res) => runCommand(req, res, "test"))
 
-app.get("/:repo(.*)\\.git/*", (req, res) => {
+app.get("/:repo.git/*", (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(rootFolder, repo)
-
-	req.url = "/" + req.url.split("/").slice(3).join("/")
-
+	req.url = "/" + req.url.split("/").slice(2).join("/")
 	const handlers = httpBackend(req.url, (err, service) => {
 		if (err) return res.end(err + "\n")
-
 		res.setHeader("content-type", service.type)
-
 		const ps = spawn(service.cmd, service.args.concat(repoPath))
 		ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
 	})
-
 	req.pipe(handlers).pipe(res)
 })
 
-app.post("/:repo(.*)\\.git/*", async (req, res) => {
+// todo: check pw
+app.post("/:repo.git/*", async (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(rootFolder, repo)
-
-	req.url = "/" + req.url.split("/").slice(3).join("/")
-
+	req.url = "/" + req.url.split("/").slice(2).join("/")
 	const handlers = httpBackend(req.url, (err, service) => {
 		if (err) return res.end(err + "\n")
-
 		res.setHeader("content-type", service.type)
-
 		const ps = spawn(service.cmd, service.args.concat(repoPath))
 		ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
-
 		// Handle Git pushes asynchronously and build the scroll
 		ps.on("close", async code => {
 			if (code === 0 && service.action === "push") {
 				await execAsync(`scroll build`, { cwd: repoPath })
-				updateFolderAndBuildList(folderName)
+				updateFolderAndBuildList(repo)
 			}
 		})
 	})
-
 	req.pipe(handlers).pipe(res)
 })
 
