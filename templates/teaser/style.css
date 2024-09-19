@@ -1,0 +1,40 @@
+body {
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+  margin: 0 auto;
+  padding: 0;
+  height: 100vh;
+  color: #fff;
+  max-width: 600px;
+}
+input[type="text"],
+input[type="email"] {
+  width: 100%;
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 30px;
+  outline: none;
+  font-size: 1rem;
+}
+input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+button {
+  background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  color: white;
+  border: none;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+  width: 100%;
+  transition: background 0.3s ease;
+}
+button:hover {
+  background: linear-gradient(135deg, #ff4b2b, #ff416c);
+}

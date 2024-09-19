@@ -1,0 +1,24 @@
+buildHtml
+metaTags
+replace COMPANY_NAME Pied Piper
+title COMPANY_NAME - Coming Soon
+style.css
+
+center
+# COMPANY_NAME - Coming Soon
+
+mediumColumn
+classicForm breck7+teaser@gmail.com Join COMPANY_NAME waitlist
+
+nameParser
+ extends abstractIdParser
+ description What is your name?
+ example
+  name Jane Doe
+
+emailAddressParser
+ extends abstractEmailMeasureParser
+ description What is your email address?
+ boolean isMeasureRequired true
+ example
+  name jane@doe.com
