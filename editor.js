@@ -59,7 +59,7 @@ class EditorApp {
 		formData.append("folderName", this.folderName)
 		formData.append("content", this.codeMirrorInstance.getValue())
 		try {
-			const response = await fetch("/write", {
+			const response = await fetch("/write.htm", {
 				method: "POST",
 				body: formData
 			})
@@ -153,7 +153,7 @@ class EditorApp {
 		formData.append("folderName", this.folderName)
 
 		try {
-			const response = await fetch("/upload", {
+			const response = await fetch("/upload.htm", {
 				method: "POST",
 				body: formData
 			})
@@ -186,19 +186,19 @@ class EditorApp {
 		document.getElementById("folderNameLink").href = this.folderName
 		document.getElementById(
 			"gitClone"
-		).innerHTML = `<a class="historyLink" href="/history/${this.folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/git/${this.folderName} --origin scrollhub`
+		).innerHTML = `<a class="historyLink" href="/history.htm/${this.folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/${this.folderName}.git --origin scrollhub`
 		document.title = `Editing ${serverName}/${this.folderName}`
 	}
 
 	duplicate() {
 		const newFolderName = prompt("Folder name")
 		if (!newFolderName) return
-		window.location.href = `/createFromForm?folderName=${newFolderName}&template=${this.folderName}`
+		window.location.href = `/createFromForm.htm?folderName=${newFolderName}&template=${this.folderName}`
 	}
 
 	async fetchAndDisplayFileList() {
 		try {
-			const response = await fetch(`/ls${this.auth}`)
+			const response = await fetch(`/ls.htm${this.auth}`)
 			if (!response.ok) throw new Error(await response.text())
 			const data = await response.text()
 			const files = data.split("\n")
@@ -245,7 +245,7 @@ class EditorApp {
 
 		const filePath = `${this.folderName}/${this.fileName}`
 
-		fetch(`/read${this.auth}filePath=${encodeURIComponent(filePath)}`)
+		fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
 			.then(response => {
 				if (!response.ok) throw new Error("Network response was not ok")
 

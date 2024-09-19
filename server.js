@@ -27,7 +27,7 @@ const app = express()
 const port = 80
 const rateLimitSeconds = 0.1
 const maxSize = 10 * 1000 * 1024
-const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps".split(" ")
+const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
 const hostname = os.hostname()
 const rootFolder = path.join(__dirname, "folders")
 
@@ -48,6 +48,9 @@ const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, ""
 
 const isValidFolderName = name => {
 	if (name.length < 2) return false
+
+	// dont allow folder names that look like filenames.
+	// also, we reserve ".htm" for ScrollHub dynamic routes
 	if (name.includes(".")) {
 		const ext = path.extname(name).toLowerCase().slice(1)
 		if (allowedExtensions.includes(ext)) return false
@@ -56,7 +59,7 @@ const isValidFolderName = name => {
 	return false
 }
 
-app.get("/foldersPublished", (req, res) => {
+app.get("/foldersPublished.htm", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
 	res.send(Object.values(folderCache).length.toString())
 })
@@ -158,11 +161,11 @@ scrollVersionLink`
 	await execAsync(`scroll build`, { cwd: __dirname })
 }
 
-app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName || " "}?template=${req.query.template}`))
+app.get("/createFromForm.htm", (req, res) => res.redirect(`/create.htm/${req.query.folderName || " "}?template=${req.query.template}`))
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create/:folderName", createLimiter, async (req, res) => {
+app.get("/create.htm/:folderName", createLimiter, async (req, res) => {
 	const rawInput = req.params.folderName
 	const template = req.query.template || "blank"
 	const folderName = sanitizeFolderName(rawInput)
@@ -248,7 +251,7 @@ const cookNext = async templateName => {
 	await execAsync(`scroll build; rm stamp.scroll; scroll format; git init --initial-branch=main; git add *.scroll; git commit -m 'Initial commit from ${templateName} template'; scroll build`, { cwd: folderPath })
 }
 Array.from(templates).map(cookNext)
-app.get("/ls", async (req, res) => {
+app.get("/ls.htm", async (req, res) => {
 	const folderName = sanitizeFolderName(req.query.folderName)
 	const folderPath = path.join(rootFolder, folderName)
 
@@ -278,11 +281,11 @@ const runCommand = async (req, res, command) => {
 	}
 }
 
-app.get("/build", (req, res) => runCommand(req, res, "build"))
-app.get("/format", (req, res) => runCommand(req, res, "format"))
-app.get("/test", (req, res) => runCommand(req, res, "test"))
+app.get("/build.htm", (req, res) => runCommand(req, res, "build"))
+app.get("/format.htm", (req, res) => runCommand(req, res, "format"))
+app.get("/test.htm", (req, res) => runCommand(req, res, "test"))
 
-app.get("/git/:repo/*", (req, res) => {
+app.get("/:repo(.*)\\.git/*", (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(rootFolder, repo)
 
@@ -300,8 +303,7 @@ app.get("/git/:repo/*", (req, res) => {
 	req.pipe(handlers).pipe(res)
 })
 
-// todo: check pw
-app.post("/git/:repo/*", async (req, res) => {
+app.post("/:repo(.*)\\.git/*", async (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(rootFolder, repo)
 
@@ -336,7 +338,7 @@ const extensionOkay = (filepath, res) => {
 	return true
 }
 
-app.get("/read", async (req, res) => {
+app.get("/read.htm", async (req, res) => {
 	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
 
 	const ok = extensionOkay(filePath, res)
@@ -392,7 +394,7 @@ const writeFile = async (res, filePath, content) => {
 	}
 }
 
-app.get("/history/:folderName", async (req, res) => {
+app.get("/history.htm/:folderName", async (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(rootFolder, folderName)
 	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
@@ -409,11 +411,11 @@ app.get("/history/:folderName", async (req, res) => {
 	}
 })
 
-app.get("/write", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
-app.post("/write", (req, res) => writeFile(res, req.body.filePath, req.body.content))
+app.get("/write.htm", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
+app.post("/write.htm", (req, res) => writeFile(res, req.body.filePath, req.body.content))
 
 // Add a route for file uploads
-app.post("/upload", async (req, res) => {
+app.post("/upload.htm", async (req, res) => {
 	if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.")
 
 	const file = req.files.file
