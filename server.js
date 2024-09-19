@@ -150,7 +150,7 @@ scrollVersionLink`
 	await execAsync(`scroll build`, { cwd: __dirname })
 }
 
-app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName}?template=${req.query.template}`))
+app.get("/createFromForm", (req, res) => res.redirect(`/create/${req.query.folderName || " "}?template=${req.query.template}`))
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
@@ -160,9 +160,13 @@ app.get("/create/:folderName", createLimiter, async (req, res) => {
 	const folderName = sanitizeFolderName(rawInput)
 
 	if (!isValidFolderName(folderName))
-		return handleCreateError(res, { errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and pass a few other checks.`, folderName: rawInput })
+		return handleCreateError(res, {
+			errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and pass a few other checks.`,
+			folderName: rawInput,
+			template
+		})
 
-	if (folderCache[folderName]) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName })
+	if (folderCache[folderName]) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName, template })
 
 	try {
 		const isUrl = template.startsWith("https:") || template.startsWith("http:")

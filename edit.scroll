@@ -1,10 +1,6 @@
-settings.scroll
-metaTags
-homeButton
-gazetteCss
+header.scroll
 title Edit Folder
 
-style.css
 ./ide/codeMirror.css
 
 ./ide/libs.js
@@ -31,5 +27,3 @@ style.css
 editor.js
 
 footer.scroll
-
-viewSourceButton
