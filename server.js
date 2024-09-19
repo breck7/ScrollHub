@@ -46,7 +46,15 @@ const createLimiter = rateLimit({
 
 const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 
-const isValidFolderName = name => /^[a-z][a-z0-9._]*$/.test(name) && name.length > 0
+const isValidFolderName = name => {
+	if (name.length < 2) return false
+	if (name.includes(".")) {
+		const ext = path.extname(name).toLowerCase().slice(1)
+		if (allowedExtensions.includes(ext)) return false
+	}
+	if (/^[a-z][a-z0-9._]*$/.test(name)) return true
+	return false
+}
 
 app.get("/foldersPublished", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
