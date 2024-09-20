@@ -8,7 +8,7 @@ title Edit Folder
 
 # <a id="folderNameLink"></a>
 
-<form method="post" action="write" id="editForm">
+<form method="post" action="write.htm" id="editForm">
 <div>
  <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
  <input type="hidden" name="filePath" id="filePathInput"/>

@@ -225,7 +225,7 @@ class EditorApp {
 		if (!fileName) return ""
 		const { folderName } = this
 		const filePath = `${folderName}/${fileName.replace(".scroll", "") + ".scroll"}`
-		window.location = `write?content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
+		window.location = `write.htm?content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
 	}
 
 	setFileContent(value) {
