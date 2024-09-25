@@ -439,6 +439,36 @@ app.post("/upload.htm", async (req, res) => {
 	}
 })
 
+app.delete("/delete.htm", async (req, res) => {
+	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
+	const folderName = path.dirname(filePath).split(path.sep).pop()
+
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+	const ok = extensionOkay(filePath, res)
+	if (!ok) return
+
+	try {
+		const fileExists = await fsp
+			.access(filePath)
+			.then(() => true)
+			.catch(() => false)
+		if (!fileExists) return res.status(404).send("File not found")
+
+		const fileName = path.basename(filePath)
+		const folderPath = path.dirname(filePath)
+
+		await fsp.unlink(filePath)
+		await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'; scroll build`, { cwd: folderPath })
+
+		res.send("File deleted successfully")
+		updateFolderAndBuildList(folderName)
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(`An error occurred while deleting the file:\n ${error.toString().replace(/</g, "&lt;")}`)
+	}
+})
+
 // Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
 // of what names are taken, for instant feedback.

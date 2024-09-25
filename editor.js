@@ -40,6 +40,7 @@ class EditorApp {
 		document.getElementById("filePathInput").value = this.filePath
 		document.getElementById("folderNameInput").value = this.folderName
 		this.loadFileContent()
+		this.bindDeleteButton()
 
 		// Add event listener for file drag and drop. If a file is dropped, upload it.
 
@@ -237,7 +238,7 @@ class EditorApp {
 		return `?folderName=${this.folderName}&`
 	}
 
-	loadFileContent() {
+	async loadFileContent() {
 		if (!this.folderName || !this.fileName) {
 			console.error("Folder name or file name is missing")
 			return
@@ -245,14 +246,42 @@ class EditorApp {
 
 		const filePath = `${this.folderName}/${this.fileName}`
 
-		fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
-			.then(response => {
-				if (!response.ok) throw new Error("Network response was not ok")
+		const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
+		const content = await response.text()
+		this.setFileContent(content)
 
-				return response.text()
+		this.renderDeleteButton()
+	}
+
+	bindDeleteButton() {
+		const deleteLink = document.querySelector(".deleteLink")
+		deleteLink.addEventListener("click", async e => {
+			e.preventDefault()
+
+			const { fileName, folderName } = this
+			const userInput = prompt(`To confirm deletion, please type the file name: ${fileName}`)
+
+			if (userInput !== fileName) {
+				alert("File name did not match. Deletion cancelled.")
+				return
+			}
+
+			const filePath = `${folderName}/${fileName}`
+
+			const response = await fetch(`/delete.htm?filePath=${encodeURIComponent(filePath)}`, {
+				method: "DELETE"
 			})
-			.then(content => this.setFileContent(content))
-			.catch(error => console.error("There was a problem reading the file:", error.message))
+
+			const data = await response.text()
+			window.location.href = `/edit.html?folderName=${folderName}` // Redirect back to folder
+		})
+	}
+
+	renderDeleteButton() {
+		const content = this.codeMirrorInstance.getValue()
+		const deleteLink = document.querySelector(".deleteLink")
+
+		deleteLink.style.display = content.trim() === "" ? "inline" : "none"
 	}
 }
 

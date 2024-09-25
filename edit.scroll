@@ -17,7 +17,7 @@ title Edit Folder
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button class="publishButton">Publish</button>
+ <button class="publishButton">Publish</button> <a href="delete.htm" class="deleteLink" style="display: none;">Delete</a>
 </div>
 </form>
 // # Commands
