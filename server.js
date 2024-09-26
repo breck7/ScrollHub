@@ -59,6 +59,31 @@ const isValidFolderName = name => {
 	return false
 }
 
+const readAllowedIPs = () => {
+	const ipFilePath = path.join(os.homedir(), "ips.txt")
+	if (!fs.existsSync(ipFilePath)) return null
+
+	const data = fs.readFileSync(ipFilePath, "utf8")
+	return new Set(
+		data
+			.split("\n")
+			.map(ip => ip.trim())
+			.filter(ip => ip)
+	)
+}
+
+const allowedIPs = readAllowedIPs()
+
+const checkWritePermissions = (req, res, next) => {
+	const clientIp = req.ip || req.connection.remoteAddress
+
+	if (allowedIPs === null || allowedIPs.has(clientIp)) {
+		return next()
+	}
+
+	res.status(403).send("Access denied. You do not have permission to perform this action.")
+}
+
 app.get("/foldersPublished.htm", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
 	res.send(Object.values(folderCache).length.toString())
@@ -165,7 +190,7 @@ app.get("/createFromForm.htm", (req, res) => res.redirect(`/create.htm/${req.que
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create.htm/:folderName", createLimiter, async (req, res) => {
+app.get("/create.htm/:folderName", checkWritePermissions, createLimiter, async (req, res) => {
 	const rawInput = req.params.folderName
 	const template = req.query.template || "blank"
 	const folderName = sanitizeFolderName(rawInput)
@@ -281,9 +306,9 @@ const runCommand = async (req, res, command) => {
 	}
 }
 
-app.get("/build.htm", (req, res) => runCommand(req, res, "build"))
-app.get("/format.htm", (req, res) => runCommand(req, res, "format"))
-app.get("/test.htm", (req, res) => runCommand(req, res, "test"))
+app.get("/build.htm", checkWritePermissions, (req, res) => runCommand(req, res, "build"))
+app.get("/format.htm", checkWritePermissions, (req, res) => runCommand(req, res, "format"))
+app.get("/test.htm", checkWritePermissions, (req, res) => runCommand(req, res, "test"))
 
 app.get("/:repo.git/*", (req, res) => {
 	const repo = req.params.repo
@@ -299,7 +324,7 @@ app.get("/:repo.git/*", (req, res) => {
 })
 
 // todo: check pw
-app.post("/:repo.git/*", async (req, res) => {
+app.post("/:repo.git/*", checkWritePermissions, async (req, res) => {
 	const repo = req.params.repo
 	const repoPath = path.join(rootFolder, repo)
 	req.url = "/" + req.url.split("/").slice(2).join("/")
@@ -401,11 +426,11 @@ app.get("/history.htm/:folderName", async (req, res) => {
 	}
 })
 
-app.get("/write.htm", (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
-app.post("/write.htm", (req, res) => writeFile(res, req.body.filePath, req.body.content))
+app.get("/write.htm", checkWritePermissions, (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
+app.post("/write.htm", checkWritePermissions, (req, res) => writeFile(res, req.body.filePath, req.body.content))
 
 // Add a route for file uploads
-app.post("/upload.htm", async (req, res) => {
+app.post("/upload.htm", checkWritePermissions, async (req, res) => {
 	if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.")
 
 	const file = req.files.file
@@ -439,7 +464,7 @@ app.post("/upload.htm", async (req, res) => {
 	}
 })
 
-app.delete("/delete.htm", async (req, res) => {
+app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
 	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
 	const folderName = path.dirname(filePath).split(path.sep).pop()
 
