@@ -11,7 +11,6 @@ const execAsync = util.promisify(exec)
 const express = require("express")
 const https = require("https")
 const http = require("http")
-const rateLimit = require("express-rate-limit")
 const fileUpload = require("express-fileupload")
 
 // Git server
@@ -25,7 +24,6 @@ const templates = new Set(fs.readdirSync(templatesFolder).filter(file => fs.stat
 
 const app = express()
 const port = 80
-const rateLimitSeconds = 0.1
 const maxSize = 10 * 1000 * 1024
 const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
 const hostname = os.hostname()
@@ -49,14 +47,6 @@ app.use(express.urlencoded({ extended: true }))
 app.use(fileUpload({ limits: { fileSize: maxSize } }))
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
 if (!fs.existsSync(hotTemplatesPath)) fs.mkdirSync(hotTemplatesPath)
-
-const createLimiter = rateLimit({
-	windowMs: rateLimit * 1000,
-	max: 1,
-	message: `Sorry, you exceeded 1 folder every ${rateLimitSeconds} seconds`,
-	standardHeaders: true,
-	legacyHeaders: false
-})
 
 const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 
@@ -88,19 +78,53 @@ const readAllowedIPs = () => {
 
 const allowedIPs = readAllowedIPs()
 const annoyingIps = new Set(["24.199.111.182", "198.54.134.120"])
+const writeLimit = 30 // Maximum number of writes per minute
+const writeWindow = 60 * 1000 // 1 minute in milliseconds
+const ipWriteOperations = new Map()
+
 const checkWritePermissions = (req, res, next) => {
 	let clientIp = req.ip || req.connection.remoteAddress
 
 	clientIp = clientIp.replace(/^::ffff:/, "")
 
-	const msg = "Instead of attacking each other, let's build together. The universe is a vast place. https://github.com/breck7/ScrollHub"
+	const msg =
+		"Your IP has been temporarily throttled. If this was a mistake, I apologize--please let me know breck7@gmail.com. If not, instead of attacking each other, let's build together. The universe is a vast place. https://github.com/breck7/ScrollHub"
 
 	if (annoyingIps.has(clientIp)) return res.status(403).send(msg)
+
+	const now = Date.now()
+	const writeTimes = ipWriteOperations.get(clientIp) || []
+	const recentWrites = writeTimes.filter(time => now - time < writeWindow)
+
+	if (recentWrites.length >= writeLimit) {
+		console.log(`Write limit exceeded for IP: ${clientIp}`)
+		annoyingIps.add(clientIp)
+		return res.status(429).send(msg)
+	}
+
+	recentWrites.push(now)
+	ipWriteOperations.set(clientIp, recentWrites)
 
 	if (allowedIPs === null || allowedIPs.has(clientIp)) return next()
 
 	res.status(403).send(msg)
 }
+
+// Cleanup function to remove old entries from ipWriteOperations
+const cleanupWriteOperations = () => {
+	const now = Date.now()
+	for (const [ip, times] of ipWriteOperations.entries()) {
+		const recentWrites = times.filter(time => now - time < writeWindow)
+		if (recentWrites.length === 0) {
+			ipWriteOperations.delete(ip)
+		} else {
+			ipWriteOperations.set(ip, recentWrites)
+		}
+	}
+}
+
+// Run cleanup every 20 minutes
+setInterval(cleanupWriteOperations, 20 * 60 * 1000)
 
 app.get("/foldersPublished.htm", (req, res) => {
 	res.setHeader("Content-Type", "text/plain")
@@ -208,7 +232,7 @@ app.get("/createFromForm.htm", (req, res) => res.redirect(`/create.htm/${req.que
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create.htm/:folderName", checkWritePermissions, createLimiter, async (req, res) => {
+app.get("/create.htm/:folderName", checkWritePermissions, async (req, res) => {
 	const rawInput = req.params.folderName
 	const template = req.query.template || "blank"
 	const folderName = sanitizeFolderName(rawInput)
