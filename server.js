@@ -31,8 +31,6 @@ const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv 
 const hostname = os.hostname()
 const rootFolder = path.join(__dirname, "folders")
 
-const allowedIps = path.join(__dirname, "allowedIps.txt")
-const bannedIps = new Set(["24.199.111.182"])
 const logFile = path.join(__dirname, "log.txt")
 
 const logRequest = (req, res, next) => {
@@ -89,14 +87,16 @@ const readAllowedIPs = () => {
 
 const allowedIPs = readAllowedIPs()
 
+const allowedIps = path.join(__dirname, "allowedIps.txt")
+const bannedIps = new Set(["24.199.111.182"])
 const checkWritePermissions = (req, res, next) => {
-	const clientIp = req.ip || req.connection.remoteAddress
+	let clientIp = req.ip || req.connection.remoteAddress
+
+	clientIp = clientIp.replace(/^::ffff:/, "")
 
 	if (bannedIps.has(clientIp)) return res.status(403).send("Access denied. Your IP has been banned for bad behavior.")
 
-	if (allowedIPs === null || allowedIPs.has(clientIp)) {
-		return next()
-	}
+	if (allowedIPs === null || allowedIPs.has(clientIp)) return next()
 
 	res.status(403).send("Access denied. You do not have permission to perform this action.")
 }
