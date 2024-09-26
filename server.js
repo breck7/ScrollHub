@@ -31,6 +31,21 @@ const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv 
 const hostname = os.hostname()
 const rootFolder = path.join(__dirname, "folders")
 
+const allowedIps = path.join(__dirname, "ips.txt")
+const logFile = path.join(__dirname, "log.txt")
+
+const logRequest = (req, res, next) => {
+	const ip = req.ip || req.connection.remoteAddress
+	const userAgent = req.get("User-Agent") || "Unknown"
+	const log = `${new Date().toISOString()} ${ip} "${req.method} ${req.url}" "${userAgent}"\n`
+
+	fs.appendFile(logFile, log, err => {
+		if (err) console.error("Failed to log request:", err)
+	})
+	next()
+}
+app.use(logRequest)
+
 app.use(express.urlencoded({ extended: true }))
 app.use(fileUpload({ limits: { fileSize: maxSize } }))
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
@@ -60,10 +75,9 @@ const isValidFolderName = name => {
 }
 
 const readAllowedIPs = () => {
-	const ipFilePath = path.join(os.homedir(), "ips.txt")
-	if (!fs.existsSync(ipFilePath)) return null
+	if (!fs.existsSync(allowedIps)) return null
 
-	const data = fs.readFileSync(ipFilePath, "utf8")
+	const data = fs.readFileSync(allowedIps, "utf8")
 	return new Set(
 		data
 			.split("\n")

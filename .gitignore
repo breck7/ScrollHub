@@ -8,3 +8,4 @@ list.scroll
 *.css
 *.pem
 hotTemplates/
+*.txt
