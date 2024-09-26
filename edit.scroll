@@ -22,7 +22,7 @@ title Edit Folder
 </form>
 // # Commands
 
-<div id="gitClone" class="greyText"></div>
+div#gitClone.greyText
 
 editor.js
 
