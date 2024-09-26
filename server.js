@@ -73,10 +73,11 @@ const isValidFolderName = name => {
 	return false
 }
 
+const allowedIpsPath = path.join(__dirname, "allowedIps.txt")
 const readAllowedIPs = () => {
-	if (!fs.existsSync(allowedIps)) return null
+	if (!fs.existsSync(allowedIpsPath)) return null
 
-	const data = fs.readFileSync(allowedIps, "utf8")
+	const data = fs.readFileSync(allowedIpsPath, "utf8")
 	return new Set(
 		data
 			.split("\n")
@@ -86,8 +87,6 @@ const readAllowedIPs = () => {
 }
 
 const allowedIPs = readAllowedIPs()
-
-const allowedIps = path.join(__dirname, "allowedIps.txt")
 const bannedIps = new Set(["24.199.111.182"])
 const checkWritePermissions = (req, res, next) => {
 	let clientIp = req.ip || req.connection.remoteAddress
