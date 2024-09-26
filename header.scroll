@@ -1,7 +1,7 @@
 importOnly
 settings.scroll
 metaTags
-gazetteCss
+theme gazette
 homeButton
 viewSourceButton
 style.css

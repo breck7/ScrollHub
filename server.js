@@ -46,7 +46,10 @@ app.use(logRequest)
 app.use(express.urlencoded({ extended: true }))
 app.use(fileUpload({ limits: { fileSize: maxSize } }))
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
-if (!fs.existsSync(hotTemplatesPath)) fs.mkdirSync(hotTemplatesPath)
+
+// Refresh hot templates path
+if (fs.existsSync(hotTemplatesPath)) fs.rmSync(hotTemplatesPath, { recursive: true, force: true })
+fs.mkdirSync(hotTemplatesPath)
 
 const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 
@@ -206,7 +209,7 @@ const buildListFile = async () => {
 homeButton
 buildHtml
 metaTags
-gazetteCss
+theme gazette
 title Folders
 
 <link rel="stylesheet" type="text/css" href="style.css" />

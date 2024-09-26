@@ -2,7 +2,7 @@ importOnly
 metaTags
 buildTxt
 buildHtml
-gazetteCss
+theme gazette
 homeButton
 leftRightButtons
 viewSourceButton

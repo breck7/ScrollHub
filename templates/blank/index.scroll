@@ -1,4 +1,12 @@
-header.scroll
+buildHtml
+buildTxt
+metaTags
+theme gazette
+homeButton
+viewSourceButton
+printTitle
+mediumColumns 1
+
 title Hello world
 
 Welcome to my folder.
