@@ -87,7 +87,7 @@ const readAllowedIPs = () => {
 }
 
 const allowedIPs = readAllowedIPs()
-const bannedIps = new Set(["24.199.111.182", "198.54.134.120"])
+const annoyingIps = new Set(["24.199.111.182", "198.54.134.120"])
 const checkWritePermissions = (req, res, next) => {
 	let clientIp = req.ip || req.connection.remoteAddress
 
@@ -95,7 +95,7 @@ const checkWritePermissions = (req, res, next) => {
 
 	const msg = "Instead of attacking each other, let's build together. The universe is a vast place. https://github.com/breck7/ScrollHub"
 
-	if (bannedIps.has(clientIp)) return res.status(403).send(msg)
+	if (annoyingIps.has(clientIp)) return res.status(403).send(msg)
 
 	if (allowedIPs === null || allowedIPs.has(clientIp)) return next()
 
