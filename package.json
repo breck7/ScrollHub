@@ -11,7 +11,7 @@
     "git-http-backend": "^1.1.2",
     "ky": "^1.4.0",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^136.0.0",
+    "scroll-cli": "^136.2.1",
     "scrollsdk": "^87.0.0"
   },
   "scripts": {

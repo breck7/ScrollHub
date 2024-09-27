@@ -1,0 +1,21 @@
+tags All
+ // Tags are like categories
+
+header.scroll
+ // Include the header
+
+title My Second Post
+ // The title of your blog post
+
+container 600px
+ // Generate a narrowish container to hold the blog contents
+
+// Blog post test goes here
+This is my second blog post using Scroll.
+
+****
+ // A common decoration to indicate the end of a post
+
+footer.scroll
+ // Include the footer
+ 

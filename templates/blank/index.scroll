@@ -1,14 +1,33 @@
 buildHtml
+ // Your site is live on the web!
+ // You can edit this file and click Publish to update your site live!
+ // This is a comment. It won't appear on the web page.
+ // The buildHTML line generates an HTML file from this program.
 buildTxt
-metaTags
-theme gazette
-homeButton
-viewSourceButton
-printTitle
-mediumColumns 1
-
+ // Generates a TXT file from this program.
 title Hello world
+ // Sets the page title for meta and printTitle parsers.
 
+metaTags
+ // Generates HTML meta tags in the HTML.
+theme gazette
+ // Adds a theme stylesheet to the HTML.
+homeButton
+ // Adds a home button to go to your index page.
+viewSourceButton
+ // Adds a view source button to go to the source code for this page.
+
+container
+ // This line sets a container for the content
+
+printTitle
+ // Prints the title of the page in the HTML and TXT output.
+
+// Put any content below
 Welcome to my folder.
 
+****
+ // Just a decoration for the end of the page
+
 scrollVersionLink
+ // Prints the version of Scroll used
