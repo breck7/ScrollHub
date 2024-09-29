@@ -212,14 +212,14 @@ metaTags
 theme gazette
 title Folders
 
-<link rel="stylesheet" type="text/css" href="style.css" />
+style.css
 
-wideColumns 1
+container 600px
 ${hostname} serves ${folders.length} folders.
- link / ${hostname}
+ index.html ${hostname}
 
 table
- orderBy -ctime
+ orderBy -mtime
   printTable
  data
   ${new Particle(folders).asCsv.replace(/\n/g, "\n  ")}
