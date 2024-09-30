@@ -1,14 +1,21 @@
-# ScrollHub: A New Way to Publish Science
+buildHtml
+metaTags
+theme dark
+homeButton
+viewSourceButton
+title ScrollHub: The fastest way to publish
 
-Introducing ScrollHub, a super server for publishing science and/or hosting ♾️ websites, powered by Scroll.
- // limited only by your computers memory
- https://scroll.pub/ powered by Scroll
+container
 
-Don't take my word for it, try ScrollHub yourself here: http://hub.scroll.pub.
+# ScrollHub: The fastest way to publish
 
-Then follow the steps below to run your own ScrollHub.
+ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more.
 
-# 90 seconds to setup your own ScrollHub server
+It is the fastest way to publish. Don't take my word for it, try for yourself here: http://hub.scroll.pub
+
+# Run your own Hub in 90 seconds
+Follow the steps below to run your own ScrollHub server.
+
 1. Launch a new Ubuntu Droplet on Digital Ocean (or your cloud provider of choice)
  https://www.digitalocean.com Digital Ocean
 2. SSH into your new server and run this oneliner:
