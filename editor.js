@@ -67,7 +67,7 @@ class EditorApp {
 			}
 
 			const data = await response.text()
-			console.log("File saved successfully:", data)
+			console.log("File saved successfully")
 			this.updatePreviewIFrame()
 			return data
 		} catch (error) {
@@ -78,6 +78,16 @@ class EditorApp {
 
 	bindKeyboardShortcuts() {
 		const that = this
+
+		const keyboardShortcuts = {
+			"command+s": () => {
+				console.log("Saved")
+			},
+			"ctrl+n": () => {
+				that.createFileCommand()
+			}
+		}
+
 		// note: I do not rememeber why we do any of this stopCallback stuff but it seems hard won knowledge ;)
 		Mousetrap._originalStopCallback = Mousetrap.prototype.stopCallback
 		Mousetrap.prototype.stopCallback = async function (evt, element, shortcut) {
@@ -86,15 +96,14 @@ class EditorApp {
 				that.saveFile()
 				evt.preventDefault()
 				return true
+			} else if (keyboardShortcuts[shortcut]) {
+				keyboardShortcuts[shortcut]()
+				evt.preventDefault()
+				return true
 			}
+
 			if (Mousetrap._pause) return true
 			return Mousetrap._originalStopCallback.call(this, evt, element)
-		}
-
-		const keyboardShortcuts = {
-			"command+s": () => {
-				console.log("Saved")
-			}
 		}
 
 		Object.keys(keyboardShortcuts).forEach(key => {
@@ -224,7 +233,8 @@ class EditorApp {
 		const fileName = prompt("Enter a filename", "untitled")
 		if (!fileName) return ""
 		const { folderName } = this
-		const filePath = `${folderName}/${fileName.replace(".scroll", "") + ".scroll"}`
+
+		const filePath = `${folderName}/${fileName.includes(".") ? fileName : fileName + ".scroll"}`
 		window.location = `write.htm?content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
 	}
 
