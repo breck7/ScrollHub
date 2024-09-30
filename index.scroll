@@ -1,14 +1,17 @@
 title ScrollHub: the fastest way to publish
 header.scroll
 
-# Scroll is a language and community for scientists of all ages.
- https://scroll.pub language
- https://www.reddit.com/r/WorldWideScroll/ community
+css .thin {font-weight: 100;}
+
+# ScrollHub The fastest way to publish
+ class thin The fastest way to publish
+ style font-size: 150%;
 
 br 2
-Watch the video
- center
- https://www.youtube.com/watch?v=HFpdpa50V6U
+
+### Scroll is a language and community for thinkers of all ages.
+ https://scroll.pub language
+ https://www.reddit.com/r/WorldWideScroll/ community
 
 br 3
 
