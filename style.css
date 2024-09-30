@@ -21,6 +21,10 @@ body {
   padding: 10px;
 }
 
+.selectedFile {
+  font-weight: bold;
+}
+
 #errorMessage {
   color: red;
   flex: 100%;

@@ -27,12 +27,8 @@ class EditorApp {
 		if (!this.folderName) return this.showError("Folder name not provided in the query string")
 		this.fileList = document.getElementById("fileList")
 		this.fileName = urlParams.get("fileName")
-		if (!this.fileName) {
-			await this.fetchAndDisplayFileList()
-			this.fileName = this.scrollFiles.includes("index.scroll") ? "index.scroll" : this.scrollFiles[0]
-		} else {
-			this.fetchAndDisplayFileList()
-		}
+		if (!this.fileName) await this.fetchAndDisplayFileList()
+		else this.fetchAndDisplayFileList()
 
 		this.updatePreviewIFrame()
 
@@ -211,14 +207,17 @@ class EditorApp {
 
 	updateFileList(files) {
 		const scrollFiles = files.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
-		const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
-		const fileLinks = sorted.map(file =>
-			file.endsWith(".scroll") || file.endsWith(".parsers")
-				? `<a href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
-				: `<a class="nonScrollFile" target="preview" href="/${this.folderName}/${file}">${file}</a>`
-		)
-		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 		this.scrollFiles = scrollFiles
+		if (!this.fileName) this.fileName = scrollFiles.includes("index.scroll") ? "index.scroll" : scrollFiles[0]
+		const currentFileName = this.fileName
+		const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+		const fileLinks = sorted.map(file => {
+			const selected = currentFileName === file ? "selectedFile" : ""
+			return file.endsWith(".scroll") || file.endsWith(".parsers")
+				? `<a class="${selected}" href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
+				: `<a class="nonScrollFile ${selected}" target="preview" href="/${this.folderName}/${file}">${file}</a>`
+		})
+		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
 
 	createFileCommand() {
