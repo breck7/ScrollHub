@@ -2,6 +2,7 @@ buildHtml
 metaTags
 theme dark
 homeButton
+settings.scroll
 viewSourceButton
 title ScrollHub: The fastest way to publish
 
@@ -11,7 +12,7 @@ container
 
 ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more.
 
-It is the fastest way to publish. Don't take my word for it, try for yourself here: http://hub.scroll.pub
+It is the fastest way to publish. Don't take my word for it, try for yourself here: https://hub.scroll.pub
 
 # Run your own Hub in 90 seconds
 Follow the steps below to run your own ScrollHub server.
