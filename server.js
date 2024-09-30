@@ -51,7 +51,13 @@ if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
 if (fs.existsSync(hotTemplatesPath)) fs.rmSync(hotTemplatesPath, { recursive: true, force: true })
 fs.mkdirSync(hotTemplatesPath)
 
-const sanitizeFolderName = name => name.toLowerCase().replace(/[^a-z0-9._]/g, "")
+const isUrl = str => str.startsWith("http://") || str.startsWith("https://")
+
+const sanitizeFolderName = name => {
+	// if given a url, return the last part
+	if (isUrl(name)) name = name.split("/").pop().replace(".git", "")
+	return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
+}
 
 const isValidFolderName = name => {
 	if (name.length < 2) return false
@@ -140,7 +146,7 @@ const updateFolder = async folder => {
 
 	if (!stats.isDirectory()) return null
 
-	const { ctime, mtime } = stats
+	const { ctime, mtime, birthtime } = stats
 
 	// Get number of files and total size
 	let fileSize = 0
@@ -185,11 +191,10 @@ const updateFolder = async folder => {
 	folderCache[folder] = {
 		folder,
 		folderLink: folder + "/",
-		editUrl: `edit.html?folderName=${folder}`,
-		ctime,
-		mtime,
+		created: birthtime || ctime,
+		modified: mtime,
 		files: fileCount,
-		MB: (fileSize / (1024 * 1024)).toFixed(3),
+		mb: (fileSize / (1024 * 1024)).toFixed(3),
 		commits: commitCount
 	}
 }
@@ -214,13 +219,16 @@ title Folders
 
 style.css
 
-container 600px
+container 1000px
 ${hostname} serves ${folders.length} folders.
  index.html ${hostname}
 
 table
- orderBy -mtime
-  printTable
+ compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="history.htm/{folder}">history</a>
+  select folder folderLink links modified files mb commits
+   orderBy -modified
+    rename modified updatedtime
+     printTable
  data
   ${new Particle(folders).asCsv.replace(/\n/g, "\n  ")}
 
@@ -235,10 +243,15 @@ app.get("/createFromForm.htm", (req, res) => res.redirect(`/create.htm/${req.que
 
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create.htm/:folderName", checkWritePermissions, async (req, res) => {
-	const rawInput = req.params.folderName
-	const template = req.query.template || "blank"
-	const folderName = sanitizeFolderName(rawInput)
+app.get("/create.htm/:folderName(*)", checkWritePermissions, async (req, res) => {
+	const rawInput = req.params.folderName.trim()
+	let folderName = sanitizeFolderName(rawInput)
+	let template = req.query.template || "blank"
+	if (isUrl(rawInput)) {
+		const words = rawInput.split(" ")
+		template = words[0]
+		if (words.length > 1) folderName = sanitizeFolderName(words[1])
+	}
 
 	if (!isValidFolderName(folderName))
 		return handleCreateError(res, {
@@ -250,8 +263,7 @@ app.get("/create.htm/:folderName", checkWritePermissions, async (req, res) => {
 	if (folderCache[folderName]) return handleCreateError(res, { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName, template })
 
 	try {
-		const isUrl = template.startsWith("https:") || template.startsWith("http:")
-		if (isUrl) {
+		if (isUrl(template)) {
 			const aborted = await buildFromUrl(template, folderName, res)
 			if (aborted) return aborted
 		} else {
@@ -507,6 +519,47 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
 		console.error(err)
 		res.status(500).send("An error occurred while uploading or processing the file.")
 	}
+})
+
+const zipCache = new Map()
+const zipFolder = async folderName => {
+	const folderPath = path.join(rootFolder, folderName)
+	const zipBuffer = await new Promise((resolve, reject) => {
+		const output = []
+		const zip = spawn("zip", ["-r", "-", "."], { cwd: folderPath })
+
+		zip.stdout.on("data", data => output.push(data))
+		zip.on("close", code => {
+			if (code === 0) resolve(Buffer.concat(output))
+			else reject(new Error("Error creating zip file"))
+		})
+	})
+	zipCache.set(folderName, zipBuffer)
+	return zipBuffer
+}
+
+app.get("/:folderName.zip", async (req, res) => {
+	const folderName = sanitizeFolderName(req.params.folderName)
+
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+	// Check if the zip is in memory cache
+	let zipBuffer = zipCache.get(folderName)
+
+	if (!zipBuffer) {
+		try {
+			zipBuffer = await zipFolder(folderName)
+			if (!zipBuffer) return res.status(404).send("Folder not found or failed to zip")
+		} catch (err) {
+			console.error("Error zipping folder:", err)
+			return res.status(500).send("Error zipping folder")
+		}
+	}
+
+	// Set headers for zip file
+	res.setHeader("Content-Type", "application/zip")
+	res.setHeader("Content-Disposition", `attachment; filename=${folderName}.zip`)
+	res.send(zipBuffer)
 })
 
 app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
