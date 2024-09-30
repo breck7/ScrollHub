@@ -7,5 +7,7 @@ list.scroll
 *.js
 *.css
 *.pem
+*.crt
+*.key
 hotTemplates/
 *.txt
