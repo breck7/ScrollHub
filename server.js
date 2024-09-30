@@ -562,6 +562,8 @@ app.use(async (req, res, next) => {
 // Serve the folders directory from the root URL
 app.use("/", express.static(rootFolder))
 
+app.get("/hostname.htm", (req, res) => res.send(req.hostname))
+
 // Serve the root directory statically
 app.use(express.static(__dirname))
 
