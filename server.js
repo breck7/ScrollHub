@@ -559,6 +559,15 @@ app.use(async (req, res, next) => {
 	}
 })
 
+// New middleware to route domains to the matching folder
+app.use((req, res, next) => {
+	const hostname = req.hostname
+	if (!folderCache[hostname]) return next()
+
+	const folderPath = path.join(rootFolder, hostname)
+	express.static(folderPath)(req, res, next)
+})
+
 // Serve the folders directory from the root URL
 app.use("/", express.static(rootFolder))
 
@@ -583,22 +592,8 @@ const startServers = app => {
 	// HTTPS server
 	https.createServer(sslOptions, app).listen(443, () => console.log("HTTPS server running on port 443"))
 
-	// Middleware to redirect HTTP to HTTPS
-	app.use((req, res, next) => {
-		if (req.secure) return next()
-
-		// Allow direct connections to IP over http
-		const isIp = /^\d+\.\d+\.\d+\.\d+$/.test(req.hostname)
-		if (isIp) return next()
-
-		return res.redirect("https://" + req.headers.host + req.url)
-	})
-
-	// Create a simple HTTP server that redirects all traffic to HTTPS
-	const httpApp = express()
-	httpApp.use((req, res) => res.redirect("https://" + req.headers.host + req.url))
-
-	http.createServer(httpApp).listen(port, () => console.log("HTTP server running, redirecting to HTTPS"))
+	// Use the main app for both HTTP and HTTPS servers
+	http.createServer(app).listen(port, () => console.log("HTTP server running on port " + port))
 }
 
 startServers(app)
