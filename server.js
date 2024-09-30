@@ -585,9 +585,13 @@ const startServers = app => {
 
 	// Middleware to redirect HTTP to HTTPS
 	app.use((req, res, next) => {
-		if (!req.secure) return res.redirect("https://" + req.headers.host + req.url)
+		if (req.secure) return next()
 
-		next()
+		// Allow direct connections to IP over http
+		const isIp = /^\d+\.\d+\.\d+\.\d+$/.test(req.hostname)
+		if (isIp) return next()
+
+		return res.redirect("https://" + req.headers.host + req.url)
 	})
 
 	// Create a simple HTTP server that redirects all traffic to HTTPS
