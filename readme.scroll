@@ -1,10 +1,11 @@
 buildHtml
+title ScrollHub: The fastest way to publish
+
 metaTags
 theme dark
 homeButton
 settings.scroll
 viewSourceButton
-title ScrollHub: The fastest way to publish
 
 container
 
