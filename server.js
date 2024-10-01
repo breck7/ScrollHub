@@ -432,7 +432,7 @@ app.get("/read.htm", async (req, res) => {
 	}
 })
 
-const writeFile = async (res, filePath, content) => {
+const writeAndCommitFile = async (req, res, filePath, content) => {
 	filePath = path.join(rootFolder, filePath)
 
 	const ok = extensionOkay(filePath, res)
@@ -450,13 +450,15 @@ const writeFile = async (res, filePath, content) => {
 	// Extract folder name and file name for the redirect
 	const folderName = path.relative(rootFolder, folderPath)
 	const fileName = path.basename(filePath)
+	const clientIp = req.ip || req.connection.remoteAddress
+	const hostname = req.hostname
 
 	try {
 		// Write the file content asynchronously
 		await fsp.writeFile(filePath, content, "utf8")
 
 		// Run the scroll build and git commands asynchronously
-		await execAsync(`scroll format; git add ${fileName}; git commit -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
+		await execAsync(`scroll format; git add ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 		updateFolderAndBuildList(folderName)
@@ -483,8 +485,8 @@ app.get("/history.htm/:folderName", async (req, res) => {
 	}
 })
 
-app.get("/write.htm", checkWritePermissions, (req, res) => writeFile(res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
-app.post("/write.htm", checkWritePermissions, (req, res) => writeFile(res, req.body.filePath, req.body.content))
+app.get("/write.htm", checkWritePermissions, (req, res) => writeAndCommitFile(req, res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
+app.post("/write.htm", checkWritePermissions, (req, res) => writeAndCommitFile(req, res, req.body.filePath, req.body.content))
 
 // Add a route for file uploads
 app.post("/upload.htm", checkWritePermissions, async (req, res) => {
