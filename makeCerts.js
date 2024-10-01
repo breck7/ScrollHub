@@ -90,7 +90,7 @@ const makeCerts = async (email, domain) => {
       }
 
       // Check that the authorization is valid
-      const updatedAuthorization = await client.getAuthorization(authorization.url)
+      const updatedAuthorization = await client.api.get(authorization.url)
       if (updatedAuthorization.status !== "valid") {
         throw new Error(`Authorization status is "${updatedAuthorization.status}", expected "valid".`)
       }
