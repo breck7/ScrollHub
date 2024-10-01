@@ -72,15 +72,14 @@ const makeCerts = async (email, domain) => {
       challenges[token] = keyAuthorization
 
       try {
-        // Notify ACME provider that challenge is ready
+        // Option A: Use verifyChallenge only
         await client.verifyChallenge(authorization, httpChallenge)
-
-        // Wait for challenge to be validated
-        await client.waitForValidStatus(httpChallenge, 30000)
 
         console.log("Challenge validated")
       } catch (e) {
-        console.error("Error during challenge validation:", e)
+        // Fetch the updated challenge status for more details
+        const updatedChallenge = await client.getChallenge(httpChallenge.url)
+        console.error("Error during challenge validation:", updatedChallenge.error || e)
         throw e
       } finally {
         // Remove the token and keyAuthorization from the challenges store
