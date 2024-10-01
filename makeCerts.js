@@ -31,7 +31,10 @@ const makeCerts = async (email, domain) => {
     // Create ACME client
     const client = new acme.Client({
       directoryUrl: acme.directory.letsencrypt.production,
-      accountKey: accountKey
+      accountKey: accountKey,
+      backoffAttempts: 5,
+      backoffMin: 5000,
+      debug: true // Enable debug mode
     })
 
     // Register account
@@ -73,7 +76,7 @@ const makeCerts = async (email, domain) => {
         await client.verifyChallenge(authorization, httpChallenge)
 
         // Wait for challenge to be validated
-        await client.waitForValidStatus(httpChallenge)
+        await client.waitForValidStatus(httpChallenge, 30000)
 
         console.log("Challenge validated")
       } catch (e) {

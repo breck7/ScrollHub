@@ -580,7 +580,7 @@ app.get("/cert.htm", checkWritePermissions, async (req, res) => {
 		res.send("ok")
 	} catch (error) {
 		console.error("Failed to obtain certificates:", error)
-		res.status(500).send("Failed to obtain certificates: " + err)
+		res.status(500).send("Failed to obtain certificates: " + error)
 	}
 })
 
