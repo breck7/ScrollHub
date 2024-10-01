@@ -122,6 +122,7 @@ const makeCerts = async (email, domain) => {
       }
       console.log(`Order status is "${orderStatus}", waiting to become "ready"...`)
       await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
+      console.log(order, JSON.stringify(order))
       const orderResponse = await acme.axios.get(order.location)
       order = orderResponse.data
       orderStatus = order.status
