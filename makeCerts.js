@@ -75,8 +75,11 @@ const makeCerts = async (email, domain) => {
       }
 
       try {
-        // Use verifyChallenge to complete and validate the challenge
-        await client.verifyChallenge(authorization, httpChallenge)
+        // Notify ACME provider that challenge is ready
+        await client.completeChallenge(httpChallenge)
+
+        // Wait for challenge to be validated
+        await client.waitForValidStatus(httpChallenge)
 
         console.log("Challenge validated")
       } catch (e) {
@@ -90,11 +93,23 @@ const makeCerts = async (email, domain) => {
         delete challenges[token]
       }
 
-      // Check that the authorization is valid
-      const updatedAuthorizationResponse = await acme.axios.get(authorization.url)
-      const updatedAuthorization = updatedAuthorizationResponse.data
-      if (updatedAuthorization.status !== "valid") {
-        throw new Error(`Authorization status is "${updatedAuthorization.status}", expected "valid".`)
+      // Fetch updated authorization
+      let authzStatus = "pending"
+      while (authzStatus !== "valid") {
+        const updatedAuthorizationResponse = await acme.axios.get(authorization.url)
+        const updatedAuthorization = updatedAuthorizationResponse.data
+        authzStatus = updatedAuthorization.status
+
+        console.log(`Authorization status is "${authzStatus}"`)
+
+        if (authzStatus === "invalid") {
+          throw new Error("Authorization has become invalid.")
+        } else if (authzStatus === "pending") {
+          // Wait a bit before checking again
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        } else if (authzStatus !== "valid") {
+          throw new Error(`Authorization status is "${authzStatus}", expected "valid".`)
+        }
       }
     }
 
