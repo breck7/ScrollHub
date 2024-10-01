@@ -81,7 +81,7 @@ const makeCerts = async (email, domain) => {
         console.log("Challenge validated")
       } catch (e) {
         // Fetch the updated challenge status for more details
-        const updatedChallengeResponse = await client.axios.get(httpChallenge.url)
+        const updatedChallengeResponse = await acme.axios.get(httpChallenge.url)
         const updatedChallenge = updatedChallengeResponse.data
         console.error("Error during challenge validation:", updatedChallenge.error || e)
         throw e
@@ -91,7 +91,7 @@ const makeCerts = async (email, domain) => {
       }
 
       // Check that the authorization is valid
-      const updatedAuthorizationResponse = await client.axios.get(authorization.url)
+      const updatedAuthorizationResponse = await acme.axios.get(authorization.url)
       const updatedAuthorization = updatedAuthorizationResponse.data
       if (updatedAuthorization.status !== "valid") {
         throw new Error(`Authorization status is "${updatedAuthorization.status}", expected "valid".`)
@@ -107,7 +107,7 @@ const makeCerts = async (email, domain) => {
       }
       console.log(`Order status is "${orderStatus}", waiting to become "ready"...`)
       await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
-      const orderResponse = await client.axios.get(order.location)
+      const orderResponse = await acme.axios.get(order.location)
       order = orderResponse.data
       orderStatus = order.status
     }
@@ -122,7 +122,7 @@ const makeCerts = async (email, domain) => {
       }
       console.log(`Order status is "${order.status}", waiting to become "valid"...`)
       await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
-      const orderResponse = await client.axios.get(order.location)
+      const orderResponse = await acme.axios.get(order.location)
       order = orderResponse.data
     }
 
