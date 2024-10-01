@@ -62,7 +62,7 @@ const makeCerts = async (email, domain) => {
 
         try {
           // Notify ACME provider that challenge is ready
-          await client.setChallengeAccepted(httpChallenge)
+          await client.verifyChallenge(authorization, httpChallenge)
 
           // Wait for challenge to be validated
           await client.waitForValidStatus(httpChallenge)
