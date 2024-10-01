@@ -13,9 +13,6 @@ const https = require("https")
 const http = require("http")
 const fileUpload = require("express-fileupload")
 
-// Silly SSL stuff
-const { addCertRoutes, makeCerts } = require("./makeCerts.js")
-
 // Git server
 const httpBackend = require("git-http-backend")
 
@@ -567,16 +564,16 @@ app.get("/:folderName.zip", async (req, res) => {
 	res.send(zipBuffer)
 })
 
-addCertRoutes(app)
+// Silly SSL stuff
+const { CertificateMaker } = require("./CertificateMaker.js")
+const certMaker = new CertificateMaker(app).setupChallengeHandler()
 app.get("/cert.htm", checkWritePermissions, async (req, res) => {
 	try {
 		const domain = req.query.domain
 		if (!domain) return res.status(500).send("No domain provided")
 		if (fs.existsSync(`${domain}.crt`)) return res.status(500).send(`Certificate already exists for '${domain}'`)
 		const email = domain + "@hub.scroll.pub"
-		const { certificate, domainKey } = await makeCerts(email, domain)
-		fs.writeFileSync(`${domain}.crt`, certificate)
-		fs.writeFileSync(`${domain}.key`, domainKey)
+		const { certificate, domainKey } = await certMaker.makeCertificate(email, domain, __dirname)
 		res.send("ok")
 	} catch (error) {
 		console.error("Failed to obtain certificates:", error)
