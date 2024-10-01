@@ -6,12 +6,12 @@ const addCertRoutes = app => {
   // Route to handle ACME HTTP-01 challenges
   app.get("/.well-known/acme-challenge/:token", (req, res) => {
     const token = req.params.token
-    const keyAuthorization = challenges[token]
+    const challengeData = challenges[token]
 
-    if (keyAuthorization) {
+    if (challengeData) {
       res.setHeader("Content-Type", "text/plain")
-      res.send(keyAuthorization)
-      console.log(`Served key authorization for token: ${token}`)
+      res.send(challengeData.keyAuthorization)
+      console.log(`Served key authorization for token: ${token}, domain: ${challengeData.domain}`)
     } else res.status(404).send("Not found")
   })
 }
@@ -54,7 +54,7 @@ const makeCerts = async (email, domain) => {
     )
 
     // Create order
-    const order = await client.createOrder({
+    let order = await client.createOrder({
       identifiers: [{ type: "dns", value: domain }]
     })
 
@@ -68,11 +68,14 @@ const makeCerts = async (email, domain) => {
       const keyAuthorization = await client.getChallengeKeyAuthorization(httpChallenge)
       const token = httpChallenge.token
 
-      // Store the token and keyAuthorization in the challenges store
-      challenges[token] = keyAuthorization
+      // Store the token, keyAuthorization, and domain in the challenges store
+      challenges[token] = {
+        keyAuthorization,
+        domain
+      }
 
       try {
-        // Option A: Use verifyChallenge only
+        // Use verifyChallenge to complete and validate the challenge
         await client.verifyChallenge(authorization, httpChallenge)
 
         console.log("Challenge validated")
@@ -85,10 +88,39 @@ const makeCerts = async (email, domain) => {
         // Remove the token and keyAuthorization from the challenges store
         delete challenges[token]
       }
+
+      // Check that the authorization is valid
+      const updatedAuthorization = await client.getAuthorization(authorization.url)
+      if (updatedAuthorization.status !== "valid") {
+        throw new Error(`Authorization status is "${updatedAuthorization.status}", expected "valid".`)
+      }
+    }
+
+    // Wait for the order to be "ready" before finalization
+    let orderStatus = order.status
+
+    while (orderStatus !== "ready") {
+      if (orderStatus === "invalid") {
+        throw new Error("Order has become invalid.")
+      }
+      console.log(`Order status is "${orderStatus}", waiting to become "ready"...`)
+      await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
+      order = await client.getOrder(order.location)
+      orderStatus = order.status
     }
 
     // Finalize order
     await client.finalizeOrder(order, csr)
+
+    // Wait for the order to be "valid" (certificate issued)
+    while (order.status !== "valid") {
+      if (order.status === "invalid") {
+        throw new Error("Order has become invalid after finalization.")
+      }
+      console.log(`Order status is "${order.status}", waiting to become "valid"...`)
+      await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
+      order = await client.getOrder(order.location)
+    }
 
     // Get certificate
     const certificate = await client.getCertificate(order)
@@ -99,7 +131,7 @@ const makeCerts = async (email, domain) => {
       domainKey
     }
   } catch (error) {
-    console.error("An error occurred during certificate generation:", error)
+    console.error("An error occurred during certificate generation:", error.message)
     throw error
   }
 }
