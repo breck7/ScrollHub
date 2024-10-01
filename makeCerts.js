@@ -4,7 +4,7 @@ const http = require("http")
 
 const makeCerts = async (email, domain) => {
   // Create account key
-  const accountKey = await acme.openssl.createPrivateKey()
+  const accountKey = await acme.crypto.createPrivateKey()
 
   // Create ACME client
   const client = new acme.Client({
@@ -19,8 +19,8 @@ const makeCerts = async (email, domain) => {
   })
 
   // Create domain private key and CSR
-  const domainKey = await acme.openssl.createPrivateKey()
-  const [csr, csrPem] = await acme.openssl.createCsr(
+  const domainKey = await acme.crypto.createPrivateKey()
+  const [csr, csrPem] = await acme.crypto.createCsr(
     {
       commonName: domain,
       altNames: [] // Add any additional domain names here
