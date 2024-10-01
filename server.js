@@ -13,6 +13,9 @@ const https = require("https")
 const http = require("http")
 const fileUpload = require("express-fileupload")
 
+// Silly SSL stuff
+const { addCertRoutes, makeCerts } = require("./makeCerts.js")
+
 // Git server
 const httpBackend = require("git-http-backend")
 
@@ -562,6 +565,23 @@ app.get("/:folderName.zip", async (req, res) => {
 	res.setHeader("Content-Type", "application/zip")
 	res.setHeader("Content-Disposition", `attachment; filename=${folderName}.zip`)
 	res.send(zipBuffer)
+})
+
+addCertRoutes(app)
+app.get("/cert.htm", checkWritePermissions, async (req, res) => {
+	try {
+		const domain = req.query.domain
+		if (!domain) return res.status(500).send("No domain provided")
+		if (fs.existsSync(`${domain}.crt`)) return res.status(500).send(`Certificate already exists for '${domain}'`)
+		const email = domain + "@hub.scroll.pub"
+		const { certificate, domainKey } = await makeCerts(email, domain)
+		fs.writeFileSync(`${domain}.crt`, certificate)
+		fs.writeFileSync(`${domain}.key`, domainKey)
+		res.send("ok")
+	} catch (error) {
+		console.error("Failed to obtain certificates:", error)
+		res.status(500).send("Failed to obtain certificates: " + err)
+	}
 })
 
 app.delete("/delete.htm", checkWritePermissions, async (req, res) => {

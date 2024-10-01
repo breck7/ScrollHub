@@ -1,100 +1,105 @@
 const acme = require("acme-client")
-const fs = require("fs")
-const http = require("http")
 
+const challenges = {}
+
+const addCertRoutes = app => {
+  // Route to handle ACME HTTP-01 challenges
+  app.get("/.well-known/acme-challenge/:token", (req, res) => {
+    const token = req.params.token
+    const keyAuthorization = challenges[token]
+
+    if (keyAuthorization) {
+      res.setHeader("Content-Type", "text/plain")
+      res.send(keyAuthorization)
+      console.log(`Served key authorization for token: ${token}`)
+    } else res.status(404).send("Not found")
+  })
+}
+
+/**
+ * Generates SSL certificates using ACME protocol.
+ *
+ * @param {string} email - The email address for registration.
+ * @param {string} domain - The domain name to issue the certificate for.
+ * @returns {Object} An object containing the certificate and domain key.
+ */
 const makeCerts = async (email, domain) => {
-  // Create account key
-  const accountKey = await acme.crypto.createPrivateKey()
+  try {
+    // Create account key
+    const accountKey = await acme.crypto.createPrivateKey()
 
-  // Create ACME client
-  const client = new acme.Client({
-    directoryUrl: acme.directory.letsencrypt.production,
-    accountKey: accountKey
-  })
+    // Create ACME client
+    const client = new acme.Client({
+      directoryUrl: acme.directory.letsencrypt.production,
+      accountKey: accountKey
+    })
 
-  // Register account
-  await client.createAccount({
-    termsOfServiceAgreed: true,
-    contact: [`mailto:${email}`]
-  })
+    // Register account
+    await client.createAccount({
+      termsOfServiceAgreed: true,
+      contact: [`mailto:${email}`]
+    })
 
-  // Create domain private key and CSR
-  const domainKey = await acme.crypto.createPrivateKey()
-  const [csr, csrPem] = await acme.crypto.createCsr(
-    {
-      commonName: domain,
-      altNames: [] // Add any additional domain names here
-    },
-    domainKey
-  )
+    // Create domain private key and CSR
+    const domainKey = await acme.crypto.createPrivateKey()
+    const [csr, csrPem] = await acme.crypto.createCsr(
+      {
+        commonName: domain,
+        altNames: [] // Add any additional domain names here
+      },
+      domainKey
+    )
 
-  // Create order
-  const order = await client.createOrder({
-    identifiers: [{ type: "dns", value: domain }]
-  })
+    // Create order
+    const order = await client.createOrder({
+      identifiers: [{ type: "dns", value: domain }]
+    })
 
-  // Get authorizations
-  const authorizations = await client.getAuthorizations(order)
+    // Get authorizations
+    const authorizations = await client.getAuthorizations(order)
 
-  // Process each authorization
-  for (const authorization of authorizations) {
-    const httpChallenge = authorization.challenges.find(challenge => challenge.type === "http-01")
+    // Process each authorization
+    for (const authorization of authorizations) {
+      const httpChallenge = authorization.challenges.find(challenge => challenge.type === "http-01")
 
-    const keyAuthorization = await client.getChallengeKeyAuthorization(httpChallenge)
-    const token = httpChallenge.token
+      const keyAuthorization = await client.getChallengeKeyAuthorization(httpChallenge)
+      const token = httpChallenge.token
 
-    // Start HTTP server to serve the challenge
-    const server = http.createServer((req, res) => {
-      if (req.url === `/.well-known/acme-challenge/${token}`) {
-        res.writeHead(200, { "Content-Type": "text/plain" })
-        res.end(keyAuthorization)
-        console.log("Served key authorization")
-      } else {
-        res.writeHead(404)
-        res.end("Not found")
+      // Store the token and keyAuthorization in the challenges store
+      challenges[token] = keyAuthorization
+
+      try {
+        // Notify ACME provider that challenge is ready
+        await client.verifyChallenge(authorization, httpChallenge)
+
+        // Wait for challenge to be validated
+        await client.waitForValidStatus(httpChallenge)
+
+        console.log("Challenge validated")
+      } catch (e) {
+        console.error("Error during challenge validation:", e)
+        throw e
+      } finally {
+        // Remove the token and keyAuthorization from the challenges store
+        delete challenges[token]
       }
-    })
+    }
 
-    // Wait for the server to start listening
-    await new Promise((resolve, reject) => {
-      server.listen(80, async () => {
-        console.log("HTTP server listening on port 80")
+    // Finalize order
+    await client.finalizeOrder(order, csr)
 
-        try {
-          // Notify ACME provider that challenge is ready
-          await client.verifyChallenge(authorization, httpChallenge)
+    // Get certificate
+    const certificate = await client.getCertificate(order)
 
-          // Wait for challenge to be validated
-          await client.waitForValidStatus(httpChallenge)
-
-          console.log("Challenge validated")
-          resolve()
-        } catch (e) {
-          reject(e)
-        } finally {
-          // Close the server
-          server.close()
-          console.log("HTTP server closed")
-        }
-      })
-    })
-  }
-
-  // Finalize order
-  await client.finalizeOrder(order, csr)
-
-  // Get certificate
-  const certificate = await client.getCertificate(order)
-
-  // Save certificate and domain key
-  // fs.writeFileSync("certificate.crt", certificate)
-  // fs.writeFileSync("private.key", domainKey)
-
-  console.log("Certificate and key have been saved.")
-  return {
-    certificate,
-    domainKey
+    console.log("Certificate and key have been obtained.")
+    return {
+      certificate,
+      domainKey
+    }
+  } catch (error) {
+    console.error("An error occurred during certificate generation:", error)
+    throw error
   }
 }
 
-module.exports = { makeCerts }
+module.exports = { addCertRoutes, makeCerts }
