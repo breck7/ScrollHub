@@ -220,11 +220,12 @@ class EditorApp {
 		if (!this.fileName) this.fileName = scrollFiles.includes("index.scroll") ? "index.scroll" : scrollFiles[0]
 		const currentFileName = this.fileName
 		const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+		const { folderName } = this
 		const fileLinks = sorted.map(file => {
 			const selected = currentFileName === file ? "selectedFile" : ""
 			return file.endsWith(".scroll") || file.endsWith(".parsers")
-				? `<a class="${selected}" href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
-				: `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
+				? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
+				: `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
 		})
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
