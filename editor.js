@@ -224,7 +224,7 @@ class EditorApp {
 			const selected = currentFileName === file ? "selectedFile" : ""
 			return file.endsWith(".scroll") || file.endsWith(".parsers")
 				? `<a class="${selected}" href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
-				: `<a class="nonScrollFile ${selected}" target="preview" href="/${this.folderName}/${file}">${file}</a>`
+				: `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${encodeURIComponent(this.folderName)}&fileName=${encodeURIComponent(file)}">${file}</a>`
 		})
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
 	}
