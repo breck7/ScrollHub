@@ -82,6 +82,7 @@ class EditorApp {
 		const keyboardShortcuts = {
 			"command+s": () => {
 				console.log("Saved")
+				that.fetchAndDisplayFileList()
 			},
 			"ctrl+n": () => {
 				that.createFileCommand()
@@ -224,10 +225,46 @@ class EditorApp {
 		const fileLinks = sorted.map(file => {
 			const selected = currentFileName === file ? "selectedFile" : ""
 			return file.endsWith(".scroll") || file.endsWith(".parsers")
-				? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
-				: `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
+				? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenamePrompt('${file}', event)">${file}</a>`
+				: `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenamePrompt('${file}', event)">${file}</a>`
 		})
 		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
+	}
+
+	maybeRenamePrompt(oldFileName, event) {
+		if (!event.ctrlKey) return true
+
+		event.preventDefault()
+		const newFileName = prompt(`Enter new name for "${oldFileName}":`, oldFileName)
+		if (newFileName && newFileName !== oldFileName) {
+			this.performRename(oldFileName, newFileName)
+		}
+	}
+
+	async performRename(oldFileName, newFileName) {
+		try {
+			const response = await fetch("/rename.htm", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded"
+				},
+				body: `folderName=${encodeURIComponent(this.folderName)}&oldFileName=${encodeURIComponent(oldFileName)}&newFileName=${encodeURIComponent(newFileName)}`
+			})
+
+			if (!response.ok) throw new Error("Rename operation failed")
+
+			console.log(`File renamed from ${oldFileName} to ${newFileName}`)
+			this.fetchAndDisplayFileList()
+
+			// If the renamed file was the current file, update the fileName
+			if (this.fileName === oldFileName) {
+				this.fileName = newFileName
+				document.getElementById("filePathInput").value = `${this.folderName}/${newFileName}`
+			}
+		} catch (error) {
+			console.error("Error renaming file:", error)
+			alert("Failed to rename file. Please try again.")
+		}
 	}
 
 	createFileCommand() {

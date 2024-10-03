@@ -611,6 +611,39 @@ app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
 	}
 })
 
+app.post("/rename.htm", checkWritePermissions, async (req, res) => {
+	const folderName = sanitizeFolderName(req.body.folderName)
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+	const oldFileName = req.body.oldFileName
+	const newFileName = sanitizeFolderName(req.body.newFileName)
+
+	const folderPath = path.join(rootFolder, folderName)
+	const oldFilePath = path.join(folderPath, oldFileName)
+	const newFilePath = path.join(folderPath, newFileName)
+
+	if (!extensionOkay(oldFilePath, res) || !extensionOkay(newFilePath, res)) return
+
+	try {
+		// Check if the old file exists
+		await fsp.access(oldFilePath)
+
+		// Rename the file
+		await fsp.rename(oldFilePath, newFilePath)
+
+		// Run git commands
+		const clientIp = req.ip || req.connection.remoteAddress
+		const hostname = req.hostname
+		await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'; scroll build`, { cwd: folderPath })
+
+		res.send("File renamed successfully")
+		updateFolderAndBuildList(folderName)
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(`An error occurred while renaming the file:\n ${error.toString().replace(/</g, "&lt;")}`)
+	}
+})
+
 // Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
 // todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
 // of what names are taken, for instant feedback.
