@@ -6,6 +6,7 @@
   "author": "Breck Yunits",
   "dependencies": {
     "acme-client": "^5.4.0",
+    "ansi-to-html": "^0.7.2",
     "cheerio": "^1.0.0-rc.12",
     "express": "^4.19.2",
     "express-fileupload": "^1.5.1",

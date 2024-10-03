@@ -224,7 +224,7 @@ ${hostname} serves ${folders.length} folders.
  index.html ${hostname}
 
 table
- compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="history.htm/{folder}">history</a>
+ compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="history.htm/{folder}">history</a> · <a href="diff.htm/{folder}">diffs</a>
   select folder folderLink links modified files mb commits
    orderBy -modified
     rename modified updatedtime
@@ -482,6 +482,59 @@ app.get("/history.htm/:folderName", async (req, res) => {
 	} catch (error) {
 		console.error(error)
 		res.status(500).send("An error occurred while fetching the git log")
+	}
+})
+
+const AnsiToHtml = require("ansi-to-html")
+
+app.get("/diff.htm/:folderName", async (req, res) => {
+	const folderName = sanitizeFolderName(req.params.folderName)
+	const folderPath = path.join(rootFolder, folderName)
+
+	if (!folderCache[folderName]) {
+		return res.status(404).send("Folder not found")
+	}
+
+	try {
+		// Get the number of commits
+		const { stdout: commitCount } = await execAsync(`git rev-list --count HEAD`, { cwd: folderPath })
+		const numCommits = parseInt(commitCount.trim())
+
+		if (numCommits === 0) {
+			return res.status(200).send("No commits available.")
+		}
+
+		// Get the last 10 commits with diffs and color
+		const { stdout: gitLog } = await execAsync(`git log -p -10 --color=always`, { cwd: folderPath })
+
+		// Convert ANSI color codes to HTML
+		const convert = new AnsiToHtml()
+		const htmlLog = convert.toHtml(gitLog)
+
+		// Wrap the log output in basic HTML structure
+		const htmlOutput = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Last 10 Commits for ${folderName}</title>
+        <style>
+          body { font-family: monospace; white-space: pre-wrap; word-wrap: break-word; padding: 5px; }
+          h2 { color: #333; }
+          .commit { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+          .commit-message { font-weight: bold; color: #005cc5; }
+        </style>
+      </head>
+      <body>${htmlLog}</body>
+      </html>
+    `
+
+		res.setHeader("Content-Type", "text/html; charset=utf-8")
+		res.send(htmlOutput)
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(`An error occurred while fetching the git log: ${error.message}`)
 	}
 })
 
