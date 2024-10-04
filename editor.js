@@ -198,22 +198,30 @@ class EditorApp {
 		}
 	}
 
-	updatePreviewIFrame() {
-		this.previewIFrame = document.getElementById("previewIFrame")
+	get isCustomDomain() {
+		const serverName = window.location.hostname
+		if (serverName === "localhost") return false
+		return this.folderName.includes(".")
+	}
 
-		if (this.previewIFrame && this.folderName) {
-			this.previewIFrame.src = `/${this.folderName}`
-		} else {
-			console.error("Preview iframe not found or folder name is missing")
-		}
+	get rootUrl() {
+		if (!this.isCustomDomain) return "/" + this.folderName
+		return "/" + this.folderName // todo: fix this once ssl is working.
+	}
+
+	updatePreviewIFrame() {
+		const { folderName, isCustomDomain, rootUrl } = this
+		this.previewIFrame = document.getElementById("previewIFrame")
+		this.previewIFrame.src = rootUrl
 
 		const serverName = window.location.hostname
-		document.getElementById("folderNameLink").innerHTML = `${serverName}/${this.folderName}`
-		document.getElementById("folderNameLink").href = this.folderName
+		const folderNameText = isCustomDomain ? folderName : `${serverName}/${folderName}`
+		document.getElementById("folderNameLink").innerHTML = folderNameText
+		document.getElementById("folderNameLink").href = rootUrl
 		document.getElementById(
 			"gitClone"
-		).innerHTML = `<a class="historyLink" href="/diff.htm/${this.folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/${this.folderName}.git --origin scrollhub`
-		document.title = `Editing ${serverName}/${this.folderName}`
+		).innerHTML = `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/${folderName}.git --origin scrollhub`
+		document.title = `Editing ${folderNameText}`
 	}
 
 	duplicate() {
