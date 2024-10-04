@@ -42,7 +42,7 @@ class CertificateMaker {
       this.log(domain, "Private keys created")
 
       // Create CSR
-      const [csr, csrDer] = await ACME.crypto.createCsr(
+      const [certificateKey, certificateRequest] = await ACME.crypto.createCsr(
         {
           altNames: [domain]
         },
