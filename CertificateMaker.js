@@ -55,9 +55,12 @@ class CertificateMaker {
       const order = await client.createOrder({
         identifiers: [{ type: "dns", value: domain }]
       })
+      console.log(`Order created for ${domain}`)
 
       // Get authorizations
       const authorizations = await client.getAuthorizations(order)
+
+      console.log(`Auths got for ${domain}`)
 
       // Handle challenges
       for (const authz of authorizations) {
@@ -66,15 +69,20 @@ class CertificateMaker {
         // Get key authorization
         const keyAuthorization = await client.getChallengeKeyAuthorization(challenge)
 
+        console.log(`key auth got for ${domain}`)
+
         // Store the key authorization for the token
         this.challengeTokens[challenge.token] = keyAuthorization
 
         // Notify ACME server that the challenge is ready
         await client.verifyChallenge(authz, challenge)
+        console.log(`challenge verified for ${domain}`)
         await client.completeChallenge(challenge)
+        console.log(`challenge completed for ${domain}`)
 
         // Wait for the challenge to be validated
         await client.waitForValidStatus(challenge)
+        console.log(`challenge valid for ${domain}`)
 
         // Remove the token after validation
         delete this.challengeTokens[challenge.token]
@@ -83,8 +91,12 @@ class CertificateMaker {
       // Finalize the order
       await client.finalizeOrder(order, csr)
 
+      console.log(`order finalized for ${domain}`)
+
       // Get the certificate
       const certificate = await client.getCertificate(order)
+
+      console.log(`got certificate for ${domain}`)
 
       // Ensure the directory exists
       fs.mkdirSync(directory, { recursive: true })
