@@ -790,7 +790,7 @@ app.use(async (req, res, next) => {
 // New middleware to route domains to the matching folder
 app.use((req, res, next) => {
 	const hostname = req.hostname
-	if (!folderCache[hostname]) return next()
+	if (!hostname || !folderCache[hostname]) return next()
 
 	const folderPath = path.join(rootFolder, hostname)
 	express.static(folderPath)(req, res, next)
