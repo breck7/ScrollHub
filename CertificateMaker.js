@@ -104,7 +104,7 @@ class CertificateMaker {
       }
 
       // Finalize the order
-      await client.finalizeOrder(order, csr)
+      await client.finalizeOrder(order, certificateRequest)
 
       this.log(domain, "order finalized")
 
