@@ -704,23 +704,6 @@ app.get("/:folderName.zip", async (req, res) => {
 	res.send(zipBuffer)
 })
 
-// Silly SSL stuff
-const { CertificateMaker } = require("./CertificateMaker.js")
-const certMaker = new CertificateMaker(app).setupChallengeHandler()
-app.get("/cert.htm", checkWritePermissions, async (req, res) => {
-	try {
-		const domain = req.query.domain
-		if (!domain) return res.status(500).send("No domain provided")
-		if (fs.existsSync(`${domain}.crt`)) return res.status(500).send(`Certificate already exists for '${domain}'`)
-		const email = domain + "@hub.scroll.pub"
-		const { certificate, domainKey } = await certMaker.makeCertificate(domain, email, __dirname)
-		res.send("ok")
-	} catch (error) {
-		console.error("Failed to obtain certificates:", error)
-		res.status(500).send("Failed to obtain certificates: " + error)
-	}
-})
-
 app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
 	const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
 	const folderName = path.dirname(filePath).split(path.sep).pop()
@@ -821,6 +804,13 @@ app.get("/hostname.htm", (req, res) => res.send(req.hostname))
 // Serve the root directory statically
 app.use(express.static(__dirname))
 const tls = require("tls")
+const { CertificateMaker } = require("./CertificateMaker.js")
+const certMaker = new CertificateMaker(app).setupChallengeHandler()
+
+const makeCert = async domain => {
+	const email = domain + "@hub.scroll.pub"
+	const { certificate, domainKey } = await certMaker.makeCertificate(domain, email, __dirname)
+}
 
 const startServers = app => {
 	const httpServer = http.createServer(app)
@@ -845,6 +835,7 @@ const startServers = app => {
 			certCache.set(hostname, sslOptions) // Cache the cert and key
 			return sslOptions
 		} else {
+			makeCert(hostname)
 			throw new Error(`SSL certificate or key not found for ${hostname}`)
 		}
 	}
