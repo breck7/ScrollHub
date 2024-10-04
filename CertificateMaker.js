@@ -26,10 +26,16 @@ class CertificateMaker {
     return this
   }
 
+  log(domain, message) {
+    console.log(`Make cert for: ${domain}. ${message}`)
+  }
+
   async makeCertificate(domain, email, directory) {
     try {
       // Create account and domain private keys
+      this.log(domain, "Creating private keys")
       const [accountKey, domainPrivateKey] = await Promise.all([ACME.crypto.createPrivateKey(), ACME.crypto.createPrivateKey()])
+      this.log(domain, "Private keys created")
 
       // Create CSR
       const [csr, csrDer] = await ACME.crypto.createCsr(
@@ -38,6 +44,7 @@ class CertificateMaker {
         },
         domainPrivateKey
       )
+      this.log(domain, "CSR created")
 
       // Initialize ACME client
       const client = new ACME.Client({
@@ -51,16 +58,18 @@ class CertificateMaker {
         contact: [`mailto:${email}`]
       })
 
+      this.log(domain, "account created")
+
       // Create a new order
       const order = await client.createOrder({
         identifiers: [{ type: "dns", value: domain }]
       })
-      console.log(`Order created for ${domain}`)
+      this.log(domain, "order created")
 
       // Get authorizations
       const authorizations = await client.getAuthorizations(order)
 
-      console.log(`Auths got for ${domain}`)
+      this.log(domain, "got auths")
 
       // Handle challenges
       for (const authz of authorizations) {
@@ -69,20 +78,20 @@ class CertificateMaker {
         // Get key authorization
         const keyAuthorization = await client.getChallengeKeyAuthorization(challenge)
 
-        console.log(`key auth got for ${domain}`)
+        this.log(domain, "got key")
 
         // Store the key authorization for the token
         this.challengeTokens[challenge.token] = keyAuthorization
 
         // Notify ACME server that the challenge is ready
         await client.verifyChallenge(authz, challenge)
-        console.log(`challenge verified for ${domain}`)
+        this.log(domain, "challenge verified")
         await client.completeChallenge(challenge)
-        console.log(`challenge completed for ${domain}`)
+        this.log(domain, "challenge completed")
 
         // Wait for the challenge to be validated
         await client.waitForValidStatus(challenge)
-        console.log(`challenge valid for ${domain}`)
+        this.log(domain, "challenge valid")
 
         // Remove the token after validation
         delete this.challengeTokens[challenge.token]
@@ -91,12 +100,12 @@ class CertificateMaker {
       // Finalize the order
       await client.finalizeOrder(order, csr)
 
-      console.log(`order finalized for ${domain}`)
+      this.log(domain, "order finalized")
 
       // Get the certificate
       const certificate = await client.getCertificate(order)
 
-      console.log(`got certificate for ${domain}`)
+      this.log(domain, "got cert")
 
       // Ensure the directory exists
       fs.mkdirSync(directory, { recursive: true })
@@ -105,7 +114,7 @@ class CertificateMaker {
       fs.writeFileSync(path.join(directory, `${domain}.crt`), certificate)
       fs.writeFileSync(path.join(directory, `${domain}.key`), domainPrivateKey)
 
-      console.log("Certificate successfully obtained and saved!")
+      this.log(domain, "wrote cert. SUCCESS!")
     } catch (error) {
       console.error(`An error occurred making cert for ${domain}`, error)
     }
