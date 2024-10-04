@@ -822,23 +822,49 @@ app.get("/hostname.htm", (req, res) => res.send(req.hostname))
 app.use(express.static(__dirname))
 
 const startServers = app => {
-	const filepath = path.join(__dirname, "privkey.pem")
-	if (!fs.existsSync(filepath)) {
-		http.createServer(app).listen(port, () => console.log(`Server running at http://localhost:${port}`))
-		return false
+	const httpServer = http.createServer(app)
+	httpServer.listen(port, () => console.log(`HTTP server running at http://localhost:${port}`))
+
+	// In-memory cache for storing certificate and key pairs
+	const certCache = new Map()
+
+	// Function to load the certificate and key files (with caching)
+	const loadCertAndKey = hostname => {
+		if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
+
+		const certPath = path.join(__dirname, `${hostname}.crt`)
+		const keyPath = path.join(__dirname, `${hostname}.key`)
+
+		// Check if both cert and key files exist
+		if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+			const sslOptions = {
+				cert: fs.readFileSync(certPath, "utf8"),
+				key: fs.readFileSync(keyPath, "utf8")
+			}
+			certCache.set(hostname, sslOptions) // Cache the cert and key
+			return sslOptions
+		} else {
+			throw new Error(`SSL certificate or key not found for ${hostname}`)
+		}
 	}
 
-	// Load SSL certificates
-	const sslOptions = {
-		key: fs.readFileSync("privkey.pem"),
-		cert: fs.readFileSync("fullchain.pem")
-	}
+	// Dynamic HTTPS server using SNI (Server Name Indication)
+	const httpsServer = https.createServer(
+		{
+			SNICallback: (hostname, cb) => {
+				try {
+					const sslOptions = loadCertAndKey(hostname)
+					cb(null, https.createSecureContext(sslOptions))
+				} catch (err) {
+					console.error(`Error setting up SSL for ${hostname}: ${err.message}`)
+					cb(err)
+				}
+			}
+		},
+		app
+	)
 
-	// HTTPS server
-	https.createServer(sslOptions, app).listen(443, () => console.log("HTTPS server running on port 443"))
-
-	// Use the main app for both HTTP and HTTPS servers
-	http.createServer(app).listen(port, () => console.log("HTTP server running on port " + port))
+	httpsServer.listen(443, () => console.log("HTTPS server running on port 443"))
 }
 
 startServers(app)

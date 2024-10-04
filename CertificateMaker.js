@@ -90,8 +90,8 @@ class CertificateMaker {
       fs.mkdirSync(directory, { recursive: true })
 
       // Save the certificate and private key
-      fs.writeFileSync(path.join(directory, "certificate.crt"), certificate)
-      fs.writeFileSync(path.join(directory, "private.key"), domainPrivateKey)
+      fs.writeFileSync(path.join(directory, `${domain}.crt`), certificate)
+      fs.writeFileSync(path.join(directory, `${domain}.key`), domainPrivateKey)
 
       console.log("Certificate successfully obtained and saved!")
     } catch (error) {
