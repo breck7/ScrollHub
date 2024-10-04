@@ -493,54 +493,109 @@ app.get("/diff.htm/:folderName", async (req, res) => {
 	if (!folderCache[folderName]) {
 		return res.status(404).send("Folder not found")
 	}
-	try {
-		// Get the number of commits
-		const { stdout: commitCount } = await execAsync(`git rev-list --count HEAD`, { cwd: folderPath })
-		const numCommits = parseInt(commitCount.trim())
-		if (numCommits === 0) {
-			return res.status(200).send("No commits available.")
-		}
-		// Get the last 10 commits with diffs and color
-		const { stdout: gitLog } = await execAsync(`git log -p -10 --color=always`, { cwd: folderPath })
-		// Convert ANSI color codes to HTML
-		const convert = new AnsiToHtml()
-		let htmlLog = convert.toHtml(gitLog)
 
-		// Replace commit hashes with POST forms
-		htmlLog = htmlLog.replace(/commit ([0-9a-f]{40})/g, (match, hash) => {
-			return `${"-".repeat(60)}
-commit ${hash}
+	try {
+		// Check if there are any commits
+		const gitRevListProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: folderPath })
+		let commitCountData = ""
+
+		gitRevListProcess.stdout.on("data", data => {
+			commitCountData += data.toString()
+		})
+
+		gitRevListProcess.stderr.on("data", data => {
+			console.error(`git rev-list stderr: ${data}`)
+		})
+
+		gitRevListProcess.on("close", code => {
+			if (code !== 0) {
+				res.status(500).send("An error occurred while checking commit count")
+				return
+			}
+
+			const numCommits = parseInt(commitCountData.trim(), 10)
+			if (numCommits === 0) {
+				res.status(200).send("No commits available.")
+				return
+			}
+
+			// Now spawn git log process
+			const gitLogProcess = spawn("git", ["log", "-p", "-10", "--color=always"], { cwd: folderPath })
+			const convert = new AnsiToHtml({ escapeXML: true })
+
+			res.setHeader("Content-Type", "text/html; charset=utf-8")
+			res.write(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Last 10 Commits for ${folderName}</title>
+  <style>
+    body { font-family: monospace; white-space: pre-wrap; word-wrap: break-word; padding: 5px; }
+    h2 { color: #333; }
+    .commit { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+    .commit-message { font-weight: bold; color: #005cc5; }
+    input[type="submit"] { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; }
+  </style>
+</head>
+<body>
+`)
+
+			let buffer = ""
+			gitLogProcess.stdout.on("data", data => {
+				buffer += data.toString()
+				// Process complete lines
+				let lines = buffer.split("\n")
+				buffer = lines.pop() // Keep incomplete line in buffer
+
+				lines = lines.map(line => {
+					// Convert ANSI to HTML
+					line = convert.toHtml(line)
+					// Replace commit hashes with forms
+					line = line.replace(/(commit\s)([0-9a-f]{40})/, (match, prefix, hash) => {
+						return `${"-".repeat(60)}<br>
+${prefix}${hash}<br>
 <form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
   <input type="hidden" name="hash" value="${hash}">
   <input type="submit" value="Revert to this commit" onclick="return confirm('Are you sure you want to revert to this commit?');">
 </form>`
+					})
+					return line
+				})
+
+				res.write(lines.join("\n") + "\n")
+			})
+
+			gitLogProcess.stderr.on("data", data => {
+				console.error(`git log stderr: ${data}`)
+			})
+
+			gitLogProcess.on("close", code => {
+				if (code !== 0) {
+					console.error(`git log process exited with code ${code}`)
+					res.status(500).end("An error occurred while fetching the git log")
+				} else {
+					// Process any remaining buffered data
+					if (buffer.length > 0) {
+						buffer = convert.toHtml(buffer)
+						buffer = buffer.replace(/(commit\s)([0-9a-f]{40})/, (match, prefix, hash) => {
+							return `${"-".repeat(60)}<br>
+${prefix}${hash}<br>
+<form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
+  <input type="hidden" name="hash" value="${hash}">
+  <input type="submit" value="Revert to this commit" onclick="return confirm('Are you sure you want to revert to this commit?');">
+</form>`
+						})
+						res.write(buffer)
+					}
+					res.end("</body></html>")
+				}
+			})
 		})
-
-		// Wrap the log output in basic HTML structure
-		const htmlOutput = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Last 10 Commits for ${folderName}</title>
-        <style>
-          body { font-family: monospace; white-space: pre-wrap; word-wrap: break-word; padding: 5px; }
-          h2 { color: #333; }
-          .commit { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
-          .commit-message { font-weight: bold; color: #005cc5; }
-          input[type="submit"] { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; }
-        </style>
-      </head>
-      <body>${htmlLog}</body>
-      </html>
-    `
-
-		res.setHeader("Content-Type", "text/html; charset=utf-8")
-		res.send(htmlOutput)
 	} catch (error) {
 		console.error(error)
-		res.status(500).send(`An error occurred while fetching the git log: ${error.message}`)
+		res.status(500).send("An error occurred while fetching the git log")
 	}
 })
 
