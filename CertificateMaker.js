@@ -44,7 +44,7 @@ class CertificateMaker {
       // Create CSR
       const [csr, csrDer] = await ACME.crypto.createCsr(
         {
-          commonName: domain
+          altNames: [domain]
         },
         domainPrivateKey
       )
@@ -52,7 +52,7 @@ class CertificateMaker {
 
       // Initialize ACME client
       const client = new ACME.Client({
-        directoryUrl: ACME.directory.letsencrypt.production,
+        directoryUrl: ACME.directory.letsencrypt.production, // ACME.directory.letsencrypt.staging, //
         accountKey
       })
 
