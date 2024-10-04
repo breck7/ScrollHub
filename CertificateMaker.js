@@ -95,7 +95,7 @@ class CertificateMaker {
 
       console.log("Certificate successfully obtained and saved!")
     } catch (error) {
-      console.error("An error occurred:", error)
+      console.error(`An error occurred making cert for ${domain}`, error)
     }
   }
 }
