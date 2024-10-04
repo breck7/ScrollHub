@@ -52,6 +52,8 @@ class CertificateMaker {
         accountKey
       })
 
+      this.log(domain, "client created")
+
       // Create a new account
       await client.createAccount({
         termsOfServiceAgreed: true,
