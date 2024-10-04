@@ -2,6 +2,10 @@ const fs = require("fs")
 const path = require("path")
 const ACME = require("acme-client")
 
+ACME.setLogger(message => {
+  console.log(message)
+})
+
 class CertificateMaker {
   constructor(app) {
     this.app = app
