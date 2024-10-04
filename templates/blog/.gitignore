@@ -1,3 +1,5 @@
 *.html
 *.txt
-feed.xml
+*.xml
+*.css
+*.js

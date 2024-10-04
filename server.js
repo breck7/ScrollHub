@@ -224,7 +224,7 @@ ${hostname} serves ${folders.length} folders.
  index.html ${hostname}
 
 table
- compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="history.htm/{folder}">history</a> · <a href="diff.htm/{folder}">diffs</a>
+ compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="diff.htm/{folder}">history</a>
   select folder folderLink links modified files mb commits
    orderBy -modified
     rename modified updatedtime
@@ -458,7 +458,7 @@ const writeAndCommitFile = async (req, res, filePath, content) => {
 		await fsp.writeFile(filePath, content, "utf8")
 
 		// Run the scroll build and git commands asynchronously
-		await execAsync(`scroll format; git add ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
+		await execAsync(`scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
 		updateFolderAndBuildList(folderName)
@@ -490,26 +490,31 @@ const AnsiToHtml = require("ansi-to-html")
 app.get("/diff.htm/:folderName", async (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(rootFolder, folderName)
-
 	if (!folderCache[folderName]) {
 		return res.status(404).send("Folder not found")
 	}
-
 	try {
 		// Get the number of commits
 		const { stdout: commitCount } = await execAsync(`git rev-list --count HEAD`, { cwd: folderPath })
 		const numCommits = parseInt(commitCount.trim())
-
 		if (numCommits === 0) {
 			return res.status(200).send("No commits available.")
 		}
-
 		// Get the last 10 commits with diffs and color
 		const { stdout: gitLog } = await execAsync(`git log -p -10 --color=always`, { cwd: folderPath })
-
 		// Convert ANSI color codes to HTML
 		const convert = new AnsiToHtml()
-		const htmlLog = convert.toHtml(gitLog)
+		let htmlLog = convert.toHtml(gitLog)
+
+		// Replace commit hashes with POST forms
+		htmlLog = htmlLog.replace(/commit ([0-9a-f]{40})/g, (match, hash) => {
+			return `${"-".repeat(60)}
+commit ${hash}
+<form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
+  <input type="hidden" name="hash" value="${hash}">
+  <input type="submit" value="Revert to this commit" onclick="return confirm('Are you sure you want to revert to this commit?');">
+</form>`
+		})
 
 		// Wrap the log output in basic HTML structure
 		const htmlOutput = `
@@ -524,6 +529,7 @@ app.get("/diff.htm/:folderName", async (req, res) => {
           h2 { color: #333; }
           .commit { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
           .commit-message { font-weight: bold; color: #005cc5; }
+          input[type="submit"] { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; }
         </style>
       </head>
       <body>${htmlLog}</body>
@@ -535,6 +541,32 @@ app.get("/diff.htm/:folderName", async (req, res) => {
 	} catch (error) {
 		console.error(error)
 		res.status(500).send(`An error occurred while fetching the git log: ${error.message}`)
+	}
+})
+
+app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
+	const folderName = sanitizeFolderName(req.params.folderName)
+	const targetHash = req.body.hash
+	const folderPath = path.join(rootFolder, folderName)
+
+	if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+	if (!targetHash || !/^[0-9a-f]{40}$/i.test(targetHash)) return res.status(400).send("Invalid target hash provided")
+
+	try {
+		// Perform the revert
+		const clientIp = req.ip || req.connection.remoteAddress
+		const hostname = req.hostname
+		await execAsync(`git checkout ${targetHash} . && git add . && git commit --author="${clientIp} <${clientIp}@${hostname}>" -m "Reverted to ${targetHash}" --allow-empty`, { cwd: folderPath })
+
+		// Rebuild the scroll project
+		await execAsync("scroll build", { cwd: folderPath })
+
+		res.redirect("/diff.htm/" + folderName)
+		updateFolderAndBuildList(folderName)
+	} catch (error) {
+		console.error(error)
+		res.status(500).send(`An error occurred while reverting the repository:\n ${error.toString().replace(/</g, "&lt;")}`)
 	}
 })
 
@@ -566,7 +598,7 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
 		await file.mv(filePath)
 
 		// Run git and scroll commands asynchronously
-		await execAsync(`git add ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
+		await execAsync(`git add -f ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
 
 		res.send("File uploaded successfully")
 		updateFolderAndBuildList(folderName)

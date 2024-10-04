@@ -193,7 +193,7 @@ class EditorApp {
 		document.getElementById("folderNameLink").href = this.folderName
 		document.getElementById(
 			"gitClone"
-		).innerHTML = `<a class="historyLink" href="/history.htm/${this.folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/${this.folderName}.git --origin scrollhub`
+		).innerHTML = `<a class="historyLink" href="/diff.htm/${this.folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · git clone http://${serverName}/${this.folderName}.git --origin scrollhub`
 		document.title = `Editing ${serverName}/${this.folderName}`
 	}
 
