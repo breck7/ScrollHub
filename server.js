@@ -809,7 +809,7 @@ const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
 const makeCert = async domain => {
 	const email = domain + "@hub.scroll.pub"
-	const { certificate, domainKey } = await certMaker.makeCertificate(domain, email, __dirname)
+	await certMaker.makeCertificate(domain, email, __dirname)
 }
 
 const startServers = app => {
@@ -836,7 +836,7 @@ const startServers = app => {
 			return sslOptions
 		} else {
 			makeCert(hostname)
-			throw new Error(`SSL certificate or key not found for ${hostname}`)
+			throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
 		}
 	}
 
