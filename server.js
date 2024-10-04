@@ -820,6 +820,7 @@ app.get("/hostname.htm", (req, res) => res.send(req.hostname))
 
 // Serve the root directory statically
 app.use(express.static(__dirname))
+const tls = require("tls")
 
 const startServers = app => {
 	const httpServer = http.createServer(app)
@@ -854,7 +855,7 @@ const startServers = app => {
 			SNICallback: (hostname, cb) => {
 				try {
 					const sslOptions = loadCertAndKey(hostname)
-					cb(null, https.createSecureContext(sslOptions))
+					cb(null, tls.createSecureContext(sslOptions))
 				} catch (err) {
 					console.error(`Error setting up SSL for ${hostname}: ${err.message}`)
 					cb(err)
