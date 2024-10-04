@@ -97,6 +97,8 @@ iframe {
 }
 #fileList {
   margin: 0 10px;
+  max-height: 360px;
+  overflow: auto;
 }
 .nonScrollFile {
   color: grey;
@@ -104,6 +106,14 @@ iframe {
 
 .createButton {
   cursor: pointer;
+  padding: 1px 10px;
+  margin: 8px;
+  border-radius: 5px;
+  display: inline-block;
+  text-align: center;
+}
+.createButton:hover {
+  background-color: rgba(220, 220, 220, 0.3);
 }
 
 form {

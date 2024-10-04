@@ -15,6 +15,7 @@ header.scroll
  <input type="hidden" name="filePath" id="filePathInput"/>
  <input type="hidden" name="folderName" id="folderNameInput"/>
  <div id="fileList"></div>
+ <a class="createButton" onclick="app.createFileCommand()">+</a><br>
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>

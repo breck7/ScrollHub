@@ -9,7 +9,26 @@ class EditorApp {
 			lineWrapping: true, // todo: some way to see wrapped lines? do we want to disable line wrapping? make a keyboard shortcut?
 			lineNumbers: false
 		})
-		this.codeMirrorInstance.setSize(784, 490) // todo: adjust on resize
+		this.codeMirrorInstance.setSize(this.width, 490)
+		window.addEventListener("resize", () => this.codeMirrorInstance.setSize(this.width, 490))
+	}
+
+	get width() {
+		const bodyWidth = document.body.clientWidth
+		let computedWidth
+
+		if (bodyWidth < 1000) {
+			// Calculate width as body width minus 250
+			computedWidth = bodyWidth - 270
+		} else {
+			// Set width to 784 when body width is 1000 or more
+			computedWidth = 784
+		}
+
+		// Ensure the width does not exceed 784 and is not less than 100
+		computedWidth = Math.max(100, Math.min(784, computedWidth))
+		console.log(computedWidth)
+		return computedWidth
 	}
 
 	showError(message) {
@@ -228,7 +247,7 @@ class EditorApp {
 				? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenamePrompt('${file}', event)">${file}</a>`
 				: `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenamePrompt('${file}', event)">${file}</a>`
 		})
-		this.fileList.innerHTML = fileLinks.join("<br>") + `<br><br><a class="createButton" onclick="app.createFileCommand()">+</a>`
+		this.fileList.innerHTML = fileLinks.join("<br>")
 	}
 
 	maybeRenamePrompt(oldFileName, event) {
