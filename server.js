@@ -807,7 +807,9 @@ const tls = require("tls")
 const { CertificateMaker } = require("./CertificateMaker.js")
 const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
+const pendingCerts = {}
 const makeCert = async domain => {
+	pendingCerts[domain] = true
 	const email = domain + "@hub.scroll.pub"
 	await certMaker.makeCertificate(domain, email, __dirname)
 }
@@ -835,6 +837,7 @@ const startServers = app => {
 			certCache.set(hostname, sslOptions) // Cache the cert and key
 			return sslOptions
 		} else {
+			if (pendingCerts[hostname]) return
 			makeCert(hostname)
 			throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
 		}
