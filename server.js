@@ -29,6 +29,11 @@ const allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv 
 const hostname = os.hostname()
 const rootFolder = path.join(__dirname, "folders")
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  next()
+})
+
 const logFile = path.join(__dirname, "log.txt")
 
 const logRequest = (req, res, next) => {
