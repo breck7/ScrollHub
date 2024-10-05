@@ -206,7 +206,7 @@ class EditorApp {
 
 	get rootUrl() {
 		if (!this.isCustomDomain) return "/" + this.folderName
-		return "/" + this.folderName // todo: fix this once ssl is working.
+		return "https://" + this.folderName // todo: fix this once ssl is working.
 	}
 
 	updatePreviewIFrame() {
