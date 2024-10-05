@@ -451,7 +451,7 @@ const writeAndCommitFile = async (req, res, filePath, content) => {
 	const folderName = path.relative(rootFolder, folderPath)
 	const fileName = path.basename(filePath)
 	const clientIp = req.ip || req.connection.remoteAddress
-	const hostname = req.hostname
+	const hostname = req.hostname?.toLowerCase()
 
 	try {
 		// Write the file content asynchronously
@@ -611,7 +611,7 @@ app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
 	try {
 		// Perform the revert
 		const clientIp = req.ip || req.connection.remoteAddress
-		const hostname = req.hostname
+		const hostname = req.hostname?.toLowerCase()
 		await execAsync(`git checkout ${targetHash} . && git add . && git commit --author="${clientIp} <${clientIp}@${hostname}>" -m "Reverted to ${targetHash}" --allow-empty`, { cwd: folderPath })
 
 		// Rebuild the scroll project
@@ -756,7 +756,7 @@ app.post("/rename.htm", checkWritePermissions, async (req, res) => {
 
 		// Run git commands
 		const clientIp = req.ip || req.connection.remoteAddress
-		const hostname = req.hostname
+		const hostname = req.hostname?.toLowerCase()
 		await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'; scroll build`, { cwd: folderPath })
 
 		res.send("File renamed successfully")
@@ -789,7 +789,7 @@ app.use(async (req, res, next) => {
 
 // New middleware to route domains to the matching folder
 app.use((req, res, next) => {
-	const hostname = req.hostname
+	const hostname = req.hostname?.toLowerCase()
 	if (!hostname || !folderCache[hostname]) return next()
 
 	const folderPath = path.join(rootFolder, hostname)
@@ -848,7 +848,7 @@ const startServers = app => {
 		{
 			SNICallback: (hostname, cb) => {
 				try {
-					const sslOptions = loadCertAndKey(hostname)
+					const sslOptions = loadCertAndKey(hostname.toLowerCase())
 					cb(null, tls.createSecureContext(sslOptions))
 				} catch (err) {
 					console.error(`Error setting up SSL for ${hostname}: ${err.message}`)
