@@ -1,5 +1,5 @@
 buildHtml
-title ScrollHub: The fastest way to publish
+title ScrollHub: The fastest way to publish. Run your own ScrollHub in 60 seconds.
 
 metaTags
 theme dark
@@ -15,8 +15,10 @@ ScrollHub is a super server for publishing websites, scientific articles, blog p
 
 It is the fastest way to publish. Don't take my word for it, try for yourself here: https://hub.scroll.pub
 
-# Run your own Hub in 90 seconds
-Follow the steps below to run your own ScrollHub server.
+# Run your own ScrollHub in 60 seconds
+Follow the steps below to run your own ScrollHub server in 60 seconds!
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/MmazCPKmU7c?si=-3_8-5iF0fjKo9-D&amp;clip=UgkxLL9gdK9ebmyJw6tKOerMYRZLBKvJ4M_s&amp;clipt=EMSRHBik5h8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 1. Launch a new Ubuntu Droplet on Digital Ocean (or your cloud provider of choice)
  https://www.digitalocean.com Digital Ocean
