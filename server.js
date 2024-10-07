@@ -495,9 +495,9 @@ const AnsiToHtml = require("ansi-to-html")
 app.get("/diff.htm/:folderName", async (req, res) => {
 	const folderName = sanitizeFolderName(req.params.folderName)
 	const folderPath = path.join(rootFolder, folderName)
-	if (!folderCache[folderName]) {
+	if (!folderCache[folderName])
 		return res.status(404).send("Folder not found")
-	}
+	const count = req.query.count || 10
 
 	try {
 		// Check if there are any commits
@@ -525,7 +525,7 @@ app.get("/diff.htm/:folderName", async (req, res) => {
 			}
 
 			// Now spawn git log process
-			const gitLogProcess = spawn("git", ["log", "-p", "-10", "--color=always"], { cwd: folderPath })
+			const gitLogProcess = spawn("git", ["log", "-p", `-${count}`, "--color=always"], { cwd: folderPath })
 			const convert = new AnsiToHtml({ escapeXML: true })
 
 			res.setHeader("Content-Type", "text/html; charset=utf-8")
