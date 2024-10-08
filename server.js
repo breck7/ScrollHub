@@ -668,6 +668,68 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
 	}
 })
 
+app.post("/insert.htm", checkWritePermissions, async (req, res) => {
+  const folderName = sanitizeFolderName(req.body.folderName);
+  const fileName = sanitizeFolderName(req.body.fileName);
+  const particles = req.body.particles;
+  const line = parseInt(req.body.line);
+  
+  if (!folderCache[folderName]) {
+    return res.status(404).send("Folder not found");
+  }
+
+  if (!particles) {
+    return res.status(400).send("No particles provided");
+  }
+
+  if (!fileName) {
+    return res.status(400).send("No filename provided");
+  }
+
+  const folderPath = path.join(rootFolder, folderName);
+  const filePath = path.join(folderPath, fileName);
+
+  // Check if the file extension is allowed
+  if (!extensionOkay(filePath, res)) {
+    return;
+  }
+
+  try {
+    // Check if the file exists
+    await fsp.access(filePath);
+
+    let content = await fsp.readFile(filePath, "utf8");
+    let lines = content.split("\n");
+
+    if (isNaN(line) || line <= 0 || line > lines.length + 1) {
+      // Append to the end if line is not provided or invalid
+      lines.push(particles);
+    } else {
+      // Insert at the specified line (adjusting for 0-based array index)
+      lines.splice(line - 1, 0, particles);
+    }
+
+    content = lines.join("\n");
+
+    await fsp.writeFile(filePath, content, "utf8");
+
+    // Run git commands
+    const clientIp = req.ip || req.connection.remoteAddress;
+    const hostname = req.hostname?.toLowerCase();
+    await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'; scroll build`, { cwd: folderPath });
+
+    res.send("Particles inserted successfully");
+    updateFolderAndBuildList(folderName);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      res.status(404).send("File not found");
+    } else {
+      console.error(error);
+      res.status(500).send(`An error occurred while inserting the particles:\n ${error.toString().replace(/</g, "&lt;")}`);
+    }
+  }
+});
+
 const zipCache = new Map()
 const zipFolder = async folderName => {
 	const folderPath = path.join(rootFolder, folderName)
