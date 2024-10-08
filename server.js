@@ -669,10 +669,10 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
 })
 
 app.post("/insert.htm", checkWritePermissions, async (req, res) => {
-  const folderName = sanitizeFolderName(req.body.folderName);
-  const fileName = sanitizeFolderName(req.body.fileName);
+  const folderName = sanitizeFolderName(req.query.folderName);
+  const fileName = sanitizeFolderName(req.query.fileName);
+  const line = parseInt(req.query.line);
   const particles = req.body.particles;
-  const line = parseInt(req.body.line);
   
   if (!folderCache[folderName]) {
     return res.status(404).send("Folder not found");
