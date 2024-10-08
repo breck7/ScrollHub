@@ -671,6 +671,7 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
 app.post("/insert.htm", checkWritePermissions, async (req, res) => {
   const folderName = sanitizeFolderName(req.query.folderName);
   const fileName = sanitizeFolderName(req.query.fileName);
+  const redirectUrl = sanitizeFolderName(req.query.redirect);
   const line = parseInt(req.query.line);
   const particles = req.body.particles;
   
@@ -718,7 +719,7 @@ app.post("/insert.htm", checkWritePermissions, async (req, res) => {
     const hostname = req.hostname?.toLowerCase();
     await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'; scroll build`, { cwd: folderPath });
 
-    res.send("Particles inserted successfully");
+    res.redirect(redirectUrl);
     updateFolderAndBuildList(folderName);
   } catch (error) {
     if (error.code === 'ENOENT') {
