@@ -14,7 +14,7 @@
     "ky": "^1.4.0",
     "minimist": "^1.2.8",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^138.3.0",
+    "scroll-cli": "^138.4.0",
     "scrollsdk": "^88.0.0"
   },
   "bin": {
