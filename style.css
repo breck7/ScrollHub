@@ -1,16 +1,23 @@
-/* Scroll Template Styles */
-
 :root {
   --primary-color: #4a90e2;
   --secondary-color: #50c878;
   --background-color: #f5f5f5;
   --text-color: #333;
   --form-background: #ffffff;
+  --border-color: rgba(204, 204, 204, 0.8);
+  --hover-color: rgba(114, 114, 114, 1);
+  --light-grey: rgba(144, 144, 144, 0.8);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --hover-bg-color: rgba(220, 220, 220, 0.3);
+  --border-light: #ddd;
+  --button-hover: #45b069;
+  --button-active: #35a059;
 }
 
+/* Scroll Template Styles */
 .CodeMirror {
   border-radius: 8px;
-  border: 1px solid rgba(204, 204, 204, 0.8);
+  border: 1px solid var(--border-color);
 }
 
 body {
@@ -36,23 +43,24 @@ body {
   flex: 100%;
   padding: 20px 0 0 0px;
   font-size: 0.8em;
-  color: rgba(204, 204, 204, 0.8);
+  color: var(--light-grey);
 }
 
 #templateOptions a {
-  color: rgba(204, 204, 204, 0.8);
-}
-#templateOptions a:hover {
-  cursor: pointer;
-  color: rgba(154, 154, 154, 1);
-}
-#templateOptions a.selected {
-  color: rgba(154, 154, 154, 1);
+  color: var(--light-grey);
 }
 
-.darkText,
+#templateOptions a:hover {
+  cursor: pointer;
+  color: var(--hover-color);
+}
+
+#templateOptions a.selected {
+  color: var(--hover-color);
+}
+
 .greyText {
-  color: rgba(204, 204, 204, 0.8);
+  color: var(--light-grey);
   text-align: center;
   font-size: 0.8rem;
   white-space: pre;
@@ -60,21 +68,19 @@ body {
   margin: auto;
   padding: 0.5rem;
 }
-.historyLink,
+
+.historyLink, .deleteLink,
 .duplicateButton {
-  color: rgba(204, 204, 204, 0.8);
+  color: var(--light-grey);
 }
+
 .duplicateButton:hover {
   text-decoration: underline;
   cursor: pointer;
 }
 
-.darkText {
-  color: rgba(104, 104, 104, 1);
-}
-
 .drag-over {
-  border: 2px dashed #007bff;
+  border: 2px dashed var(--primary-color);
   background-color: rgba(0, 123, 255, 0.1);
 }
 
@@ -85,21 +91,24 @@ iframe {
   transform: scale(0.5);
   transform-origin: 0 0;
 }
+
 .iframeHolder {
   width: 200px;
   height: 125px;
-  box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 2px 2px 2px var(--shadow-color);
   border-radius: 8px;
   margin: 10px;
   display: inline-block;
   position: relative;
   overflow: hidden;
 }
+
 #fileList {
   margin: 0 10px;
   max-height: 360px;
   overflow: auto;
 }
+
 .nonScrollFile {
   color: grey;
 }
@@ -112,15 +121,16 @@ iframe {
   display: inline-block;
   text-align: center;
 }
+
 .createButton:hover {
-  background-color: rgba(220, 220, 220, 0.3);
+  background-color: var(--hover-bg-color);
 }
 
 form {
   background-color: var(--form-background);
   padding: 40px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -128,18 +138,22 @@ form {
   margin: 0 auto;
   max-width: 600px;
 }
+
 #createForm {
   padding-bottom: 20px;
 }
+
 #importForm {
   margin-top: 20px;
 }
+
 #editForm {
   max-width: 1025px;
   margin-top: 20px;
   margin-bottom: 20px;
   padding: 0;
 }
+
 .editorHolder {
   border-left: 1px solid rgb(232, 232, 232);
   padding: 7px;
@@ -149,14 +163,16 @@ input[type="text"],
 textarea {
   flex-grow: 1;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-light);
   border-radius: 4px 0 0 4px;
   font-size: 16px;
 }
+
 textarea {
-  width: 80ch; /* Set width to 60 characters */
-  max-width: 100%; /* Ensure it doesn't overflow on small screens */
+  width: 80ch;
+  max-width: 100%;
 }
+
 .CodeMirror {
   border: 0;
 }
@@ -174,11 +190,11 @@ button {
 }
 
 button:hover {
-  background-color: #45b069;
+  background-color: var(--button-hover);
 }
 
 button:active {
-  background-color: #35a059;
+  background-color: var(--button-active);
 }
 
 .publishButton {
@@ -191,17 +207,14 @@ button:active {
   body {
     padding: 10px;
   }
-
   form {
     flex-direction: column;
     align-items: stretch;
   }
-
   input[type="text"] {
     border-radius: 4px;
     margin-bottom: 10px;
   }
-
   button {
     border-radius: 4px;
   }
