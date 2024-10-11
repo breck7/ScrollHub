@@ -244,10 +244,19 @@ class EditorApp {
     }
   }
 
-  duplicate() {
+  async duplicate() {
     const newFolderName = prompt("Folder name")
     if (!newFolderName) return
-    window.location.href = `/createFromForm.htm?folderName=${newFolderName}&template=${this.folderName}`
+    const response = await fetch("/create.htm", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: `folderName=${encodeURIComponent(newFolderName)}&template=${encodeURIComponent(this.folderName)}`
+    })
+
+    const result = await response.text()
+    window.location.href = `/edit.html?folderName=${newFolderName}`
   }
 
   async fetchAndDisplayFileList() {

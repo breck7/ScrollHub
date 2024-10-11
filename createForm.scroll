@@ -1,4 +1,4 @@
-<form method="get" action="createFromForm.htm" id="createForm">
+<form method="post" action="create.htm" id="createForm">
 <input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Publish</button>
 <div class="templateButton">Template: <span id="templateOptions"></span></div>
 <input type="hidden" name="template" id="template"/>

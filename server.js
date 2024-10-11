@@ -40,7 +40,7 @@ const logFile = path.join(__dirname, "log.txt")
 const logRequest = (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress
   const userAgent = req.get("User-Agent") || "Unknown"
-  const log = `${new Date().toISOString()} ${ip} "${req.method} ${req.url}" "${userAgent}"\n`
+  const log = `${req.method === "GET" ? "read" : "write"} ${req.url} ${ip} ${Date.now()} ${userAgent}\n`
 
   fs.appendFile(logFile, log, err => {
     if (err) console.error("Failed to log request:", err)
@@ -275,14 +275,12 @@ scrollVersionLink`
   await execAsync(`scroll build`, { cwd: __dirname })
 }
 
-app.get("/createFromForm.htm", (req, res) => res.redirect(`/create.htm/${req.query.folderName || " "}?template=${req.query.template}`))
-
 const handleCreateError = (res, params) => res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
 
-app.get("/create.htm/:folderName(*)", checkWritePermissions, async (req, res) => {
-  const rawInput = req.params.folderName.trim()
+app.post("/create.htm", checkWritePermissions, async (req, res) => {
+  const rawInput = req.body.folderName
   let folderName = sanitizeFolderName(rawInput)
-  let template = req.query.template || "blank"
+  let template = req.body.template || "blank"
   if (isUrl(rawInput)) {
     const words = rawInput.split(" ")
     template = words[0]

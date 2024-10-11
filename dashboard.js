@@ -5,17 +5,19 @@ class Dashboard {
   constructor(inputFile) {
     this.inputFile = inputFile
     this.dailyStats = {}
+    this.totalLines = 0
+    this.parsedLines = 0
   }
 
   parseLogEntry(entry) {
-    const regex = /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z) ([\d.:]+) "(GET|POST) ([^"]+)" "([^"]+)"/
+    const regex = /^(read|write) ([^ ]+) ([^ ]+) (\d+) (.+)$/
     const match = entry.match(regex)
     if (match) {
       return {
-        timestamp: new Date(match[1]),
-        ip: match[2],
-        method: match[3],
-        path: match[4],
+        method: match[1] === "read" ? "GET" : "POST",
+        path: match[2],
+        ip: match[3],
+        timestamp: new Date(parseInt(match[4])),
         userAgent: match[5]
       }
     }
@@ -34,12 +36,14 @@ class Dashboard {
         }
       }
 
-      if (entry.method.toUpperCase() === "GET") {
+      if (entry.method === "GET") {
         this.dailyStats[date].reads++
         this.dailyStats[date].uniqueReaders.add(entry.ip)
-      } else if (entry.method.toUpperCase() === "POST") {
+        console.log(`Read request from IP: ${entry.ip}`)
+      } else if (entry.method === "POST") {
         this.dailyStats[date].writes++
         this.dailyStats[date].uniqueWriters.add(entry.ip)
+        console.log(`Write request from IP: ${entry.ip}`)
       }
     }
   }
@@ -48,6 +52,11 @@ class Dashboard {
     Object.keys(this.dailyStats).forEach(date => {
       this.dailyStats[date].readers = this.dailyStats[date].uniqueReaders.size
       this.dailyStats[date].writers = this.dailyStats[date].uniqueWriters.size
+      console.log(`Date: ${date}`)
+      console.log(`  Unique readers: ${this.dailyStats[date].uniqueReaders.size}`)
+      console.log(`  Reader IPs: ${[...this.dailyStats[date].uniqueReaders].join(", ")}`)
+      console.log(`  Unique writers: ${this.dailyStats[date].uniqueWriters.size}`)
+      console.log(`  Writer IPs: ${[...this.dailyStats[date].uniqueWriters].join(", ")}`)
       delete this.dailyStats[date].uniqueReaders
       delete this.dailyStats[date].uniqueWriters
     })
@@ -62,11 +71,19 @@ class Dashboard {
       })
 
       rl.on("line", line => {
+        this.totalLines++
         const entry = this.parseLogEntry(line)
-        this.updateDailyStats(entry)
+        if (entry) {
+          this.parsedLines++
+          this.updateDailyStats(entry)
+        } else {
+          console.log(`Failed to parse line: ${line}`)
+        }
       })
 
       rl.on("close", () => {
+        console.log(`Total lines processed: ${this.totalLines}`)
+        console.log(`Successfully parsed lines: ${this.parsedLines}`)
         this.finalizeDailyStats()
         resolve()
       })
