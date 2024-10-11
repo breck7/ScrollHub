@@ -1,9 +1,9 @@
-const fs = require("fs").promises
+const fs = require("fs")
+const readline = require("readline")
 
 class Dashboard {
   constructor(inputFile) {
     this.inputFile = inputFile
-    this.logEntries = []
     this.dailyStats = {}
   }
 
@@ -22,31 +22,29 @@ class Dashboard {
     return null
   }
 
-  generateDailyStatistics() {
-    this.dailyStats = {}
-    this.logEntries.forEach(entry => {
-      if (entry) {
-        const date = entry.timestamp.toISOString().split("T")[0]
-        if (!this.dailyStats[date]) {
-          this.dailyStats[date] = {
-            reads: 0,
-            writes: 0,
-            uniqueReaders: new Set(),
-            uniqueWriters: new Set()
-          }
-        }
-
-        if (entry.method.toUpperCase() === "GET") {
-          this.dailyStats[date].reads++
-          this.dailyStats[date].uniqueReaders.add(entry.ip)
-        } else if (entry.method.toUpperCase() === "POST") {
-          this.dailyStats[date].writes++
-          this.dailyStats[date].uniqueWriters.add(entry.ip)
+  updateDailyStats(entry) {
+    if (entry) {
+      const date = entry.timestamp.toISOString().split("T")[0]
+      if (!this.dailyStats[date]) {
+        this.dailyStats[date] = {
+          reads: 0,
+          writes: 0,
+          uniqueReaders: new Set(),
+          uniqueWriters: new Set()
         }
       }
-    })
 
-    // Convert Sets to counts
+      if (entry.method.toUpperCase() === "GET") {
+        this.dailyStats[date].reads++
+        this.dailyStats[date].uniqueReaders.add(entry.ip)
+      } else if (entry.method.toUpperCase() === "POST") {
+        this.dailyStats[date].writes++
+        this.dailyStats[date].uniqueWriters.add(entry.ip)
+      }
+    }
+  }
+
+  finalizeDailyStats() {
     Object.keys(this.dailyStats).forEach(date => {
       this.dailyStats[date].readers = this.dailyStats[date].uniqueReaders.size
       this.dailyStats[date].writers = this.dailyStats[date].uniqueWriters.size
@@ -56,14 +54,27 @@ class Dashboard {
   }
 
   async processLogFile() {
-    try {
-      const logContent = await fs.readFile(this.inputFile, "utf-8")
-      this.logEntries = logContent.split("\n").map(this.parseLogEntry).filter(Boolean)
-      this.generateDailyStatistics()
-    } catch (error) {
-      console.error("Error processing log file:", error)
-      throw error
-    }
+    return new Promise((resolve, reject) => {
+      const fileStream = fs.createReadStream(this.inputFile)
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity
+      })
+
+      rl.on("line", line => {
+        const entry = this.parseLogEntry(line)
+        this.updateDailyStats(entry)
+      })
+
+      rl.on("close", () => {
+        this.finalizeDailyStats()
+        resolve()
+      })
+
+      fileStream.on("error", error => {
+        reject(error)
+      })
+    })
   }
 
   get csv() {
