@@ -42,8 +42,7 @@ class EditorApp {
 
   async main() {
     const urlParams = new URLSearchParams(window.location.search)
-    this.folderName = urlParams.get("folderName")
-    if (!this.folderName) return this.showError("Folder name not provided in the query string")
+    this.folderName = urlParams.get("folderName") || window.location.hostname
     this.fileList = document.getElementById("fileList")
     this.fileName = urlParams.get("fileName")
     if (!this.fileName) await this.fetchAndDisplayFileList()
@@ -206,7 +205,7 @@ class EditorApp {
 
   get rootUrl() {
     if (!this.isCustomDomain) return "/" + this.folderName
-    return "https://" + this.folderName // todo: fix this once ssl is working.
+    return "https://" + this.folderName
   }
 
   updatePreviewIFrame() {
