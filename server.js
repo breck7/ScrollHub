@@ -168,15 +168,12 @@ app.get("/now.htm", (req, res) => {
 })
 
 const { Dashboard } = require("./dashboard.js")
-app.get("/dashboard.htm", (req, res) => {
-  const outputFile = "dashboard.csv"
-
+app.get("/dashboard.csv", (req, res) => {
   const dashboard = new Dashboard(logFile)
   dashboard.processLogFile()
-  dashboard.generateCSV(outputFile)
-
+  const { csv } = dashboard
   res.setHeader("Content-Type", "text/plain")
-  res.send(`Saved to ${outputFile}`)
+  res.send(csv)
 })
 
 const updateFolder = async folder => {
@@ -294,7 +291,7 @@ app.get("/create.htm/:folderName(*)", checkWritePermissions, async (req, res) =>
 
   if (!isValidFolderName(folderName))
     return handleCreateError(res, {
-      errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and pass a few other checks.`,
+      errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and not end in a common file extension.`,
       folderName: rawInput,
       template
     })

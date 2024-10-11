@@ -47,14 +47,12 @@ class Dashboard {
     this.generateDailyStatistics()
   }
 
-  generateCSV(outputFile) {
+  get csv() {
     const csvHeader = "Date,Total Requests,Unique IP Count\n"
     const csvRows = Object.entries(this.dailyStats)
       .map(([date, stats]) => `${date},${stats.totalRequests},${stats.uniqueIPCount}`)
       .join("\n")
-    const csvContent = csvHeader + csvRows
-    fs.writeFileSync(outputFile, csvContent)
-    console.log(`CSV file with daily statistics has been generated: ${outputFile}`)
+    return csvHeader + csvRows
   }
 
   getDailyStats() {
