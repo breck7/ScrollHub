@@ -162,9 +162,23 @@ app.get("/foldersPublished.htm", (req, res) => {
   res.send(Object.values(folderCache).length.toString())
 })
 
-app.get("/now", (req, res) => {
+app.get("/now.htm", (req, res) => {
   res.setHeader("Content-Type", "text/plain")
   res.send(storyCache)
+})
+
+const { Dashboard } = require("./dashboard.js")
+app.get("/dashboard.htm", (req, res) => {
+  // Usage example
+  const inputFile = "log.txt"
+  const outputFile = "dashboard.csv"
+
+  const dashboard = new Dashboard(inputFile)
+  dashboard.processLogFile()
+  dashboard.generateCSV(outputFile)
+
+  res.setHeader("Content-Type", "text/plain")
+  res.send("Saved to dashboard.csv")
 })
 
 const updateFolder = async folder => {
