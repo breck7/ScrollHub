@@ -98,6 +98,21 @@ const writeLimit = 30 // Maximum number of writes per minute
 const writeWindow = 60 * 1000 // 1 minute in milliseconds
 const ipWriteOperations = new Map()
 
+const storyLogFile = path.join(__dirname, "now.txt")
+
+if (!fs.existsSync(storyLogFile)) fs.writeFileSync(storyLogFile, "", "utf8")
+let storyCache = ""
+const addStory = (req, message) => {
+  let clientIp = req.ip || req.connection.remoteAddress
+  const formattedDate = new Date().toLocaleString("en-US", { timeZone: "Pacific/Honolulu" })
+  const storyEntry = `${formattedDate} ${clientIp} ${message}\n`
+  // Append the new story entry to the story log file
+  fs.appendFile(storyLogFile, storyEntry, err => console.error(err))
+  storyCache = storyEntry + storyCache
+}
+
+addStory({ ip: "admin" }, "started scrollhub server")
+
 const checkWritePermissions = (req, res, next) => {
   let clientIp = req.ip || req.connection.remoteAddress
 
@@ -145,6 +160,11 @@ setInterval(cleanupWriteOperations, 20 * 60 * 1000)
 app.get("/foldersPublished.htm", (req, res) => {
   res.setHeader("Content-Type", "text/plain")
   res.send(Object.values(folderCache).length.toString())
+})
+
+app.get("/now", (req, res) => {
+  res.setHeader("Content-Type", "text/plain")
+  res.send(storyCache)
 })
 
 const updateFolder = async folder => {
@@ -278,6 +298,8 @@ app.get("/create.htm/:folderName(*)", checkWritePermissions, async (req, res) =>
       if (aborted) return aborted
     }
 
+    addStory(req, `created ${folderName}`)
+
     res.redirect(`/edit.html?folderName=${folderName}`)
     prepNext(folderName, template)
   } catch (error) {
@@ -385,6 +407,7 @@ app.get("/:repo.git/*", (req, res) => {
     ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
   })
   req.pipe(handlers).pipe(res)
+  addStory(req, `cloned ${repo}`)
 })
 
 // todo: check pw
@@ -401,6 +424,7 @@ app.post("/:repo.git/*", checkWritePermissions, async (req, res) => {
     ps.on("close", async code => {
       if (code === 0 && service.action === "push") {
         await execAsync(`scroll build`, { cwd: repoPath })
+        addStory(req, `pushed ${repo}`)
         updateFolderAndBuildList(repo)
       }
     })
@@ -468,6 +492,7 @@ const writeAndCommitFile = async (req, res, filePath, content) => {
     await execAsync(`scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
     res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
+    addStory(req, `updated ${folderName}/${fileName}`)
     updateFolderAndBuildList(folderName)
   } catch (error) {
     console.error(error)
@@ -620,6 +645,8 @@ app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
     const hostname = req.hostname?.toLowerCase()
     await execAsync(`git checkout ${targetHash} . && git add . && git commit --author="${clientIp} <${clientIp}@${hostname}>" -m "Reverted to ${targetHash}" --allow-empty`, { cwd: folderPath })
 
+    addStory(req, `reverted ${folderName}`)
+
     // Rebuild the scroll project
     await execAsync("scroll build", { cwd: folderPath })
 
@@ -661,6 +688,7 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
     // Run git and scroll commands asynchronously
     await execAsync(`git add -f ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
 
+    addStory(req, `uploaded ${fileName} to ${folderName}`)
     res.send("File uploaded successfully")
     updateFolderAndBuildList(folderName)
   } catch (err) {
@@ -720,6 +748,8 @@ app.post("/insert.htm", checkWritePermissions, async (req, res) => {
     const hostname = req.hostname?.toLowerCase()
     await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'; scroll build`, { cwd: folderPath })
 
+    addStory(req, `inserted particles into ${folderPath}/${fileName}`)
+
     res.redirect(redirectUrl)
     updateFolderAndBuildList(folderName)
   } catch (error) {
@@ -771,6 +801,8 @@ app.get("/:folderName.zip", async (req, res) => {
   res.setHeader("Content-Type", "application/zip")
   res.setHeader("Content-Disposition", `attachment; filename=${folderName}.zip`)
   res.send(zipBuffer)
+
+  addStory(req, `downloaded ${folderName}.zip`)
 })
 
 app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
@@ -796,6 +828,7 @@ app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
     await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'; scroll build`, { cwd: folderPath })
 
     res.send("File deleted successfully")
+    addStory(req, `deleted ${fileName} in ${folderName}`)
     updateFolderAndBuildList(folderName)
   } catch (error) {
     console.error(error)
@@ -823,6 +856,8 @@ app.post("/trash", checkWritePermissions, async (req, res) => {
 
     // Rebuild the list file
     buildListFile()
+
+    addStory(req, `trashed ${folderName}`)
 
     res.send("Folder moved to trash successfully")
   } catch (error) {
@@ -856,6 +891,7 @@ app.post("/rename.htm", checkWritePermissions, async (req, res) => {
     const hostname = req.hostname?.toLowerCase()
     await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'; scroll build`, { cwd: folderPath })
 
+    addStory(req, `renamed ${oldFileName} to ${newFileName} in ${folderName}`)
     res.send("File renamed successfully")
     updateFolderAndBuildList(folderName)
   } catch (error) {
