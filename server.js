@@ -169,16 +169,14 @@ app.get("/now.htm", (req, res) => {
 
 const { Dashboard } = require("./dashboard.js")
 app.get("/dashboard.htm", (req, res) => {
-  // Usage example
-  const inputFile = "log.txt"
   const outputFile = "dashboard.csv"
 
-  const dashboard = new Dashboard(inputFile)
+  const dashboard = new Dashboard(logFile)
   dashboard.processLogFile()
   dashboard.generateCSV(outputFile)
 
   res.setHeader("Content-Type", "text/plain")
-  res.send("Saved to dashboard.csv")
+  res.send(`Saved to ${outputFile}`)
 })
 
 const updateFolder = async folder => {
