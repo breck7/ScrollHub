@@ -8,7 +8,7 @@ class Dashboard {
   }
 
   parseLogEntry(entry) {
-    const regex = /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z) ([\d.:]+) "(\w+) ([^"]+)" "([^"]+)"/
+    const regex = /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z) ([\d.:]+) "(GET|POST) ([^"]+)" "([^"]+)"/
     const match = entry.match(regex)
     if (match) {
       return {
