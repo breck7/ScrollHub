@@ -168,9 +168,9 @@ app.get("/now.htm", (req, res) => {
 })
 
 const { Dashboard } = require("./dashboard.js")
-app.get("/dashboard.csv", (req, res) => {
+app.get("/dashboard.csv", async (req, res) => {
   const dashboard = new Dashboard(logFile)
-  dashboard.processLogFile()
+  await dashboard.processLogFile()
   const { csv } = dashboard
   res.setHeader("Content-Type", "text/plain")
   res.send(csv)
