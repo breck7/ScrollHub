@@ -14139,7 +14139,7 @@ class Utils {
       const particleAFirst = -1
       const particleBFirst = 1
       if (!particleAExtends && !particleBExtends) {
-        // If neither extends, sort by firstAtom
+        // If neither extends, sort by cue
         if (particleAUniqueId > particleBUniqueId) return particleBFirst
         else if (particleAUniqueId < particleBUniqueId) return particleAFirst
         return 0
@@ -14153,7 +14153,7 @@ class Utils {
       // Sort by what they extend
       if (particleAExtends > particleBExtends) return particleBFirst
       else if (particleAExtends < particleBExtends) return particleAFirst
-      // Finally sort by firstAtom
+      // Finally sort by cue
       if (particleAUniqueId > particleBUniqueId) return particleBFirst
       else if (particleAUniqueId < particleBUniqueId) return particleAFirst
       // Should never hit this, unless we have a duplicate line.
@@ -14272,29 +14272,29 @@ var ParticlesConstants
   ParticlesConstants["extends"] = "extends"
 })(ParticlesConstants || (ParticlesConstants = {}))
 class ParserCombinator {
-  constructor(catchAllParser, firstAtomMap = {}, regexTests = undefined) {
+  constructor(catchAllParser, cueMap = {}, regexTests = undefined) {
     this._catchAllParser = catchAllParser
-    this._firstAtomMap = new Map(Object.entries(firstAtomMap))
+    this._cueMap = new Map(Object.entries(cueMap))
     this._regexTests = regexTests
   }
-  getFirstAtomOptions() {
-    return Array.from(this._getFirstAtomMap().keys())
+  getCueOptions() {
+    return Array.from(this._getCueMap().keys())
   }
   // todo: remove
-  _getFirstAtomMap() {
-    return this._firstAtomMap
+  _getCueMap() {
+    return this._cueMap
   }
   // todo: remove
-  _getFirstAtomMapAsObject() {
+  _getCueMapAsObject() {
     let obj = {}
-    const map = this._getFirstAtomMap()
+    const map = this._getCueMap()
     for (let [key, val] of map.entries()) {
       obj[key] = val
     }
     return obj
   }
   _getParser(line, contextParticle, atomBreakSymbol = TN_WORD_BREAK_SYMBOL) {
-    return this._getFirstAtomMap().get(this._getFirstAtom(line, atomBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
+    return this._getCueMap().get(this._getCue(line, atomBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
   }
   _getCatchAllParser(contextParticle) {
     if (this._catchAllParser) return this._catchAllParser
@@ -14308,7 +14308,7 @@ class ParserCombinator {
     if (hit) return hit.parser
     return undefined
   }
-  _getFirstAtom(line, atomBreakSymbol) {
+  _getCue(line, atomBreakSymbol) {
     const firstBreak = line.indexOf(atomBreakSymbol)
     return line.substr(0, firstBreak > -1 ? firstBreak : undefined)
   }
@@ -14436,8 +14436,8 @@ class Particle extends AbstractParticle {
   get isBlank() {
     return this.isBlankLine()
   }
-  hasDuplicateFirstAtoms() {
-    return this.length ? new Set(this.getFirstAtoms()).size !== this.length : false
+  hasDuplicateCues() {
+    return this.length ? new Set(this.getCues()).size !== this.length : false
   }
   isEmpty() {
     return !this.length && !this.content
@@ -14499,7 +14499,7 @@ class Particle extends AbstractParticle {
       particleSubparticles: "particleSubparticles"
     }
     const edge = this.edgeSymbol.repeat(indentCount)
-    // Set up the firstAtom part of the particle
+    // Set up the cue part of the particle
     const edgeHtml = `<span class="${classes.particleLine}" data-pathVector="${path}"><span class="${classes.edgeSymbol}">${edge}</span>`
     const lineHtml = this._getLineHtml()
     const subparticlesHtml = this.length ? `<span class="${classes.particleBreakSymbol}">${this.particleBreakSymbol}</span>` + `<span class="${classes.particleSubparticles}">${this._subparticlesToHtml(indentCount + 1)}</span>` : ""
@@ -14693,8 +14693,11 @@ class Particle extends AbstractParticle {
       line++
     }
   }
-  get firstAtom() {
+  get cue() {
     return this.atoms[0]
+  }
+  set cue(atom) {
+    this.setAtom(0, atom)
   }
   get content() {
     const atoms = this.getAtomsFrom(1)
@@ -14742,16 +14745,16 @@ class Particle extends AbstractParticle {
     return clone
   }
   // todo: return array? getPathArray?
-  _getFirstAtomPath(relativeTo) {
+  _getCuePath(relativeTo) {
     if (this.isRoot(relativeTo)) return ""
-    else if (this.parent.isRoot(relativeTo)) return this.firstAtom
-    return this.parent._getFirstAtomPath(relativeTo) + this.edgeSymbol + this.firstAtom
+    else if (this.parent.isRoot(relativeTo)) return this.cue
+    return this.parent._getCuePath(relativeTo) + this.edgeSymbol + this.cue
   }
-  getFirstAtomPathRelativeTo(relativeTo) {
-    return this._getFirstAtomPath(relativeTo)
+  getCuePathRelativeTo(relativeTo) {
+    return this._getCuePath(relativeTo)
   }
-  getFirstAtomPath() {
-    return this._getFirstAtomPath()
+  getCuePath() {
+    return this._getCuePath()
   }
   getPathVector() {
     return this._getPathVector()
@@ -14780,7 +14783,7 @@ class Particle extends AbstractParticle {
   }
   _toXml(indentCount) {
     const indent = " ".repeat(indentCount)
-    const tag = this.firstAtom
+    const tag = this.cue
     return `${indent}<${tag}>${this._getXmlContent(indentCount)}</${tag}>${indentCount === -1 ? "" : "\n"}`
   }
   _toObjectTuple() {
@@ -14791,7 +14794,7 @@ class Particle extends AbstractParticle {
     // If the particle has a content and a subparticle return it as a string, as
     // Javascript object values can't be both a leaf and a particle.
     const tupleValue = hasSubparticlesNoContent ? this.toObject() : hasContentAndHasSubparticles ? this.contentWithSubparticles : content
-    return [this.firstAtom, tupleValue]
+    return [this.cue, tupleValue]
   }
   _indexOfParticle(needleParticle) {
     let result = -1
@@ -14951,11 +14954,11 @@ class Particle extends AbstractParticle {
     })
     return result
   }
-  with(firstAtom) {
-    return this.filter(particle => particle.has(firstAtom))
+  with(cue) {
+    return this.filter(particle => particle.has(cue))
   }
-  without(firstAtom) {
-    return this.filter(particle => !particle.has(firstAtom))
+  without(cue) {
+    return this.filter(particle => !particle.has(cue))
   }
   first(quantity = 1) {
     return this.limit(quantity, 0)
@@ -15037,7 +15040,7 @@ class Particle extends AbstractParticle {
     this.forEach((subparticle, index) => {
       newObject[subparticle.getAtom(0)] = subparticle.content
       subparticle.topDownArray.forEach(particle => {
-        const newColumnName = particle.getFirstAtomPathRelativeTo(this).replace(edgeSymbolRegex, delimiter)
+        const newColumnName = particle.getCuePathRelativeTo(this).replace(edgeSymbolRegex, delimiter)
         const value = particle.content
         newObject[newColumnName] = value
       })
@@ -15106,10 +15109,10 @@ class Particle extends AbstractParticle {
   _lineToYaml(indentLevel, listTag = "") {
     let prefix = " ".repeat(indentLevel)
     if (listTag && indentLevel > 1) prefix = " ".repeat(indentLevel - 2) + listTag + " "
-    return prefix + `${this.firstAtom}:` + (this.content ? " " + this.content : "")
+    return prefix + `${this.cue}:` + (this.content ? " " + this.content : "")
   }
   _isYamlList() {
-    return this.hasDuplicateFirstAtoms()
+    return this.hasDuplicateCues()
   }
   get asYaml() {
     return `%YAML 1.2
@@ -15170,13 +15173,13 @@ class Particle extends AbstractParticle {
   get asGridJson() {
     return JSON.stringify(this.asGrid, null, 2)
   }
-  findParticles(firstAtomPath) {
+  findParticles(cuePath) {
     // todo: can easily speed this up
     const map = {}
-    if (!Array.isArray(firstAtomPath)) firstAtomPath = [firstAtomPath]
-    firstAtomPath.forEach(path => (map[path] = true))
+    if (!Array.isArray(cuePath)) cuePath = [cuePath]
+    cuePath.forEach(path => (map[path] = true))
     return this.topDownArray.filter(particle => {
-      if (map[particle._getFirstAtomPath(this)]) return true
+      if (map[particle._getCuePath(this)]) return true
       return false
     })
   }
@@ -15199,11 +15202,11 @@ class Particle extends AbstractParticle {
       })
     return clone
   }
-  getParticle(firstAtomPath) {
-    return this._getParticleByPath(firstAtomPath)
+  getParticle(cuePath) {
+    return this._getParticleByPath(cuePath)
   }
-  getParticles(firstAtomPath) {
-    return this.findParticles(firstAtomPath)
+  getParticles(cuePath) {
+    return this.findParticles(cuePath)
   }
   get section() {
     // return all particles after this one to the next blank line or end of file
@@ -15227,8 +15230,8 @@ class Particle extends AbstractParticle {
     const hit = this.filter(particle => particle.getLine().startsWith(prefix))[0]
     if (hit) return hit.getLine().substr((prefix + this.atomBreakSymbol).length)
   }
-  get(firstAtomPath) {
-    const particle = this._getParticleByPath(firstAtomPath)
+  get(cuePath) {
+    const particle = this._getParticleByPath(cuePath)
     return particle === undefined ? undefined : particle.content
   }
   getOneOf(keys) {
@@ -15253,26 +15256,26 @@ class Particle extends AbstractParticle {
     const edgeSymbol = this.edgeSymbol
     if (!globPath.includes(edgeSymbol)) {
       if (globPath === "*") return this.getSubparticles()
-      return this.filter(particle => particle.firstAtom === globPath)
+      return this.filter(particle => particle.cue === globPath)
     }
     const parts = globPath.split(edgeSymbol)
     const current = parts.shift()
     const rest = parts.join(edgeSymbol)
-    const matchingParticles = current === "*" ? this.getSubparticles() : this.filter(subparticle => subparticle.firstAtom === current)
+    const matchingParticles = current === "*" ? this.getSubparticles() : this.filter(subparticle => subparticle.cue === current)
     return [].concat.apply(
       [],
       matchingParticles.map(particle => particle._getParticlesByGlobPath(rest))
     )
   }
-  _getParticleByPath(firstAtomPath) {
+  _getParticleByPath(cuePath) {
     const edgeSymbol = this.edgeSymbol
-    if (!firstAtomPath.includes(edgeSymbol)) {
-      const index = this.indexOfLast(firstAtomPath)
+    if (!cuePath.includes(edgeSymbol)) {
+      const index = this.indexOfLast(cuePath)
       return index === -1 ? undefined : this._particleAt(index)
     }
-    const parts = firstAtomPath.split(edgeSymbol)
+    const parts = cuePath.split(edgeSymbol)
     const current = parts.shift()
-    const currentParticle = this._getSubparticlesArray()[this._getIndex()[current]]
+    const currentParticle = this._getSubparticlesArray()[this._getCueIndex()[current]]
     return currentParticle ? currentParticle._getParticleByPath(parts.join(edgeSymbol)) : undefined
   }
   get next() {
@@ -15297,7 +15300,7 @@ class Particle extends AbstractParticle {
     this.forEach(particle => {
       if (!particle.length) return undefined
       particle.forEach(particle => {
-        obj[particle.firstAtom] = 1
+        obj[particle.cue] = 1
       })
     })
     return Object.keys(obj)
@@ -15334,13 +15337,13 @@ class Particle extends AbstractParticle {
     ancestorParticles.push(parentParticle)
     return ancestorParticles
   }
-  pathVectorToFirstAtomPath(pathVector) {
+  pathVectorToCuePath(pathVector) {
     const path = pathVector.slice() // copy array
     const names = []
     let particle = this
     while (path.length) {
       if (!particle) return names
-      names.push(particle.particleAt(path[0]).firstAtom)
+      names.push(particle.particleAt(path[0]).cue)
       particle = particle.particleAt(path.shift())
     }
     return names
@@ -15467,12 +15470,12 @@ class Particle extends AbstractParticle {
       const particle = outlineParticle.particle
       if (lastStatesCopy.push([outlineParticle, last]) && lastStates.length > 0) {
         let line = ""
-        // firstAtomd on the "was last element" states of whatever we're nested within,
+        // cued on the "was last element" states of whatever we're nested within,
         // we need to append either blankness or a branch to our line
         lastStates.forEach((lastState, idx) => {
           if (idx > 0) line += lastState[1] ? " " : "│"
         })
-        // the prefix varies firstAtomd on whether the key contains something to show and
+        // the prefix varies cued on whether the key contains something to show and
         // whether we're dealing with the last element in this collection
         // the extra "-" just makes things stand out more.
         line += (last ? "└" : "├") + particleFn(particle)
@@ -15495,13 +15498,13 @@ class Particle extends AbstractParticle {
   }
   // Note: Splits using a positive lookahead
   // this.split("foo").join("\n") === this.toString()
-  split(firstAtom) {
+  split(cue) {
     const constructor = this.constructor
     const ParticleBreakSymbol = this.particleBreakSymbol
     const AtomBreakSymbol = this.atomBreakSymbol
     // todo: cleanup. the escaping is wierd.
     return this.toString()
-      .split(new RegExp(`\\${ParticleBreakSymbol}(?=${firstAtom}(?:${AtomBreakSymbol}|\\${ParticleBreakSymbol}))`, "g"))
+      .split(new RegExp(`\\${ParticleBreakSymbol}(?=${cue}(?:${AtomBreakSymbol}|\\${ParticleBreakSymbol}))`, "g"))
       .map(str => new constructor(str))
   }
   get asMarkdownTable() {
@@ -15578,33 +15581,33 @@ class Particle extends AbstractParticle {
     return this._setFromObject(content, circularCheckArray)
   }
   _setFromObject(content, circularCheckArray) {
-    for (let firstAtom in content) {
-      if (!content.hasOwnProperty(firstAtom)) continue
+    for (let cue in content) {
+      if (!content.hasOwnProperty(cue)) continue
       // Branch the circularCheckArray, as we only have same branch circular arrays
-      this._appendFromJavascriptObjectTuple(firstAtom, content[firstAtom], circularCheckArray.slice(0))
+      this._appendFromJavascriptObjectTuple(cue, content[cue], circularCheckArray.slice(0))
     }
     return this
   }
   // todo: refactor the below.
-  _appendFromJavascriptObjectTuple(firstAtom, content, circularCheckArray) {
+  _appendFromJavascriptObjectTuple(cue, content, circularCheckArray) {
     const type = typeof content
     let line
     let subparticles
-    if (content === null) line = firstAtom + " " + null
-    else if (content === undefined) line = firstAtom
+    if (content === null) line = cue + " " + null
+    else if (content === undefined) line = cue
     else if (type === "string") {
       const tuple = this._textToContentAndSubparticlesTuple(content)
-      line = firstAtom + " " + tuple[0]
+      line = cue + " " + tuple[0]
       subparticles = tuple[1]
-    } else if (type === "function") line = firstAtom + " " + content.toString()
-    else if (type !== "object") line = firstAtom + " " + content
-    else if (content instanceof Date) line = firstAtom + " " + content.getTime().toString()
+    } else if (type === "function") line = cue + " " + content.toString()
+    else if (type !== "object") line = cue + " " + content
+    else if (content instanceof Date) line = cue + " " + content.getTime().toString()
     else if (content instanceof Particle) {
-      line = firstAtom
+      line = cue
       subparticles = new Particle(content.subparticlesToString(), content.getLine())
     } else if (circularCheckArray.indexOf(content) === -1) {
       circularCheckArray.push(content)
-      line = firstAtom
+      line = cue
       const length = content instanceof Array ? content.length : Object.keys(content).length
       if (length) subparticles = new Particle()._setSubparticles(content, circularCheckArray)
     } else {
@@ -15618,7 +15621,7 @@ class Particle extends AbstractParticle {
     const newParticle = new parser(subparticles, line, this)
     const adjustedIndex = index < 0 ? this.length + index : index
     this._getSubparticlesArray().splice(adjustedIndex, 0, newParticle)
-    if (this._index) this._makeIndex(adjustedIndex)
+    if (this._cueIndex) this._makeCueIndex(adjustedIndex)
     this.clearQuickCache()
     return newParticle
   }
@@ -15646,11 +15649,11 @@ class Particle extends AbstractParticle {
       parent._getSubparticlesArray().push(lastParticle)
     })
   }
-  _getIndex() {
-    // StringMap<int> {firstAtom: index}
-    // When there are multiple tails with the same firstAtom, _index stores the last content.
+  _getCueIndex() {
+    // StringMap<int> {cue: index}
+    // When there are multiple tails with the same cue, index stores the last content.
     // todo: change the above behavior: when a collision occurs, create an array.
-    return this._index || this._makeIndex()
+    return this._cueIndex || this._makeCueIndex()
   }
   getContentsArray() {
     return this.map(particle => particle.content)
@@ -15667,33 +15670,33 @@ class Particle extends AbstractParticle {
   getParticleByParser(parser) {
     return this.find(subparticle => subparticle instanceof parser)
   }
-  indexOfLast(firstAtom) {
-    const result = this._getIndex()[firstAtom]
+  indexOfLast(cue) {
+    const result = this._getCueIndex()[cue]
     return result === undefined ? -1 : result
   }
   // todo: renmae to indexOfFirst?
-  indexOf(firstAtom) {
-    if (!this.has(firstAtom)) return -1
+  indexOf(cue) {
+    if (!this.has(cue)) return -1
     const length = this.length
     const particles = this._getSubparticlesArray()
     for (let index = 0; index < length; index++) {
-      if (particles[index].firstAtom === firstAtom) return index
+      if (particles[index].cue === cue) return index
     }
   }
   // todo: rename this. it is a particular type of object.
   toObject() {
     return this._toObject()
   }
-  getFirstAtoms() {
-    return this.map(particle => particle.firstAtom)
+  getCues() {
+    return this.map(particle => particle.cue)
   }
-  _makeIndex(startAt = 0) {
-    if (!this._index || !startAt) this._index = {}
+  _makeCueIndex(startAt = 0) {
+    if (!this._cueIndex || !startAt) this._cueIndex = {}
     const particles = this._getSubparticlesArray()
-    const newIndex = this._index
+    const newIndex = this._cueIndex
     const length = particles.length
     for (let index = startAt; index < length; index++) {
-      newIndex[particles[index].firstAtom] = index
+      newIndex[particles[index].cue] = index
     }
     return newIndex
   }
@@ -15711,13 +15714,13 @@ class Particle extends AbstractParticle {
   clone(subparticles = this.subparticlesToString(), line = this.getLine()) {
     return new this.constructor(subparticles, line)
   }
-  hasFirstAtom(firstAtom) {
-    return this._hasFirstAtom(firstAtom)
+  hasCue(cue) {
+    return this._hasCue(cue)
   }
-  has(firstAtomPath) {
+  has(cuePath) {
     const edgeSymbol = this.edgeSymbol
-    if (!firstAtomPath.includes(edgeSymbol)) return this.hasFirstAtom(firstAtomPath)
-    const parts = firstAtomPath.split(edgeSymbol)
+    if (!cuePath.includes(edgeSymbol)) return this.hasCue(cuePath)
+    const parts = cuePath.split(edgeSymbol)
     const next = this.getParticle(parts.shift())
     if (!next) return false
     return next.has(parts.join(edgeSymbol))
@@ -15726,8 +15729,8 @@ class Particle extends AbstractParticle {
     const needle = particle.toString()
     return this.getSubparticles().some(particle => particle.toString() === needle)
   }
-  _hasFirstAtom(firstAtom) {
-    return this._getIndex()[firstAtom] !== undefined
+  _hasCue(cue) {
+    return this._getCueIndex()[cue] !== undefined
   }
   map(fn) {
     return this.getSubparticles().map(fn)
@@ -15780,8 +15783,8 @@ class Particle extends AbstractParticle {
     delete this._quickCache
   }
   // todo: protected?
-  _clearIndex() {
-    delete this._index
+  _clearCueIndex() {
+    delete this._cueIndex
     this.clearQuickCache()
   }
   slice(start, end) {
@@ -15891,20 +15894,20 @@ class Particle extends AbstractParticle {
   // todo: this is slow.
   extend(particleOrStr) {
     const particle = particleOrStr instanceof Particle ? particleOrStr : new Particle(particleOrStr)
-    const usedFirstAtoms = new Set()
+    const usedCues = new Set()
     particle.forEach(sourceParticle => {
-      const firstAtom = sourceParticle.firstAtom
+      const cue = sourceParticle.cue
       let targetParticle
-      const isAnArrayNotMap = usedFirstAtoms.has(firstAtom)
-      if (!this.has(firstAtom)) {
-        usedFirstAtoms.add(firstAtom)
+      const isAnArrayNotMap = usedCues.has(cue)
+      if (!this.has(cue)) {
+        usedCues.add(cue)
         this.appendLineAndSubparticles(sourceParticle.getLine(), sourceParticle.subparticlesToString())
         return true
       }
       if (isAnArrayNotMap) targetParticle = this.appendLine(sourceParticle.getLine())
       else {
-        targetParticle = this.touchParticle(firstAtom).setContent(sourceParticle.content)
-        usedFirstAtoms.add(firstAtom)
+        targetParticle = this.touchParticle(cue).setContent(sourceParticle.content)
+        usedCues.add(cue)
       }
       if (sourceParticle.length) targetParticle.extend(sourceParticle)
     })
@@ -15983,7 +15986,7 @@ class Particle extends AbstractParticle {
   }
   setContent(content) {
     if (content === this.content) return this
-    const newArray = [this.firstAtom]
+    const newArray = [this.cue]
     if (content !== undefined) {
       content = content.toString()
       if (content.match(this.particleBreakSymbol)) return this.setContentWithSubparticles(content)
@@ -16015,13 +16018,13 @@ class Particle extends AbstractParticle {
     this.setSubparticles(subparticles)
     return this
   }
-  setFirstAtom(firstAtom) {
-    return this.setAtom(0, firstAtom)
+  setCue(cue) {
+    return this.setAtom(0, cue)
   }
   setLine(line) {
     if (line === this.getLine()) return this
     // todo: clear parent TMTimes
-    this.parent._clearIndex()
+    this.parent._clearCueIndex()
     this._setLine(line)
     this._updateLineModifiedTimeAndTriggerEvent()
     return this
@@ -16037,8 +16040,8 @@ class Particle extends AbstractParticle {
   destroy() {
     this.parent._deleteParticle(this)
   }
-  set(firstAtomPath, text) {
-    return this.touchParticle(firstAtomPath).setContentWithSubparticles(text)
+  set(cuePath, text) {
+    return this.touchParticle(cuePath).setContentWithSubparticles(text)
   }
   setFromText(text) {
     if (this.toString() === text) return this
@@ -16104,7 +16107,7 @@ class Particle extends AbstractParticle {
   }
   _deleteByIndexes(indexesToDelete) {
     if (!indexesToDelete.length) return this
-    this._clearIndex()
+    this._clearCueIndex()
     // note: assumes indexesToDelete is in ascending order
     const deletedParticles = indexesToDelete.reverse().map(index => this._getSubparticlesArray().splice(index, 1)[0])
     this._setChildArrayMofifiedTime(this._getProcessTimeInMilliseconds())
@@ -16115,7 +16118,7 @@ class Particle extends AbstractParticle {
     return index > -1 ? this._deleteByIndexes([index]) : 0
   }
   reverse() {
-    this._clearIndex()
+    this._clearCueIndex()
     this._getSubparticlesArray().reverse()
     return this
   }
@@ -16126,61 +16129,61 @@ class Particle extends AbstractParticle {
   }
   sort(fn) {
     this._getSubparticlesArray().sort(fn)
-    this._clearIndex()
+    this._clearCueIndex()
     return this
   }
   invert() {
     this.forEach(particle => particle.atoms.reverse())
     return this
   }
-  _rename(oldFirstAtom, newFirstAtom) {
-    const index = this.indexOf(oldFirstAtom)
+  _rename(oldCue, newCue) {
+    const index = this.indexOf(oldCue)
     if (index === -1) return this
     const particle = this._getSubparticlesArray()[index]
-    particle.setFirstAtom(newFirstAtom)
-    this._clearIndex()
+    particle.setCue(newCue)
+    this._clearCueIndex()
     return this
   }
   // Does not recurse.
   remap(map) {
     this.forEach(particle => {
-      const firstAtom = particle.firstAtom
-      if (map[firstAtom] !== undefined) particle.setFirstAtom(map[firstAtom])
+      const cue = particle.cue
+      if (map[cue] !== undefined) particle.setCue(map[cue])
     })
     return this
   }
-  rename(oldFirstAtom, newFirstAtom) {
-    this._rename(oldFirstAtom, newFirstAtom)
+  rename(oldCue, newCue) {
+    this._rename(oldCue, newCue)
     return this
   }
   renameAll(oldName, newName) {
-    this.findParticles(oldName).forEach(particle => particle.setFirstAtom(newName))
+    this.findParticles(oldName).forEach(particle => particle.setCue(newName))
     return this
   }
-  _deleteAllChildParticlesWithFirstAtom(firstAtom) {
-    if (!this.has(firstAtom)) return this
+  _deleteAllChildParticlesWithCue(cue) {
+    if (!this.has(cue)) return this
     const allParticles = this._getSubparticlesArray()
     const indexesToDelete = []
     allParticles.forEach((particle, index) => {
-      if (particle.firstAtom === firstAtom) indexesToDelete.push(index)
+      if (particle.cue === cue) indexesToDelete.push(index)
     })
     return this._deleteByIndexes(indexesToDelete)
   }
   delete(path = "") {
     const edgeSymbol = this.edgeSymbol
-    if (!path.includes(edgeSymbol)) return this._deleteAllChildParticlesWithFirstAtom(path)
+    if (!path.includes(edgeSymbol)) return this._deleteAllChildParticlesWithCue(path)
     const parts = path.split(edgeSymbol)
-    const nextFirstAtom = parts.pop()
+    const nextCue = parts.pop()
     const targetParticle = this.getParticle(parts.join(edgeSymbol))
-    return targetParticle ? targetParticle._deleteAllChildParticlesWithFirstAtom(nextFirstAtom) : 0
+    return targetParticle ? targetParticle._deleteAllChildParticlesWithCue(nextCue) : 0
   }
-  deleteColumn(firstAtom = "") {
-    this.forEach(particle => particle.delete(firstAtom))
+  deleteColumn(cue = "") {
+    this.forEach(particle => particle.delete(cue))
     return this
   }
   _getNonMaps() {
-    const results = this.topDownArray.filter(particle => particle.hasDuplicateFirstAtoms())
-    if (this.hasDuplicateFirstAtoms()) results.unshift(this)
+    const results = this.topDownArray.filter(particle => particle.hasDuplicateCues())
+    if (this.hasDuplicateCues()) results.unshift(this)
     return results
   }
   replaceParticle(fn) {
@@ -16219,8 +16222,8 @@ class Particle extends AbstractParticle {
     return this
   }
   // todo: add "globalReplace" method? Which runs a global regex or string replace on the Particle as a string?
-  firstAtomSort(firstAtomOrder) {
-    return this._firstAtomSort(firstAtomOrder)
+  cueSort(cueOrder) {
+    return this._cueSort(cueOrder)
   }
   deleteAtomAt(atomIndex) {
     const atoms = this.atoms
@@ -16274,26 +16277,26 @@ class Particle extends AbstractParticle {
     atoms.push(atom)
     return this.setAtoms(atoms)
   }
-  _firstAtomSort(firstAtomOrder, secondarySortFn) {
+  _cueSort(cueOrder, secondarySortFn) {
     const particleAFirst = -1
     const particleBFirst = 1
     const map = {}
-    firstAtomOrder.forEach((atom, index) => {
+    cueOrder.forEach((atom, index) => {
       map[atom] = index
     })
     this.sort((particleA, particleB) => {
-      const valA = map[particleA.firstAtom]
-      const valB = map[particleB.firstAtom]
+      const valA = map[particleA.cue]
+      const valB = map[particleB.cue]
       if (valA > valB) return particleBFirst
       if (valA < valB) return particleAFirst
       return secondarySortFn ? secondarySortFn(particleA, particleB) : 0
     })
     return this
   }
-  _touchParticle(firstAtomPathArray) {
+  _touchParticle(cuePathArray) {
     let contextParticle = this
-    firstAtomPathArray.forEach(firstAtom => {
-      contextParticle = contextParticle.getParticle(firstAtom) || contextParticle.appendLine(firstAtom)
+    cuePathArray.forEach(cue => {
+      contextParticle = contextParticle.getParticle(cue) || contextParticle.appendLine(cue)
     })
     return contextParticle
   }
@@ -16439,9 +16442,9 @@ class Particle extends AbstractParticle {
       else if (!particleA.length) return -1
       else if (!particleB.length) return 1
       for (let index = 0; index < length; index++) {
-        const firstAtom = names[index]
-        const av = particleA.get(firstAtom)
-        const bv = particleB.get(firstAtom)
+        const cue = names[index]
+        const av = particleA.get(cue)
+        const bv = particleB.get(cue)
         if (av > bv) return 1
         else if (av < bv) return -1
       }
@@ -16785,11 +16788,11 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "89.0.0"
+Particle.getVersion = () => "90.1.0"
 class AbstractExtendibleParticle extends Particle {
-  _getFromExtended(firstAtomPath) {
-    const hit = this._getParticleFromExtended(firstAtomPath)
-    return hit ? hit.get(firstAtomPath) : undefined
+  _getFromExtended(cuePath) {
+    const hit = this._getParticleFromExtended(cuePath)
+    return hit ? hit.get(cuePath) : undefined
   }
   _getLineage() {
     const newParticle = new Particle()
@@ -16807,16 +16810,16 @@ class AbstractExtendibleParticle extends Particle {
   _getExtendedParent() {
     return this._getAncestorsArray()[1]
   }
-  _hasFromExtended(firstAtomPath) {
-    return !!this._getParticleFromExtended(firstAtomPath)
+  _hasFromExtended(cuePath) {
+    return !!this._getParticleFromExtended(cuePath)
   }
-  _getParticleFromExtended(firstAtomPath) {
-    return this._getAncestorsArray().find(particle => particle.has(firstAtomPath))
+  _getParticleFromExtended(cuePath) {
+    return this._getAncestorsArray().find(particle => particle.has(cuePath))
   }
-  _getConcatBlockStringFromExtended(firstAtomPath) {
+  _getConcatBlockStringFromExtended(cuePath) {
     return this._getAncestorsArray()
-      .filter(particle => particle.has(firstAtomPath))
-      .map(particle => particle.getParticle(firstAtomPath).subparticlesToString())
+      .filter(particle => particle.has(cuePath))
+      .map(particle => particle.getParticle(cuePath).subparticlesToString())
       .reverse()
       .join("\n")
   }
@@ -16957,7 +16960,7 @@ var ParsersConstants
   ParsersConstants["listDelimiter"] = "listDelimiter"
   ParsersConstants["contentKey"] = "contentKey"
   ParsersConstants["subparticlesKey"] = "subparticlesKey"
-  ParsersConstants["uniqueFirstAtom"] = "uniqueFirstAtom"
+  ParsersConstants["uniqueCue"] = "uniqueCue"
   ParsersConstants["catchAllAtomType"] = "catchAllAtomType"
   ParsersConstants["atomParser"] = "atomParser"
   ParsersConstants["catchAllParser"] = "catchAllParser"
@@ -17004,24 +17007,39 @@ class ParserBackedParticle extends Particle {
     return this.definition.root
   }
   getAutocompleteResults(partialAtom, atomIndex) {
-    return atomIndex === 0 ? this._getAutocompleteResultsForFirstAtom(partialAtom) : this._getAutocompleteResultsForAtom(partialAtom, atomIndex)
+    return atomIndex === 0 ? this._getAutocompleteResultsForCue(partialAtom) : this._getAutocompleteResultsForAtom(partialAtom, atomIndex)
   }
   makeError(message) {
     return new ParserDefinedError(this, message)
   }
+  usesParser(parserId) {
+    return !!this.parserIdIndex[parserId]
+  }
+  get parserIdIndex() {
+    if (this._parserIdIndex) return this._parserIdIndex
+    const index = {}
+    this._parserIdIndex = index
+    for (let particle of this.getTopDownArrayIterator()) {
+      Array.from(particle.definition._getAncestorSet()).forEach(id => {
+        if (!index[id]) index[id] = []
+        index[id].push(particle)
+      })
+    }
+    return index
+  }
   get particleIndex() {
-    // StringMap<int> {firstAtom: index}
-    // When there are multiple tails with the same firstAtom, _index stores the last content.
+    // StringMap<int> {cue: index}
+    // When there are multiple tails with the same cue, index stores the last content.
     // todo: change the above behavior: when a collision occurs, create an array.
     return this._particleIndex || this._makeParticleIndex()
   }
-  _clearIndex() {
+  _clearCueIndex() {
     delete this._particleIndex
-    return super._clearIndex()
+    return super._clearCueIndex()
   }
-  _makeIndex(startAt = 0) {
+  _makeCueIndex(startAt = 0) {
     if (this._particleIndex) this._makeParticleIndex(startAt)
-    return super._makeIndex(startAt)
+    return super._makeCueIndex(startAt)
   }
   _makeParticleIndex(startAt = 0) {
     if (!this._particleIndex || !startAt) this._particleIndex = {}
@@ -17044,13 +17062,13 @@ class ParserBackedParticle extends Particle {
     return this.definition._doesExtend(parserId)
   }
   _getErrorParserErrors() {
-    return [this.firstAtom ? new UnknownParserError(this) : new BlankLineError(this)]
+    return [this.cue ? new UnknownParserError(this) : new BlankLineError(this)]
   }
   _getBlobParserCatchAllParser() {
     return BlobParser
   }
-  _getAutocompleteResultsForFirstAtom(partialAtom) {
-    const keywordMap = this.definition.firstAtomMapWithDefinitions
+  _getAutocompleteResultsForCue(partialAtom) {
+    const keywordMap = this.definition.cueMapWithDefinitions
     let keywords = Object.keys(keywordMap)
     if (partialAtom) keywords = keywords.filter(keyword => keyword.includes(partialAtom))
     return keywords
@@ -17092,7 +17110,7 @@ class ParserBackedParticle extends Particle {
   }
   get requiredParticleErrors() {
     const errors = []
-    Object.values(this.definition.firstAtomMapWithDefinitions).forEach(def => {
+    Object.values(this.definition.cueMapWithDefinitions).forEach(def => {
       if (def.isRequired() && !this.particleIndex[def.id]) errors.push(new MissingRequiredParserError(this, def.id))
     })
     return errors
@@ -17151,7 +17169,7 @@ class ParserBackedParticle extends Particle {
       new Set(
         this.getAllErrors()
           .filter(err => err instanceof UnknownParserError)
-          .map(err => err.getParticle().firstAtom)
+          .map(err => err.getParticle().cue)
       )
     )
   }
@@ -17374,7 +17392,7 @@ class ParserBackedParticle extends Particle {
     return this.definition._isBlobParser()
   }
   get isArrayElement() {
-    return this.definition._hasFromExtended(ParsersConstants.uniqueFirstAtom) ? false : !this.definition.isSingle
+    return this.definition._hasFromExtended(ParsersConstants.uniqueCue) ? false : !this.definition.isSingle
   }
   get list() {
     return this.listDelimiter ? this.content.split(this.listDelimiter) : super.list
@@ -17388,7 +17406,7 @@ class ParserBackedParticle extends Particle {
     return this.content
   }
   get typedTuple() {
-    const key = this.firstAtom
+    const key = this.cue
     if (this.subparticlesAreTextBlob) return [key, this.subparticlesToString()]
     const { typedContent, contentKey, subparticlesKey } = this
     if (contentKey || subparticlesKey) {
@@ -17811,7 +17829,7 @@ class AbstractParticleError {
       line: this.lineNumber,
       atom: this.atomIndex,
       suggestion: this.suggestionMessage,
-      path: this.getParticle().getFirstAtomPath(),
+      path: this.getParticle().getCuePath(),
       message: this.message
     }
   }
@@ -17851,21 +17869,21 @@ class UnknownParserError extends AbstractParticleError {
   get message() {
     const particle = this.getParticle()
     const parentParticle = particle.parent
-    const options = parentParticle._getParser().getFirstAtomOptions()
-    return super.message + ` Invalid parser "${particle.firstAtom}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
+    const options = parentParticle._getParser().getCueOptions()
+    return super.message + ` Invalid parser "${particle.cue}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
   }
   get atomSuggestion() {
     const particle = this.getParticle()
     const parentParticle = particle.parent
     return Utils.didYouMean(
-      particle.firstAtom,
+      particle.cue,
       parentParticle.getAutocompleteResults("", 0).map(option => option.text)
     )
   }
   get suggestionMessage() {
     const suggestion = this.atomSuggestion
     const particle = this.getParticle()
-    if (suggestion) return `Change "${particle.firstAtom}" to "${suggestion}"`
+    if (suggestion) return `Change "${particle.cue}" to "${suggestion}"`
     return ""
   }
   applySuggestion() {
@@ -17911,7 +17929,7 @@ class MissingRequiredParserError extends AbstractParticleError {
 }
 class ParserUsedMultipleTimesError extends AbstractParticleError {
   get message() {
-    return super.message + ` Multiple "${this.getParticle().firstAtom}" found.`
+    return super.message + ` Multiple "${this.getParticle().cue}" found.`
   }
   get suggestionMessage() {
     return `Delete line ${this.lineNumber}`
@@ -18274,7 +18292,7 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
       ParsersConstants.listDelimiter,
       ParsersConstants.contentKey,
       ParsersConstants.subparticlesKey,
-      ParsersConstants.uniqueFirstAtom,
+      ParsersConstants.uniqueCue,
       ParsersConstants.uniqueLine,
       ParsersConstants.pattern,
       ParsersConstants.baseParser,
@@ -18302,12 +18320,12 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
   toTypeScriptInterface(used = new Set()) {
     let subparticlesInterfaces = []
     let properties = []
-    const inScope = this.firstAtomMapWithDefinitions
+    const inScope = this.cueMapWithDefinitions
     const thisId = this.id
     used.add(thisId)
     Object.keys(inScope).forEach(key => {
       const def = inScope[key]
-      const map = def.firstAtomMapWithDefinitions
+      const map = def.cueMapWithDefinitions
       const id = def.id
       const optionalTag = def.isRequired() ? "" : "?"
       const escapedKey = key.match(/\?/) ? `"${key}"` : key
@@ -18366,9 +18384,9 @@ ${properties.join("\n")}
   get regexMatch() {
     return this.get(ParsersConstants.pattern)
   }
-  get firstAtomEnumOptions() {
-    const firstAtomDef = this._getMyAtomTypeDefs()[0]
-    return firstAtomDef ? firstAtomDef._getEnumOptions() : undefined
+  get cueEnumOptions() {
+    const cueDef = this._getMyAtomTypeDefs()[0]
+    return cueDef ? cueDef._getEnumOptions() : undefined
   }
   get languageDefinitionProgram() {
     return this.root
@@ -18377,13 +18395,13 @@ ${properties.join("\n")}
     const hasJsCode = this.has(ParsersConstants.javascript)
     return hasJsCode ? this.getParticle(ParsersConstants.javascript).subparticlesToString() : ""
   }
-  get firstAtomMapWithDefinitions() {
-    if (!this._cache_firstAtomToParticleDefMap) this._cache_firstAtomToParticleDefMap = this._createParserInfo(this._getInScopeParserIds()).firstAtomMap
-    return this._cache_firstAtomToParticleDefMap
+  get cueMapWithDefinitions() {
+    if (!this._cache_cueToParticleDefMap) this._cache_cueToParticleDefMap = this._createParserInfo(this._getInScopeParserIds()).cueMap
+    return this._cache_cueToParticleDefMap
   }
   // todo: remove
-  get runTimeFirstAtomsInScope() {
-    return this._getParser().getFirstAtomOptions()
+  get runTimeCuesInScope() {
+    return this._getParser().getCueOptions()
   }
   _getMyAtomTypeDefs() {
     const requiredAtoms = this.get(ParsersConstants.atoms)
@@ -18408,7 +18426,7 @@ ${properties.join("\n")}
   }
   _createParserInfo(parserIdsInScope) {
     const result = {
-      firstAtomMap: {},
+      cueMap: {},
       regexTests: []
     }
     if (!parserIdsInScope.length) return result
@@ -18422,17 +18440,17 @@ ${properties.join("\n")}
         const def = allProgramParserDefinitionsMap[parserId]
         const regex = def.regexMatch
         const cue = def.cueIfAny
-        const enumOptions = def.firstAtomEnumOptions
+        const enumOptions = def.cueEnumOptions
         if (regex) result.regexTests.push({ regex: regex, parser: def.parserIdFromDefinition })
-        else if (cue) result.firstAtomMap[cue] = def
+        else if (cue) result.cueMap[cue] = def
         else if (enumOptions) {
-          enumOptions.forEach(option => (result.firstAtomMap[option] = def))
+          enumOptions.forEach(option => (result.cueMap[option] = def))
         }
       })
     return result
   }
   get topParserDefinitions() {
-    const arr = Object.values(this.firstAtomMapWithDefinitions)
+    const arr = Object.values(this.cueMapWithDefinitions)
     arr.sort(Utils.makeSortByFn(definition => definition.popularity))
     arr.reverse()
     return arr
@@ -18498,17 +18516,15 @@ ${properties.join("\n")}
       // todo: do we need this?
       return "createParserCombinator() { return new Particle.ParserCombinator(this._getBlobParserCatchAllParser())}"
     const parserInfo = this._createParserInfo(this._getMyInScopeParserIds())
-    const myFirstAtomMap = parserInfo.firstAtomMap
+    const myCueMap = parserInfo.cueMap
     const regexRules = parserInfo.regexTests
     // todo: use constants in first atom maps?
     // todo: cache the super extending?
-    const firstAtoms = Object.keys(myFirstAtomMap)
-    const hasFirstAtoms = firstAtoms.length
+    const cues = Object.keys(myCueMap)
+    const hasCues = cues.length
     const catchAllParser = this.catchAllParserToJavascript
-    if (!hasFirstAtoms && !catchAllParser && !regexRules.length) return ""
-    const firstAtomsStr = hasFirstAtoms
-      ? `Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {` + firstAtoms.map(firstAtom => `"${firstAtom}" : ${myFirstAtomMap[firstAtom].parserIdFromDefinition}`).join(",\n") + "})"
-      : "undefined"
+    if (!hasCues && !catchAllParser && !regexRules.length) return ""
+    const cuesStr = hasCues ? `Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {` + cues.map(cue => `"${cue}" : ${myCueMap[cue].parserIdFromDefinition}`).join(",\n") + "})" : "undefined"
     const regexStr = regexRules.length
       ? `[${regexRules
           .map(rule => {
@@ -18519,7 +18535,7 @@ ${properties.join("\n")}
     const catchAllStr = catchAllParser ? catchAllParser : this._amIRoot() ? `this._getBlobParserCatchAllParser()` : "undefined"
     const scopedParserJavascript = this.myScopedParserDefinitions.map(def => def.asJavascriptClass).join("\n\n")
     return `createParserCombinator() {${scopedParserJavascript}
-  return new Particle.ParserCombinator(${catchAllStr}, ${firstAtomsStr}, ${regexStr})
+  return new Particle.ParserCombinator(${catchAllStr}, ${cuesStr}, ${regexStr})
   }`
   }
   get myScopedParserDefinitions() {
@@ -18563,9 +18579,9 @@ ${properties.join("\n")}
   get lineHints() {
     return this.atomParser.lineHints
   }
-  isOrExtendsAParserInScope(firstAtomsInScope) {
+  isOrExtendsAParserInScope(cuesInScope) {
     const chain = this._getParserInheritanceSet()
-    return firstAtomsInScope.some(firstAtom => chain.has(firstAtom))
+    return cuesInScope.some(cue => chain.has(cue))
   }
   isTerminalParser() {
     return !this._getFromExtended(ParsersConstants.inScope) && !this._getFromExtended(ParsersConstants.catchAllParser)
@@ -18575,7 +18591,7 @@ ${properties.join("\n")}
     if (regexMatch) return `'${regexMatch}'`
     const cueMatch = this.cueIfAny
     if (cueMatch) return `'^ *${Utils.escapeRegExp(cueMatch)}(?: |$)'`
-    const enumOptions = this.firstAtomEnumOptions
+    const enumOptions = this.cueEnumOptions
     if (enumOptions) return `'^ *(${Utils.escapeRegExp(enumOptions.join("|"))})(?: |$)'`
   }
   // todo: refactor. move some parts to atomParser?
@@ -18585,11 +18601,11 @@ ${properties.join("\n")}
     const atomParser = this.atomParser
     const requiredAtomTypeIds = atomParser.getRequiredAtomTypeIds()
     const catchAllAtomTypeId = atomParser.catchAllAtomTypeId
-    const firstAtomTypeDef = program.getAtomTypeDefinitionById(requiredAtomTypeIds[0])
-    const firstAtomPaint = (firstAtomTypeDef ? firstAtomTypeDef.paint : defaultPaint) + "." + this.parserIdFromDefinition
+    const cueTypeDef = program.getAtomTypeDefinitionById(requiredAtomTypeIds[0])
+    const cuePaint = (cueTypeDef ? cueTypeDef.paint : defaultPaint) + "." + this.parserIdFromDefinition
     const topHalf = ` '${this.parserIdFromDefinition}':
   - match: ${this.sublimeMatchLine}
-    scope: ${firstAtomPaint}`
+    scope: ${cuePaint}`
     if (catchAllAtomTypeId) requiredAtomTypeIds.push(catchAllAtomTypeId)
     if (!requiredAtomTypeIds.length) return topHalf
     const captures = requiredAtomTypeIds
@@ -19112,7 +19128,7 @@ class UnknownParsersProgram extends Particle {
     const rootParticle = new Particle(`${parsersName}
  ${ParsersConstants.root}`)
     // note: right now we assume 1 global atomTypeMap and parserMap per parsers. But we may have scopes in the future?
-    const rootParticleNames = this.getFirstAtoms()
+    const rootParticleNames = this.getCues()
       .filter(identity => identity)
       .map(atom => HandParsersProgram.makeParserId(atom))
     rootParticle
@@ -19124,28 +19140,28 @@ class UnknownParsersProgram extends Particle {
   _renameIntegerKeywords(clone) {
     // todo: why are we doing this?
     for (let particle of clone.getTopDownArrayIterator()) {
-      const firstAtomIsAnInteger = !!particle.firstAtom.match(/^\d+$/)
-      const parentFirstAtom = particle.parent.firstAtom
-      if (firstAtomIsAnInteger && parentFirstAtom) particle.setFirstAtom(HandParsersProgram.makeParserId(parentFirstAtom + UnknownParsersProgram._subparticleSuffix))
+      const cueIsAnInteger = !!particle.cue.match(/^\d+$/)
+      const parentCue = particle.parent.cue
+      if (cueIsAnInteger && parentCue) particle.setCue(HandParsersProgram.makeParserId(parentCue + UnknownParsersProgram._subparticleSuffix))
     }
   }
   _getKeywordMaps(clone) {
     const keywordsToChildKeywords = {}
     const keywordsToParticleInstances = {}
     for (let particle of clone.getTopDownArrayIterator()) {
-      const firstAtom = particle.firstAtom
-      if (!keywordsToChildKeywords[firstAtom]) keywordsToChildKeywords[firstAtom] = {}
-      if (!keywordsToParticleInstances[firstAtom]) keywordsToParticleInstances[firstAtom] = []
-      keywordsToParticleInstances[firstAtom].push(particle)
-      particle.forEach(subparticle => (keywordsToChildKeywords[firstAtom][subparticle.firstAtom] = true))
+      const cue = particle.cue
+      if (!keywordsToChildKeywords[cue]) keywordsToChildKeywords[cue] = {}
+      if (!keywordsToParticleInstances[cue]) keywordsToParticleInstances[cue] = []
+      keywordsToParticleInstances[cue].push(particle)
+      particle.forEach(subparticle => (keywordsToChildKeywords[cue][subparticle.cue] = true))
     }
     return { keywordsToChildKeywords: keywordsToChildKeywords, keywordsToParticleInstances: keywordsToParticleInstances }
   }
-  _inferParserDef(firstAtom, globalAtomTypeMap, subparticleFirstAtoms, instances) {
+  _inferParserDef(cue, globalAtomTypeMap, subparticleCues, instances) {
     const edgeSymbol = this.edgeSymbol
-    const parserId = HandParsersProgram.makeParserId(firstAtom)
+    const parserId = HandParsersProgram.makeParserId(cue)
     const particleDefParticle = new Particle(parserId).particleAt(0)
-    const subparticleParserIds = subparticleFirstAtoms.map(atom => HandParsersProgram.makeParserId(atom))
+    const subparticleParserIds = subparticleCues.map(atom => HandParsersProgram.makeParserId(atom))
     if (subparticleParserIds.length) particleDefParticle.touchParticle(ParsersConstants.inScope).setAtomsFrom(1, subparticleParserIds)
     const atomsForAllInstances = instances
       .map(line => line.content)
@@ -19158,7 +19174,7 @@ class UnknownParsersProgram extends Particle {
     let atomTypeIds = []
     for (let atomIndex = 0; atomIndex < maxAtomsOnLine; atomIndex++) {
       const atomType = this._getBestAtomType(
-        firstAtom,
+        cue,
         instances.length,
         maxAtomsOnLine,
         atomsForAllInstances.map(atoms => atoms[atomIndex])
@@ -19173,8 +19189,8 @@ class UnknownParsersProgram extends Particle {
         atomTypeIds.pop()
       }
     }
-    const needsCueProperty = !firstAtom.endsWith(UnknownParsersProgram._subparticleSuffix + ParsersConstants.parserSuffix) // todo: cleanup
-    if (needsCueProperty) particleDefParticle.set(ParsersConstants.cue, firstAtom)
+    const needsCueProperty = !cue.endsWith(UnknownParsersProgram._subparticleSuffix + ParsersConstants.parserSuffix) // todo: cleanup
+    if (needsCueProperty) particleDefParticle.set(ParsersConstants.cue, cue)
     if (catchAllAtomType) particleDefParticle.set(ParsersConstants.catchAllAtomType, catchAllAtomType)
     const atomLine = atomTypeIds.slice()
     atomLine.unshift(PreludeAtomTypeIds.keywordAtom)
@@ -19188,7 +19204,7 @@ class UnknownParsersProgram extends Particle {
   //    const rootParticle = new Particle(`${parsersName}
   // ${ParsersConstants.root}`)
   //    // note: right now we assume 1 global atomTypeMap and parserMap per parsers. But we may have scopes in the future?
-  //    const rootParticleNames = this.getFirstAtoms().map(atom => HandParsersProgram.makeParserId(atom))
+  //    const rootParticleNames = this.getCues().map(atom => HandParsersProgram.makeParserId(atom))
   //    rootParticle
   //      .particleAt(0)
   //      .touchParticle(ParsersConstants.inScope)
@@ -19203,7 +19219,7 @@ class UnknownParsersProgram extends Particle {
     globalAtomTypeMap.set(PreludeAtomTypeIds.keywordAtom, undefined)
     const parserDefs = Object.keys(keywordsToChildKeywords)
       .filter(identity => identity)
-      .map(firstAtom => this._inferParserDef(firstAtom, globalAtomTypeMap, Object.keys(keywordsToChildKeywords[firstAtom]), keywordsToParticleInstances[firstAtom]))
+      .map(cue => this._inferParserDef(cue, globalAtomTypeMap, Object.keys(keywordsToChildKeywords[cue]), keywordsToParticleInstances[cue]))
     const atomTypeDefs = []
     globalAtomTypeMap.forEach((def, id) => atomTypeDefs.push(def ? def : id))
     const particleBreakSymbol = this.particleBreakSymbol
@@ -19217,7 +19233,7 @@ class UnknownParsersProgram extends Particle {
     const program = new rootParser(code)
     return program.format().toString()
   }
-  _getBestAtomType(firstAtom, instanceCount, maxAtomsOnLine, allValues) {
+  _getBestAtomType(cue, instanceCount, maxAtomsOnLine, allValues) {
     const asSet = new Set(allValues)
     const edgeSymbol = this.edgeSymbol
     const values = Array.from(asSet).filter(identity => identity)
@@ -19244,8 +19260,8 @@ class UnknownParsersProgram extends Particle {
     const enumLimit = 30
     if (instanceCount > 1 && maxAtomsOnLine === 1 && allValues.length > asSet.size && asSet.size < enumLimit)
       return {
-        atomTypeId: HandParsersProgram.makeAtomTypeId(firstAtom),
-        atomTypeDefinition: `${HandParsersProgram.makeAtomTypeId(firstAtom)}
+        atomTypeId: HandParsersProgram.makeAtomTypeId(cue),
+        atomTypeDefinition: `${HandParsersProgram.makeAtomTypeId(cue)}
  enum ${values.join(edgeSymbol)}`
       }
     return { atomTypeId: PreludeAtomTypeIds.anyAtom }
@@ -19604,7 +19620,7 @@ window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
     createParserCombinator() {
       return new Particle.ParserCombinator(
         errorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
           blockquote: htmlTagParser,
           colgroup: htmlTagParser,
           datalist: htmlTagParser,
@@ -19787,12 +19803,12 @@ htmlTagParser
   isHtmlTagParser = true
   getTag() {
    // we need to remove the "Tag" bit to handle the style and title attribute/tag conflict.
-   const firstAtom = this.firstAtom
+   const cue = this.cue
    const map = {
     titleTag: "title",
     styleTag: "style"
    }
-   return map[firstAtom] || firstAtom
+   return map[cue] || cue
   }
   _getHtmlJoinByCharacter() {
    return ""
@@ -19814,7 +19830,7 @@ htmlTagParser
     var elem = document.createElement(this.getTag())
     elem.setAttribute("stumpUid", this._getUid())
     this.filter(particle => particle.isAttributeParser)
-      .forEach(subparticle => elem.setAttribute(subparticle.firstAtom, subparticle.content))
+      .forEach(subparticle => elem.setAttribute(subparticle.cue, subparticle.content))
     elem.innerHTML = this.has("bern") ? this.getParticle("bern").subparticlesToString() : this._getOneLiner()
     this.filter(particle => particle.isHtmlTagParser)
       .forEach(subparticle => elem.appendChild(subparticle.domElement))
@@ -19901,11 +19917,11 @@ htmlTagParser
      .includes(line)
    )
   }
-  findStumpParticleByFirstAtom(firstAtom) {
-   return this._findStumpParticlesByBase(firstAtom)[0]
+  findStumpParticleByCue(cue) {
+   return this._findStumpParticlesByBase(cue)[0]
   }
-  _findStumpParticlesByBase(firstAtom) {
-   return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstAtom === firstAtom)
+  _findStumpParticlesByBase(cue) {
+   return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.cue === cue)
   }
   hasLine(line) {
    return this.getSubparticles().some(particle => particle.getLine() === line)
@@ -19966,7 +19982,7 @@ htmlAttributeParser
   }
   getTextContent() {return ""}
   getAttribute() {
-   return \` \${this.firstAtom}="\${this.content}"\`
+   return \` \${this.cue}="\${this.content}"\`
   }
  boolean isAttributeParser true
  boolean isTileAttribute true
@@ -20019,7 +20035,7 @@ bernParser
     createParserCombinator() {
       return new Particle.ParserCombinator(
         undefined,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
           blockquote: htmlTagParser,
           colgroup: htmlTagParser,
           datalist: htmlTagParser,
@@ -20320,12 +20336,12 @@ bernParser
     isHtmlTagParser = true
     getTag() {
       // we need to remove the "Tag" bit to handle the style and title attribute/tag conflict.
-      const firstAtom = this.firstAtom
+      const cue = this.cue
       const map = {
         titleTag: "title",
         styleTag: "style"
       }
-      return map[firstAtom] || firstAtom
+      return map[cue] || cue
     }
     _getHtmlJoinByCharacter() {
       return ""
@@ -20346,7 +20362,7 @@ bernParser
     get domElement() {
       var elem = document.createElement(this.getTag())
       elem.setAttribute("stumpUid", this._getUid())
-      this.filter(particle => particle.isAttributeParser).forEach(subparticle => elem.setAttribute(subparticle.firstAtom, subparticle.content))
+      this.filter(particle => particle.isAttributeParser).forEach(subparticle => elem.setAttribute(subparticle.cue, subparticle.content))
       elem.innerHTML = this.has("bern") ? this.getParticle("bern").subparticlesToString() : this._getOneLiner()
       this.filter(particle => particle.isHtmlTagParser).forEach(subparticle => elem.appendChild(subparticle.domElement))
       return elem
@@ -20432,11 +20448,11 @@ bernParser
           .includes(line)
       )
     }
-    findStumpParticleByFirstAtom(firstAtom) {
-      return this._findStumpParticlesByBase(firstAtom)[0]
+    findStumpParticleByCue(cue) {
+      return this._findStumpParticlesByBase(cue)[0]
     }
-    _findStumpParticlesByBase(firstAtom) {
-      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.firstAtom === firstAtom)
+    _findStumpParticlesByBase(cue) {
+      return this.topDownArray.filter(particle => particle.doesExtend("htmlTagParser") && particle.cue === cue)
     }
     hasLine(line) {
       return this.getSubparticles().some(particle => particle.getLine() === line)
@@ -20512,7 +20528,7 @@ bernParser
       return ""
     }
     getAttribute() {
-      return ` ${this.firstAtom}="${this.content}"`
+      return ` ${this.cue}="${this.content}"`
     }
   }
 
@@ -20562,7 +20578,7 @@ bernParser
 {
   class hakonParser extends ParserBackedParticle {
     createParserCombinator() {
-      return new Particle.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), { comment: commentParser }), undefined)
+      return new Particle.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), { comment: commentParser }), undefined)
     }
     getSelector() {
       return ""
@@ -20634,7 +20650,7 @@ propertyParser
  catchAllParser errorParser
  javascript
   compile(spaces) {
-   return \`\${spaces}\${this.firstAtom}: \${this.content};\`
+   return \`\${spaces}\${this.cue}: \${this.content};\`
   }
  atoms propertyKeywordAtom
 variableParser
@@ -20659,7 +20675,7 @@ selectorParser
  javascript
   getSelector() {
    const parentSelector = this.parent.getSelector()
-   return this.firstAtom
+   return this.cue
     .split(",")
     .map(part => {
      if (part.startsWith("&")) return parentSelector + part.substr(1)
@@ -20693,7 +20709,7 @@ selectorParser
       return this.getAtomsFrom(1)
     }
     compile(spaces) {
-      return `${spaces}${this.firstAtom}: ${this.content};`
+      return `${spaces}${this.cue}: ${this.content};`
     }
   }
 
@@ -20733,7 +20749,7 @@ selectorParser
     createParserCombinator() {
       return new Particle.ParserCombinator(
         selectorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getFirstAtomMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
           "border-bottom-right-radius": propertyParser,
           "transition-timing-function": propertyParser,
           "animation-iteration-count": propertyParser,
@@ -20958,7 +20974,7 @@ selectorParser
     }
     getSelector() {
       const parentSelector = this.parent.getSelector()
-      return this.firstAtom
+      return this.cue
         .split(",")
         .map(part => {
           if (part.startsWith("&")) return parentSelector + part.substr(1)
@@ -21381,12 +21397,12 @@ class AbstractWillowBrowser extends stumpParser {
   getWindowTitle() {
     // todo: deep getParticleByBase/withBase/type/atom or something?
     const particles = this.topDownArray
-    const titleParticle = particles.find(particle => particle.firstAtom === WillowConstants.titleTag)
+    const titleParticle = particles.find(particle => particle.cue === WillowConstants.titleTag)
     return titleParticle ? titleParticle.content : ""
   }
   setWindowTitle(value) {
     const particles = this.topDownArray
-    const headParticle = particles.find(particle => particle.firstAtom === WillowConstants.tags.head)
+    const headParticle = particles.find(particle => particle.cue === WillowConstants.tags.head)
     headParticle.touchParticle(WillowConstants.titleTag).setContent(value)
     return this
   }
@@ -21947,7 +21963,7 @@ class AbstractParticleComponentParser extends ParserBackedParticle {
   _getHtmlOnlyParticles() {
     const particles = []
     this.willowBrowser.getHtmlStumpParticle().deepVisit(particle => {
-      if (particle.firstAtom === "styleTag" || (particle.content || "").startsWith("<svg ")) return false
+      if (particle.cue === "styleTag" || (particle.content || "").startsWith("<svg ")) return false
       particles.push(particle)
     })
     return particles
@@ -21956,7 +21972,7 @@ class AbstractParticleComponentParser extends ParserBackedParticle {
     // todo: cleanup. feels hacky.
     const clone = new Particle(this.willowBrowser.getHtmlStumpParticle().toString())
     clone.topDownArray.forEach(particle => {
-      if (particle.firstAtom === "styleTag" || (particle.content || "").startsWith("<svg ")) particle.destroy()
+      if (particle.cue === "styleTag" || (particle.content || "").startsWith("<svg ")) particle.destroy()
     })
     return clone.toString()
   }
@@ -22178,21 +22194,21 @@ ${new stumpParser(this.toStumpCode()).compile()}
     return this.destroy()
   }
   // todo: move to keyword particle class?
-  toggle(firstAtom, contentOptions) {
-    const currentParticle = this.getParticle(firstAtom)
-    if (!contentOptions) return currentParticle ? currentParticle.unmountAndDestroy() : this.appendLine(firstAtom)
+  toggle(cue, contentOptions) {
+    const currentParticle = this.getParticle(cue)
+    if (!contentOptions) return currentParticle ? currentParticle.unmountAndDestroy() : this.appendLine(cue)
     const currentContent = currentParticle === undefined ? undefined : currentParticle.content
     const index = contentOptions.indexOf(currentContent)
     const newContent = index === -1 || index + 1 === contentOptions.length ? contentOptions[0] : contentOptions[index + 1]
-    this.delete(firstAtom)
-    if (newContent) this.touchParticle(firstAtom).setContent(newContent)
+    this.delete(cue)
+    if (newContent) this.touchParticle(cue).setContent(newContent)
     return newContent
   }
   isMounted() {
     return !!this._htmlStumpParticle
   }
-  toggleAndRender(firstAtom, contentOptions) {
-    this.toggle(firstAtom, contentOptions)
+  toggleAndRender(cue, contentOptions) {
+    this.toggle(cue, contentOptions)
     this.root.renderAndGetRenderReport()
   }
   _getFirstOutdatedDependency(lastRenderedTime = this._getLastRenderedTime() || 0) {
@@ -22240,7 +22256,7 @@ ${new stumpParser(this.toStumpCode()).compile()}
     })
   }
   toStumpLoadingCode() {
-    return `div Loading ${this.firstAtom}...
+    return `div Loading ${this.cue}...
  class ${this.getCssClassNames().join(" ")}
  id ${this.getParticleComponentId()}`
   }
