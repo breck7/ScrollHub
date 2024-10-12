@@ -106,6 +106,7 @@ iframe {
 #fileList {
   margin: 0 10px;
   max-height: 360px;
+  max-width: 200px;
   overflow: auto;
 }
 
