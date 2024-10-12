@@ -27,7 +27,6 @@ class EditorApp {
 
     // Ensure the width does not exceed 784 and is not less than 100
     computedWidth = Math.max(100, Math.min(784, computedWidth))
-    console.log(computedWidth)
     return computedWidth
   }
 
