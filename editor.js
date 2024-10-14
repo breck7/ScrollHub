@@ -328,9 +328,11 @@ class EditorApp {
   }
 
   async createFileCommand() {
-    const fileName = prompt("Enter a filename", "untitled")
+    let fileName = prompt("Enter a filename", "untitled")
     if (!fileName) return ""
     const { folderName } = this
+
+    fileName = fileName.replace(/[^a-zA-Z0-9._\-]/g, "")
 
     const newFileName = fileName.includes(".") ? fileName : fileName + ".scroll"
     const filePath = `${folderName}/${newFileName}`
