@@ -93,13 +93,17 @@ class EditorApp {
     }
   }
 
+  async saveCommand() {
+    await this.saveFile()
+    await this.fetchAndDisplayFileList()
+  }
+
   bindKeyboardShortcuts() {
     const that = this
 
     const keyboardShortcuts = {
       "command+s": () => {
-        console.log("Saved")
-        that.fetchAndDisplayFileList()
+        that.saveCommand()
       },
       "ctrl+n": () => {
         that.createFileCommand()
@@ -111,7 +115,7 @@ class EditorApp {
     Mousetrap.prototype.stopCallback = async function (evt, element, shortcut) {
       if (shortcut === "command+s") {
         // save. refresh preview
-        that.saveFile()
+        that.saveCommand()
         evt.preventDefault()
         return true
       } else if (keyboardShortcuts[shortcut]) {
@@ -222,12 +226,12 @@ class EditorApp {
   }
 
   async deleteFolder() {
-    const userInput = prompt(`To confirm deletion, please type the folder name: ${this.folderName}`)
+    const userInput = prompt(`To delete this entire folder, please type the folder name: ${this.folderName}`)
 
     if (userInput !== this.folderName) return
 
     try {
-      const response = await fetch("/trash", {
+      const response = await fetch("/trash.htm", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
@@ -265,6 +269,7 @@ class EditorApp {
       const data = await response.text()
       const files = data.split("\n")
       this.updateFileList(files)
+      console.log("File list updated")
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)
     }
@@ -322,13 +327,24 @@ class EditorApp {
     }
   }
 
-  createFileCommand() {
+  async createFileCommand() {
     const fileName = prompt("Enter a filename", "untitled")
     if (!fileName) return ""
     const { folderName } = this
 
     const filePath = `${folderName}/${fileName.includes(".") ? fileName : fileName + ".scroll"}`
-    window.location = `write.htm?content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
+
+    const response = await fetch("/write.htm", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: `content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
+    })
+
+    const data = await response.text()
+    console.log(data)
+    window.location = `/edit.html?folderName=${folderName}&fileName=${data}`
   }
 
   setFileContent(value) {
@@ -351,8 +367,6 @@ class EditorApp {
     const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
     this.setFileContent(content)
-
-    this.renderDeleteButton()
   }
 
   bindDeleteButton() {
@@ -361,12 +375,9 @@ class EditorApp {
       e.preventDefault()
 
       const { fileName, folderName } = this
-      const userInput = prompt(`To confirm deletion, please type the file name: ${fileName}`)
+      const userInput = prompt(`To delete this file, please type the file name: ${fileName}`)
 
-      if (userInput !== fileName) {
-        alert("File name did not match. Deletion cancelled.")
-        return
-      }
+      if (userInput !== fileName) return
 
       const filePath = `${folderName}/${fileName}`
 
@@ -377,13 +388,6 @@ class EditorApp {
       const data = await response.text()
       window.location.href = `/edit.html?folderName=${folderName}` // Redirect back to folder
     })
-  }
-
-  renderDeleteButton() {
-    const content = this.codeMirrorInstance.getValue()
-    const deleteLink = document.querySelector(".deleteLink")
-
-    deleteLink.style.display = content.trim() === "" ? "inline" : "none"
   }
 }
 

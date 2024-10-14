@@ -498,7 +498,7 @@ const writeAndCommitFile = async (req, res, filePath, content) => {
     // Run the scroll build and git commands asynchronously
     await execAsync(`scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
-    res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
+    res.send(fileName)
     addStory(req, `updated ${folderName}/${fileName}`)
     updateFolderAndBuildList(folderName)
   } catch (error) {
@@ -665,7 +665,6 @@ app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
   }
 })
 
-app.get("/write.htm", checkWritePermissions, (req, res) => writeAndCommitFile(req, res, decodeURIComponent(req.query.filePath), decodeURIComponent(req.query.content)))
 app.post("/write.htm", checkWritePermissions, (req, res) => writeAndCommitFile(req, res, req.body.filePath, req.body.content))
 
 // Add a route for file uploads
@@ -843,7 +842,7 @@ app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
   }
 })
 
-app.post("/trash", checkWritePermissions, async (req, res) => {
+app.post("/trash.htm", checkWritePermissions, async (req, res) => {
   const folderName = sanitizeFolderName(req.body.folderName)
   if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 

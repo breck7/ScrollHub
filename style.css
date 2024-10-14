@@ -73,6 +73,9 @@ body {
 .duplicateButton {
   color: var(--light-grey);
 }
+.deleteLink {
+  margin-left: 5px;
+}
 
 .duplicateButton:hover {
   text-decoration: underline;
