@@ -332,7 +332,8 @@ class EditorApp {
     if (!fileName) return ""
     const { folderName } = this
 
-    const filePath = `${folderName}/${fileName.includes(".") ? fileName : fileName + ".scroll"}`
+    const newFileName = fileName.includes(".") ? fileName : fileName + ".scroll"
+    const filePath = `${folderName}/${newFileName}`
 
     const response = await fetch("/write.htm", {
       method: "POST",
@@ -342,9 +343,8 @@ class EditorApp {
       body: `content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
     })
 
-    const data = await response.text()
-    console.log(data)
-    window.location = `/edit.html?folderName=${folderName}&fileName=${data}`
+    await response.text()
+    window.location = `/edit.html?folderName=${folderName}&fileName=${newFileName}`
   }
 
   setFileContent(value) {

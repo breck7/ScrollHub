@@ -498,7 +498,7 @@ const writeAndCommitFile = async (req, res, filePath, content) => {
     // Run the scroll build and git commands asynchronously
     await execAsync(`scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
 
-    res.send(fileName)
+    res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
     addStory(req, `updated ${folderName}/${fileName}`)
     updateFolderAndBuildList(folderName)
   } catch (error) {
