@@ -230,7 +230,7 @@ const updateFolder = async folder => {
     created: birthtime || ctime,
     modified: mtime,
     files: fileCount,
-    mb: (fileSize / (1024 * 1024)).toFixed(3),
+    mb: Math.ceil(fileSize / (1024 * 1024)),
     commits: commitCount
   }
 }
