@@ -322,7 +322,7 @@ const buildFromUrl = async (url, folderName, res) => {
     handleCreateError(res, { errorMessage: `Invalid template url.`, folderName, template: url })
     return true
   }
-  await execAsync(`git clone ${url} ${folderName} && cd ${folderName} && scroll build`, { cwd: rootFolder })
+  await execAsync(`git clone ${url} ${folderName} && cd ${folderName} && scroll list | scroll build`, { cwd: rootFolder })
   return false
 }
 
@@ -391,7 +391,7 @@ const runCommand = async (req, res, command) => {
   if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
   try {
-    const { stdout } = await execAsync(`scroll ${command}`, { cwd: folderPath })
+    const { stdout } = await execAsync(`scroll list | scroll ${command}`, { cwd: folderPath })
     res.send(stdout.toString())
   } catch (error) {
     console.error(`Error running '${command}' in '${folderName}':`, error)
@@ -430,7 +430,7 @@ app.post("/:repo.git/*", checkWritePermissions, async (req, res) => {
     // Handle Git pushes asynchronously and build the scroll
     ps.on("close", async code => {
       if (code === 0 && service.action === "push") {
-        await execAsync(`scroll build`, { cwd: repoPath })
+        await execAsync(`scroll list | scroll build`, { cwd: repoPath })
         addStory(req, `pushed ${repo}`)
         updateFolderAndBuildList(repo)
       }
@@ -496,7 +496,7 @@ const writeAndCommitFile = async (req, res, filePath, content) => {
     await fsp.writeFile(filePath, content, "utf8")
 
     // Run the scroll build and git commands asynchronously
-    await execAsync(`scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll build`, { cwd: folderPath })
+    await execAsync(`scroll list | scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'; scroll list | scroll build`, { cwd: folderPath })
 
     res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
     addStory(req, `updated ${folderName}/${fileName}`)
@@ -655,7 +655,7 @@ app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
     addStory(req, `reverted ${folderName}`)
 
     // Rebuild the scroll project
-    await execAsync("scroll build", { cwd: folderPath })
+    await execAsync("scroll list | scroll build", { cwd: folderPath })
 
     res.redirect("/diff.htm/" + folderName)
     updateFolderAndBuildList(folderName)
@@ -692,7 +692,7 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
     await file.mv(filePath)
 
     // Run git and scroll commands asynchronously
-    await execAsync(`git add -f ${fileName}; git commit -m 'Added ${fileName}'; scroll build`, { cwd: folderPath })
+    await execAsync(`git add -f ${fileName}; git commit -m 'Added ${fileName}'; scroll list | scroll build`, { cwd: folderPath })
 
     addStory(req, `uploaded ${fileName} to ${folderName}`)
     res.send("File uploaded successfully")
@@ -752,7 +752,7 @@ app.post("/insert.htm", checkWritePermissions, async (req, res) => {
     // Run git commands
     const clientIp = req.ip || req.connection.remoteAddress
     const hostname = req.hostname?.toLowerCase()
-    await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'; scroll build`, { cwd: folderPath })
+    await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'; scroll list | scroll build`, { cwd: folderPath })
 
     addStory(req, `inserted particles into ${folderPath}/${fileName}`)
 
@@ -831,7 +831,7 @@ app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
     const folderPath = path.dirname(filePath)
 
     await fsp.unlink(filePath)
-    await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'; scroll build`, { cwd: folderPath })
+    await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'; scroll list | scroll build`, { cwd: folderPath })
 
     res.send("File deleted successfully")
     addStory(req, `deleted ${fileName} in ${folderName}`)
@@ -895,7 +895,7 @@ app.post("/rename.htm", checkWritePermissions, async (req, res) => {
     // Run git commands
     const clientIp = req.ip || req.connection.remoteAddress
     const hostname = req.hostname?.toLowerCase()
-    await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'; scroll build`, { cwd: folderPath })
+    await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'; scroll list | scroll build`, { cwd: folderPath })
 
     addStory(req, `renamed ${oldFileName} to ${newFileName} in ${folderName}`)
     res.send("File renamed successfully")
