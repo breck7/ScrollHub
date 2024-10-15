@@ -5,20 +5,22 @@ class Dashboard {
   constructor(inputFile) {
     this.inputFile = inputFile
     this.dailyStats = {}
+    this.folderStats = {}
     this.totalLines = 0
     this.parsedLines = 0
   }
 
   parseLogEntry(entry) {
-    const regex = /^(read|write) ([^ ]+) ([^ ]+) (\d+) (.+)$/
+    const regex = /^(read|write) ([^ ]+) ([^ ]+) (\d+) ([^ ]+) (.+)$/
     const match = entry.match(regex)
     if (match) {
       return {
         method: match[1] === "read" ? "GET" : "POST",
-        path: match[2],
-        ip: match[3],
+        folder: match[2],
+        url: match[3],
         timestamp: new Date(parseInt(match[4])),
-        userAgent: match[5]
+        ip: match[5],
+        userAgent: match[6]
       }
     }
     return null
@@ -32,18 +34,31 @@ class Dashboard {
           reads: 0,
           writes: 0,
           uniqueReaders: new Set(),
+          uniqueWriters: new Set(),
+          folders: new Set()
+        }
+      }
+      if (!this.folderStats[entry.folder]) {
+        this.folderStats[entry.folder] = {
+          reads: 0,
+          writes: 0,
+          uniqueReaders: new Set(),
           uniqueWriters: new Set()
         }
       }
 
+      this.dailyStats[date].folders.add(entry.folder)
+
       if (entry.method === "GET") {
         this.dailyStats[date].reads++
         this.dailyStats[date].uniqueReaders.add(entry.ip)
-        console.log(`Read request from IP: ${entry.ip}`)
+        this.folderStats[entry.folder].reads++
+        this.folderStats[entry.folder].uniqueReaders.add(entry.ip)
       } else if (entry.method === "POST") {
         this.dailyStats[date].writes++
         this.dailyStats[date].uniqueWriters.add(entry.ip)
-        console.log(`Write request from IP: ${entry.ip}`)
+        this.folderStats[entry.folder].writes++
+        this.folderStats[entry.folder].uniqueWriters.add(entry.ip)
       }
     }
   }
@@ -52,13 +67,16 @@ class Dashboard {
     Object.keys(this.dailyStats).forEach(date => {
       this.dailyStats[date].readers = this.dailyStats[date].uniqueReaders.size
       this.dailyStats[date].writers = this.dailyStats[date].uniqueWriters.size
-      console.log(`Date: ${date}`)
-      console.log(`  Unique readers: ${this.dailyStats[date].uniqueReaders.size}`)
-      console.log(`  Reader IPs: ${[...this.dailyStats[date].uniqueReaders].join(", ")}`)
-      console.log(`  Unique writers: ${this.dailyStats[date].uniqueWriters.size}`)
-      console.log(`  Writer IPs: ${[...this.dailyStats[date].uniqueWriters].join(", ")}`)
+      this.dailyStats[date].uniqueFolders = this.dailyStats[date].folders.size
       delete this.dailyStats[date].uniqueReaders
       delete this.dailyStats[date].uniqueWriters
+    })
+
+    Object.keys(this.folderStats).forEach(folder => {
+      this.folderStats[folder].readers = this.folderStats[folder].uniqueReaders.size
+      this.folderStats[folder].writers = this.folderStats[folder].uniqueWriters.size
+      delete this.folderStats[folder].uniqueReaders
+      delete this.folderStats[folder].uniqueWriters
     })
   }
 
@@ -95,15 +113,24 @@ class Dashboard {
   }
 
   get csv() {
-    const csvHeader = "Date,Reads,Readers,Writes,Writers\n"
+    const csvHeader = "Date,Folder,Reads,Readers,Writes,Writers\n"
     const csvRows = Object.entries(this.dailyStats)
-      .map(([date, stats]) => `${date},${stats.reads},${stats.readers},${stats.writes},${stats.writers}`)
+      .flatMap(([date, stats]) =>
+        Array.from(stats.folders).map(folder => {
+          const folderStats = this.folderStats[folder] || { reads: 0, readers: 0, writes: 0, writers: 0 }
+          return `${date},${folder},${folderStats.reads},${folderStats.readers},${folderStats.writes},${folderStats.writers}`
+        })
+      )
       .join("\n")
     return csvHeader + csvRows
   }
 
   getDailyStats() {
     return this.dailyStats
+  }
+
+  getFolderStats() {
+    return this.folderStats
   }
 }
 

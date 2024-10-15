@@ -35,22 +35,55 @@ app.use((req, res, next) => {
   next()
 })
 
-const logFile = path.join(__dirname, "log.txt")
+const globalLogFile = path.join(__dirname, "log.txt")
 
-const logRequest = (req, res, next) => {
+const parseUserAgent = userAgent => {
+  if (!userAgent) return "Unknown"
+
+  // Extract browser and OS
+  const browser = userAgent.match(/(Chrome|Safari|Firefox|Edge|Opera|MSIE|Trident)[\/\s](\d+)/i)
+  const os = userAgent.match(/(Mac OS X|Windows NT|Linux|Android|iOS)[\/\s]?(\d+[\._\d]*)?/i)
+
+  let result = []
+  if (browser) result.push(browser[1] + (browser[2] ? "." + browser[2] : ""))
+  if (os) result.push(os[1].replace(/ /g, "") + (os[2] ? "." + os[2].replace(/_/g, ".") : ""))
+
+  return result.join(" ") || "Other"
+}
+
+const logRequest = async (req, res, next) => {
+  const { hostname, method, url, protocol } = req
   const ip = req.ip || req.connection.remoteAddress
-  const userAgent = req.get("User-Agent") || "Unknown"
-  const log = `${req.method === "GET" ? "read" : "write"} ${req.url} ${ip} ${Date.now()} ${userAgent}\n`
+  const userAgent = parseUserAgent(req.get("User-Agent") || "Unknown")
 
-  fs.appendFile(logFile, log, err => {
+  let folderPart = url.split("/")[1]
+  let folderName = req.body?.folderName || req.query?.folderName
+  if (!folderCache[folderName]) folderName = ""
+  if (!folderName && folderCache[hostname]) folderName = hostname
+  if (!folderName && folderCache[folderPart]) folderName = folderPart
+
+  const logEntry = `${method === "GET" ? "read" : "write"} ${folderName || hostname} ${protocol}://${hostname}${url} ${Date.now()} ${ip} ${userAgent}\n`
+
+  fs.appendFile(globalLogFile, logEntry, err => {
     if (err) console.error("Failed to log request:", err)
   })
+
+  if (folderName && folderCache[folderName]) {
+    const folderPath = path.join(rootFolder, folderName)
+    const folderLogFile = path.join(folderPath, "log.txt")
+    try {
+      await fsp.appendFile(folderLogFile, logEntry)
+    } catch (err) {
+      console.error(`Failed to log request to folder log (${folderLogFile}):`, err)
+    }
+  }
   next()
 }
-app.use(logRequest)
 
 app.use(express.urlencoded({ extended: true }))
 app.use(fileUpload({ limits: { fileSize: maxSize } }))
+app.use(logRequest)
+
 if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
 if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
 
@@ -169,7 +202,7 @@ app.get("/now.htm", (req, res) => {
 
 const { Dashboard } = require("./dashboard.js")
 app.get("/dashboard.csv", async (req, res) => {
-  const dashboard = new Dashboard(logFile)
+  const dashboard = new Dashboard(globalLogFile)
   await dashboard.processLogFile()
   const { csv } = dashboard
   res.setHeader("Content-Type", "text/plain")
