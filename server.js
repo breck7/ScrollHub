@@ -231,7 +231,7 @@ const updateFolder = async folder => {
     modified: mtime,
     files: fileCount,
     mb: Math.ceil(fileSize / (1024 * 1024)),
-    commits: commitCount
+    revisions: commitCount
   }
 }
 
@@ -261,7 +261,7 @@ ${hostname} serves ${folders.length} folders.
 
 table
  compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="diff.htm/{folder}">history</a>
-  select folder folderLink links modified files mb commits
+  select folder folderLink links modified files mb revisions
    orderBy -modified
     rename modified updatedtime
      printTable
