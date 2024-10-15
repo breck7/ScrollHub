@@ -107,7 +107,7 @@ const addStory = (req, message) => {
   const formattedDate = new Date().toLocaleString("en-US", { timeZone: "Pacific/Honolulu" })
   const storyEntry = `${formattedDate} ${clientIp} ${message}\n`
   // Append the new story entry to the story log file
-  fs.appendFile(storyLogFile, storyEntry, err => console.error(err))
+  fs.appendFile(storyLogFile, storyEntry, err => (err ? console.error(err) : ""))
   storyCache = storyEntry + storyCache
 }
 
