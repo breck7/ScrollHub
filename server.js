@@ -979,15 +979,19 @@ app.get("*", async (req, res) => {
   const folderName = getFolderName(req)
   const folderPath = path.join(rootFolder, folderName)
 
-  const notFoundPage = path.join(folderPath, "404.html")
-  await fsp
-    .access(notFoundPage)
-    .then(() => {
-      res.status(404).sendFile(notFoundPage)
-    })
-    .catch(() => {
-      res.status(404).sendFile(path.join(__dirname, "404.html"))
-    })
+  try {
+    const notFoundPage = path.join(folderPath, "404.html")
+    await fsp
+      .access(notFoundPage)
+      .then(() => {
+        res.status(404).sendFile(notFoundPage)
+      })
+      .catch(() => {
+        res.status(404).sendFile(path.join(__dirname, "404.html"))
+      })
+  } catch (err) {
+    res.status(500).send(err)
+  }
 })
 
 const startServers = app => {

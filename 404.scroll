@@ -1,7 +1,7 @@
 buildHtml
 title Page not found
 
-theme gazette
+/gazette.css
 settings.scroll
 
 homeButton /
