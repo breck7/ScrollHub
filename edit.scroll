@@ -19,7 +19,7 @@ header.scroll
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button class="publishButton">Publish</button> <a href="delete.htm" class="deleteLink">Delete</a>
+ <button class="publishButton">Publish</button> <a href="#" target="visit" class="visitLink">Visit</a> <a href="delete.htm" class="deleteLink">Delete</a>
 </div>
 </form>
 // # Commands

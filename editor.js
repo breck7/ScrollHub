@@ -52,6 +52,7 @@ class EditorApp {
     this.fileEditor = document.getElementById("fileEditor")
     document.getElementById("filePathInput").value = this.filePath
     document.getElementById("folderNameInput").value = this.folderName
+    this.updateVisitLink()
     this.loadFileContent()
     this.bindDeleteButton()
 
@@ -65,6 +66,10 @@ class EditorApp {
     this.bindKeyboardShortcuts()
 
     return this
+  }
+
+  updateVisitLink() {
+    document.querySelector(".visitLink").href = this.rootUrl + "/" + this.fileName
   }
 
   async saveFile() {
@@ -369,6 +374,7 @@ class EditorApp {
     const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
     this.setFileContent(content)
+    this.updateVisitLink()
   }
 
   bindDeleteButton() {
