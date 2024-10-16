@@ -1,0 +1,18 @@
+buildHtml
+title Page not found
+
+theme gazette
+settings.scroll
+
+homeButton /
+
+printTitle
+thinColumns 1
+
+Sorry, the url you requested was not found.
+
+If you think there's a bug on our site, please email feedback@scroll.pub or open an issue to let us know. Thank you!
+ https://github.com/breck7/scroll/issues open an issue
+
+center
+scrollVersionLink

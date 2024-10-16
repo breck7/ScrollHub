@@ -53,16 +53,22 @@ const parseUserAgent = userAgent => {
   return result.join(" ") || "Other"
 }
 
+const getFolderName = req => {
+  const folderName = req.body?.folderName || req.query?.folderName
+  if (folderCache[folderName]) return folderName
+
+  if (folderCache[req.hostname]) return req.hostname
+
+  const folderPart = req.url.split("/")[1]
+  if (folderCache[folderPart]) return folderPart
+  return ""
+}
+
 const logRequest = async (req, res, next) => {
   const { hostname, method, url, protocol } = req
   const ip = req.ip || req.connection.remoteAddress
   const userAgent = parseUserAgent(req.get("User-Agent") || "Unknown")
-
-  let folderPart = url.split("/")[1]
-  let folderName = req.body?.folderName || req.query?.folderName
-  if (!folderCache[folderName]) folderName = ""
-  if (!folderName && folderCache[hostname]) folderName = hostname
-  if (!folderName && folderCache[folderPart]) folderName = folderPart
+  const folderName = getFolderName(req)
 
   const logEntry = `${method === "GET" ? "read" : "write"} ${folderName || hostname} ${protocol}://${hostname}${url} ${Date.now()} ${ip} ${userAgent}\n`
 
@@ -967,6 +973,22 @@ const makeCert = async domain => {
   const email = domain + "@hub.scroll.pub"
   await certMaker.makeCertificate(domain, email, __dirname)
 }
+
+//The 404 Route (ALWAYS Keep this as the last route)
+app.get("*", async (req, res) => {
+  const folderName = getFolderName(req)
+  const folderPath = path.join(rootFolder, folderName)
+
+  const notFoundPage = path.join(folderPath, "404.html")
+  await fsp
+    .access(notFoundPage)
+    .then(() => {
+      res.status(404).sendFile(notFoundPage)
+    })
+    .catch(() => {
+      res.status(404).sendFile(path.join(__dirname, "404.html"))
+    })
+})
 
 const startServers = app => {
   const httpServer = http.createServer(app)
