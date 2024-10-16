@@ -30,6 +30,8 @@ const hostname = os.hostname()
 const rootFolder = path.join(__dirname, "folders")
 const trashFolder = path.join(__dirname, "trash")
 
+express.static.mime.define({ "text/plain": ["scroll", "parsers"] })
+
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*")
   next()
@@ -936,26 +938,6 @@ app.post("/rename.htm", checkWritePermissions, async (req, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).send(`An error occurred while renaming the file:\n ${error.toString().replace(/</g, "&lt;")}`)
-  }
-})
-
-// Static file serving comes AFTER our routes, so if someone creates a folder with a route name, our route name wont break.
-// todo: would be nicer to additionally make those folder names reserved, and provide a clientside script to people
-// of what names are taken, for instant feedback.
-
-// Middleware to serve .scroll files as plain text
-// This should come BEFORE the static file serving middleware
-app.use(async (req, res, next) => {
-  if (!req.url.endsWith(".scroll")) return next()
-
-  const filePath = path.join(rootFolder, decodeURIComponent(req.url))
-
-  try {
-    await fsp.access(filePath)
-    res.setHeader("Content-Type", "text/plain; charset=utf-8")
-    res.sendFile(filePath)
-  } catch (err) {
-    next()
   }
 })
 

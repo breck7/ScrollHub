@@ -69,7 +69,7 @@ class EditorApp {
   }
 
   updateVisitLink() {
-    document.querySelector(".visitLink").href = this.rootUrl + "/" + this.fileName
+    document.querySelector(".visitLink").href = this.rootUrl.replace(/\/$/, "") + "/" + this.fileName
   }
 
   async saveFile() {
