@@ -55,12 +55,12 @@ const parseUserAgent = userAgent => {
 
 const getFolderName = req => {
   const folderName = req.body?.folderName || req.query?.folderName
-  if (folderCache[folderName]) return folderName
+  if (folderName && folderCache[folderName]) return folderName
 
-  if (folderCache[req.hostname]) return req.hostname
+  if (req.hostname && folderCache[req.hostname]) return req.hostname
 
   const folderPart = req.url.split("/")[1]
-  if (folderCache[folderPart]) return folderPart
+  if (folderPart && folderCache[folderPart]) return folderPart
   return ""
 }
 
@@ -979,19 +979,15 @@ app.get("*", async (req, res) => {
   const folderName = getFolderName(req)
   const folderPath = path.join(rootFolder, folderName)
 
-  try {
-    const notFoundPage = path.join(folderPath, "404.html")
-    await fsp
-      .access(notFoundPage)
-      .then(() => {
-        res.status(404).sendFile(notFoundPage)
-      })
-      .catch(() => {
-        res.status(404).sendFile(path.join(__dirname, "404.html"))
-      })
-  } catch (err) {
-    res.status(500).send(err)
-  }
+  const notFoundPage = path.join(folderPath, "404.html")
+  await fsp
+    .access(notFoundPage)
+    .then(() => {
+      res.status(404).sendFile(notFoundPage)
+    })
+    .catch(() => {
+      res.status(404).sendFile(path.join(__dirname, "404.html"))
+    })
 })
 
 const startServers = app => {
