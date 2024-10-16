@@ -287,6 +287,10 @@ initCache()
 
 const buildListFile = async () => {
   const folders = Object.values(folderCache)
+  const particles = new Particle(folders)
+  await fsp.writeFile(path.join(__dirname, "folders.csv"), particles.asCsv, "utf8")
+  await fsp.writeFile(path.join(__dirname, "folders.tsv"), particles.asTsv, "utf8")
+  await fsp.writeFile(path.join(__dirname, "folders.json"), JSON.stringify(folders, null, 2), "utf8")
   const scroll = `settings.scroll
 homeButton
 buildHtml
@@ -300,19 +304,22 @@ container 1000px
 ${hostname} serves ${folders.length} folders.
  index.html ${hostname}
 
-table
+JSON | CSV | TSV
+ link folders.json JSON
+ link folders.csv CSV
+ link folders.tsv TSV
+
+table folders.csv
  compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?template={folder}">clone</a> · <a href="diff.htm/{folder}">history</a>
   select folder folderLink links modified files mb revisions
    orderBy -modified
     rename modified updatedtime
      printTable
- data
-  ${new Particle(folders).asCsv.replace(/\n/g, "\n  ")}
 
 endColumns
 tableSearch
 scrollVersionLink`
-  await fsp.writeFile(path.join(__dirname, "list.scroll"), scroll, "utf8")
+  await fsp.writeFile(path.join(__dirname, "folders.scroll"), scroll, "utf8")
   await execAsync(`scroll build`, { cwd: __dirname })
 }
 

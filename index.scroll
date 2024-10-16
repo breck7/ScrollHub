@@ -21,7 +21,7 @@ createForm.scroll
 br 3
 
 center
-<a id="foldersPublished" class="greyText" href="list.html"></a>
+<a id="foldersPublished" class="greyText" href="folders.html"></a>
 <script>
  fetch('/foldersPublished.htm').then(response => response.text()).then(data => document.getElementById('foldersPublished').innerText = `${data} folders`);
  </script>
