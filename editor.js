@@ -226,7 +226,7 @@ class EditorApp {
     document.getElementById("folderNameLink").innerHTML = folderNameText
     document.getElementById("folderNameLink").href = rootUrl
     document.getElementById("gitClone").innerHTML =
-      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · <span title="Requires npm install -g scroll-cli. Or you can modify to do a standard git clone">clone ${folderNameText}</span> · <a href="#" class="deleteLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · <span title="Requires npm install -g scroll-cli. Or you can modify to do a standard git clone">clone ${folderNameText}</span> · <a href="#" class="deleteFolderLink" onclick="window.app.deleteFolder()">delete</a>`
     document.title = `Editing ${folderNameText}`
   }
 

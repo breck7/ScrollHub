@@ -70,7 +70,7 @@ body {
 }
 
 .historyLink,
-.duplicateButton {
+.duplicateButton,.deleteFolderLink {
   color: var(--light-grey);
 }
 .visitLink,
