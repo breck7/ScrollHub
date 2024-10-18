@@ -1061,7 +1061,7 @@ scrollVersionLink`
 
     this.certCache = new Map()
     this.pendingCerts = {}
-    const makeCert = async domain => {
+    this.makeCert = async domain => {
       pendingCerts[domain] = true
       const email = domain + "@hub.scroll.pub"
       await certMaker.makeCertificate(domain, email, __dirname)
@@ -1104,7 +1104,7 @@ scrollVersionLink`
       return sslOptions
     } else {
       if (pendingCerts[hostname]) return
-      makeCert(hostname)
+      this.makeCert(hostname)
       throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
     }
   }
