@@ -1,6 +1,6 @@
 <form method="post" action="create.htm" id="createForm">
 <input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Publish</button>
-<div class="templateButton">Hint: use 2 words to start from a template. For example "blog [folder]".</div>
+<div class="templateButton">Popular templates: blog, paper, gallery, teaser</div>
 <div id="errorMessage"></div>
 <script>
  {

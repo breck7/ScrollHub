@@ -357,6 +357,10 @@ class EditorApp {
   setFileContent(value) {
     this.fileEditor.value = value
     this.codeMirrorInstance.setValue(value)
+    const lines = value.split("\n")
+    const lastLine = lines.pop()
+    this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
+    this.codeMirrorInstance.focus()
   }
 
   get auth() {
