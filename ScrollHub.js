@@ -584,6 +584,7 @@ ${prefix}${hash}<br>
     })
 
     app.post("/trash.htm", checkWritePermissions, async (req, res) => {
+      const { trashFolder } = this
       const folderName = sanitizeFolderName(req.body.folderName)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
@@ -599,7 +600,7 @@ ${prefix}${hash}<br>
         delete folderCache[folderName]
 
         // Remove the zip file from cache if it exists
-        zipCache.delete(folderName)
+        this.zipCache.delete(folderName)
 
         // Rebuild the list file
         this.buildListFile()
