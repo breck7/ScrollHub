@@ -864,7 +864,7 @@ app.get("/:folderName.zip", async (req, res) => {
   addStory(req, `downloaded ${folderName}.zip`)
 })
 
-app.delete("/delete.htm", checkWritePermissions, async (req, res) => {
+app.post("/delete.htm", checkWritePermissions, async (req, res) => {
   const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
   const folderName = path.dirname(filePath).split(path.sep).pop()
 

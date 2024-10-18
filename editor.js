@@ -390,7 +390,7 @@ class EditorApp {
       const filePath = `${folderName}/${fileName}`
 
       const response = await fetch(`/delete.htm?filePath=${encodeURIComponent(filePath)}`, {
-        method: "DELETE"
+        method: "POST"
       })
 
       const data = await response.text()
