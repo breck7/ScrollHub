@@ -1,0 +1,28 @@
+buildConcepts releaseNotes.csv releaseNotes.json releaseNotes.tsv
+buildMeasures releaseNotesMeasures.tsv
+title ScrollHub Release Notes
+
+header.scroll
+printTitle
+## A list of what has changed in ScrollHub releases.
+
+thinColumn
+Download as CSV | TSV | JSON
+ link releaseNotes.csv CSV
+ link releaseNotes.tsv TSV
+ link releaseNotes.json JSON
+
+br
+
+node_modules/scroll-cli/microlangs/changes.parsers
+
+thinColumns 1
+
+📦 0.8.0 10/18/2024
+🎉 refactored code into ScrollHub class and started automated tests
+🎉 refactored templates and creation
+
+endColumns
+
+scrollVersionLink
+footer.scroll
