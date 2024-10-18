@@ -10,8 +10,10 @@
  el.textContent = errorMessage
  el.style.display = errorMessage ? 'block' : "none"
  const folderName = params.get('folderName') || ''
+ const inputEl = document.getElementById("folderName")
  if (folderName)
-    document.getElementById("folderName").value = folderName
+    inputEl.value = folderName
+  inputEl.focus()
  }
  </script>
 </form>

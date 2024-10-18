@@ -203,7 +203,7 @@ class ScrollHub {
         ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
       })
       req.pipe(handlers).pipe(res)
-      addStory(req, `cloned ${repo}`)
+      this.addStory(req, `cloned ${repo}`)
     })
 
     // todo: check pw
@@ -231,12 +231,12 @@ class ScrollHub {
   }
 
   initHistoryRoutes() {
-    const { app } = this
+    const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
     app.get("/history.htm/:folderName", async (req, res) => {
       const folderName = sanitizeFolderName(req.params.folderName)
       const folderPath = path.join(rootFolder, folderName)
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
       try {
         // Get the git log asynchronously and format it as CSV
         const { stdout: gitLog } = await execAsync(`git log --pretty=format:"%h,%an,%ad,%at,%s" --date=short`, { cwd: folderPath })
@@ -252,7 +252,7 @@ class ScrollHub {
     app.get("/diff.htm/:folderName", async (req, res) => {
       const folderName = sanitizeFolderName(req.params.folderName)
       const folderPath = path.join(rootFolder, folderName)
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
       const count = req.query.count || 10
 
       try {
@@ -365,7 +365,7 @@ ${prefix}${hash}<br>
       const targetHash = req.body.hash
       const folderPath = path.join(rootFolder, folderName)
 
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       if (!targetHash || !/^[0-9a-f]{40}$/i.test(targetHash)) return res.status(400).send("Invalid target hash provided")
 
@@ -602,9 +602,9 @@ ${prefix}${hash}<br>
         zipCache.delete(folderName)
 
         // Rebuild the list file
-        buildListFile()
+        this.buildListFile()
 
-        addStory(req, `trashed ${folderName}`)
+        this.addStory(req, `trashed ${folderName}`)
 
         res.send("Folder moved to trash successfully")
       } catch (error) {
@@ -672,7 +672,7 @@ ${prefix}${hash}<br>
 
       if (!zipBuffer) {
         try {
-          zipBuffer = await zipFolder(folderName)
+          zipBuffer = await this.zipFolder(folderName)
           if (!zipBuffer) return res.status(404).send("Folder not found or failed to zip")
         } catch (err) {
           console.error("Error zipping folder:", err)
@@ -685,7 +685,7 @@ ${prefix}${hash}<br>
       res.setHeader("Content-Disposition", `attachment; filename=${folderName}.zip`)
       res.send(zipBuffer)
 
-      addStory(req, `downloaded ${folderName}.zip`)
+      this.addStory(req, `downloaded ${folderName}.zip`)
     })
   }
 
@@ -857,10 +857,11 @@ ${prefix}${hash}<br>
       if (fs.existsSync(destPath)) return
 
       // Copy the template folder to the root folder
-      fs.copySync(sourcePath, destPath)
+      execSync(`cp -R ${sourcePath} ${destPath};`, { cwd: rootFolder })
 
       // Initialize Git repository
       execSync("git init; git add .; git commit -m 'initial ${dir} template'", { cwd: destPath })
+      this.buildFolderSync(dir)
     }
   }
 
@@ -933,6 +934,10 @@ ${prefix}${hash}<br>
     await execAsync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
   }
 
+  buildFolderSync(folderName) {
+    execSync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
+  }
+
   getFolderName(req) {
     const folderName = req.body?.folderName || req.query?.folderName
     if (folderName && this.folderCache[folderName]) return folderName
@@ -969,7 +974,7 @@ JSON | CSV | TSV
  link folders.tsv TSV
 
 table folders.csv
- compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder} ">clone</a> · <a href="diff.htm/{folder}">history</a>
+ compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder}%20">clone</a> · <a href="diff.htm/{folder}">history</a>
   select folder folderLink links modified files mb revisions
    orderBy -modified
     rename modified updatedtime
