@@ -751,6 +751,11 @@ app.post("/upload.htm", checkWritePermissions, async (req, res) => {
   }
 })
 
+app.post("/echo.htm", checkWritePermissions, async (req, res) => {
+  res.setHeader("Content-Type", "text/plain")
+  res.send(req.body)
+})
+
 app.post("/insert.htm", checkWritePermissions, async (req, res) => {
   const folderName = sanitizeFolderName(req.query.folderName)
   const fileName = sanitizeFolderName(req.query.fileName)
