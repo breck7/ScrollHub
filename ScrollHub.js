@@ -101,12 +101,6 @@ class ScrollHub {
 
   enableStaticFileServing() {
     const { app, folderCache, rootFolder } = this
-    // Serve the folders directory from the root URL
-    app.use("/", express.static(rootFolder))
-
-    // Serve the root directory statically
-    app.use(express.static(__dirname))
-
     // New middleware to route domains to the matching folder
     app.use((req, res, next) => {
       const hostname = req.hostname?.toLowerCase()
@@ -115,6 +109,12 @@ class ScrollHub {
       const folderPath = path.join(rootFolder, hostname)
       express.static(folderPath)(req, res, next)
     })
+
+    // Serve the folders directory from the root URL
+    app.use("/", express.static(rootFolder))
+
+    // Serve the root directory statically
+    app.use(express.static(__dirname))
   }
 
   init404Routes() {
