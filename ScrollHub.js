@@ -61,6 +61,7 @@ class ScrollHub {
 
   startAll() {
     this.ensureInstalled()
+    this.ensureTemplatesInstalled()
     this.warmFolderCache()
     this.initVandalProtection()
     this.enableCors()
@@ -836,9 +837,31 @@ ${prefix}${hash}<br>
   }
 
   ensureInstalled() {
-    const { rootFolder, templatesFolder, trashFolder } = this
-    if (!fs.existsSync(rootFolder)) execSync(`cp -R ${templatesFolder} ${rootFolder};`)
+    const { rootFolder, trashFolder } = this
+    if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
     if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
+  }
+
+  ensureTemplatesInstalled() {
+    const { rootFolder, templatesFolder } = this
+    const templateDirs = fs.readdirSync(templatesFolder)
+
+    for (const dir of templateDirs) {
+      const sourcePath = path.join(templatesFolder, dir)
+      const destPath = path.join(rootFolder, dir)
+
+      // Check if it's a directory
+      const stats = fs.statSync(sourcePath)
+      if (!stats.isDirectory()) continue
+
+      if (fs.existsSync(destPath)) return
+
+      // Copy the template folder to the root folder
+      fs.copySync(sourcePath, destPath)
+
+      // Initialize Git repository
+      execSync("git init; git add .; git commit -m 'initial ${dir} template'", { cwd: destPath })
+    }
   }
 
   async updateFolder(folder) {
