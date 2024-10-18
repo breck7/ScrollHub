@@ -1059,6 +1059,7 @@ scrollVersionLink`
     const { CertificateMaker } = require("./CertificateMaker.js")
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
+    this.certCache = new Map()
     this.pendingCerts = {}
     const makeCert = async domain => {
       pendingCerts[domain] = true
@@ -1066,12 +1067,13 @@ scrollVersionLink`
       await certMaker.makeCertificate(domain, email, __dirname)
     }
 
+    const that = this
     // Dynamic HTTPS server using SNI (Server Name Indication)
     const httpsServer = https.createServer(
       {
         SNICallback: (hostname, cb) => {
           try {
-            const sslOptions = loadCertAndKey(hostname.toLowerCase())
+            const sslOptions = that.loadCertAndKey(hostname.toLowerCase())
             cb(null, tls.createSecureContext(sslOptions))
           } catch (err) {
             console.error(`Error setting up SSL for ${hostname}: ${err.message}`)
@@ -1085,35 +1087,32 @@ scrollVersionLink`
     httpsServer.listen(443, () => console.log("HTTPS server running on port 443"))
   }
 
+  loadCertAndKey(hostname) {
+    const { certCache, pendingCerts } = this
+    if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
+
+    const certPath = path.join(__dirname, `${hostname}.crt`)
+    const keyPath = path.join(__dirname, `${hostname}.key`)
+
+    // Check if both cert and key files exist
+    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      const sslOptions = {
+        cert: fs.readFileSync(certPath, "utf8"),
+        key: fs.readFileSync(keyPath, "utf8")
+      }
+      certCache.set(hostname, sslOptions) // Cache the cert and key
+      return sslOptions
+    } else {
+      if (pendingCerts[hostname]) return
+      makeCert(hostname)
+      throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
+    }
+  }
+
   async startServers() {
-    const { app, port, pendingCerts } = this
+    const { app, port } = this
     const httpServer = http.createServer(app)
     httpServer.listen(port, () => console.log(`HTTP server running at http://localhost:${port}`))
-
-    // In-memory cache for storing certificate and key pairs
-    const certCache = new Map()
-
-    // Function to load the certificate and key files (with caching)
-    const loadCertAndKey = hostname => {
-      if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
-
-      const certPath = path.join(__dirname, `${hostname}.crt`)
-      const keyPath = path.join(__dirname, `${hostname}.key`)
-
-      // Check if both cert and key files exist
-      if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
-        const sslOptions = {
-          cert: fs.readFileSync(certPath, "utf8"),
-          key: fs.readFileSync(keyPath, "utf8")
-        }
-        certCache.set(hostname, sslOptions) // Cache the cert and key
-        return sslOptions
-      } else {
-        if (pendingCerts[hostname]) return
-        makeCert(hostname)
-        throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
-      }
-    }
   }
 }
 
