@@ -316,7 +316,7 @@ class EditorApp {
         body: `folderName=${encodeURIComponent(this.folderName)}&oldFileName=${encodeURIComponent(oldFileName)}&newFileName=${encodeURIComponent(newFileName)}`
       })
 
-      if (!response.ok) throw new Error("Rename operation failed")
+      if (!response.ok) throw new Error(await response.text())
 
       console.log(`File renamed from ${oldFileName} to ${newFileName}`)
       this.fetchAndDisplayFileList()
@@ -327,8 +327,8 @@ class EditorApp {
         document.getElementById("filePathInput").value = `${this.folderName}/${newFileName}`
       }
     } catch (error) {
-      console.error("Error renaming file:", error)
-      alert("Failed to rename file. Please try again.")
+      console.error(error)
+      alert("Rename error:" + error)
     }
   }
 

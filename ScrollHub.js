@@ -508,7 +508,7 @@ ${prefix}${hash}<br>
       const filePath = path.join(folderPath, fileName)
 
       // Check if the file extension is allowed
-      if (!extensionOkay(filePath, res)) {
+      if (!this.extensionOkay(filePath, res)) {
         return
       }
 
@@ -557,7 +557,7 @@ ${prefix}${hash}<br>
 
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
-      const ok = extensionOkay(filePath, res)
+      const ok = this.extensionOkay(filePath, res)
       if (!ok) return
 
       try {
@@ -572,7 +572,7 @@ ${prefix}${hash}<br>
 
         await fsp.unlink(filePath)
         await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'`, { cwd: folderPath })
-        awaitthis.buildFolder(folderName)
+        await this.buildFolder(folderName)
 
         res.send("File deleted successfully")
         this.addStory(req, `deleted ${fileName} in ${folderName}`)
@@ -624,14 +624,11 @@ ${prefix}${hash}<br>
       const oldFilePath = path.join(folderPath, oldFileName)
       const newFilePath = path.join(folderPath, newFileName)
 
-      if (!extensionOkay(oldFilePath, res) || !extensionOkay(newFilePath, res)) return
+      if (!this.extensionOkay(oldFilePath, res) || !this.extensionOkay(newFilePath, res)) return
 
       try {
         // Check if the old file exists
         await fsp.access(oldFilePath)
-
-        // Rename the file
-        await fsp.rename(oldFilePath, newFilePath)
 
         // Run git commands
         const clientIp = req.ip || req.connection.remoteAddress
@@ -782,7 +779,7 @@ ${prefix}${hash}<br>
     const { allowedExtensions } = this
     const fileExtension = path.extname(filepath).toLowerCase().slice(1)
     if (!allowedExtensions.includes(fileExtension)) {
-      res.status(400).send(`Cannot edit a ${fileExtension} file. Only editing of ${allowedExtensions} files is allowed.`)
+      res.status(400).send(`Editing '${fileExtension}' files not yet supported. Only editing of ${allowedExtensions} files is allowed.`)
       return false
     }
     return true
