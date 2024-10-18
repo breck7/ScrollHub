@@ -490,28 +490,21 @@ ${prefix}${hash}<br>
       const fileName = sanitizeFolderName(req.query.fileName)
       const redirectUrl = sanitizeFolderName(req.query.redirect)
       const line = parseInt(req.query.line)
-      const particles = req.body.particles
+      let particles = req.body.particles
 
-      if (!folderCache[folderName]) {
-        return res.status(404).send("Folder not found")
-      }
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
-      if (!particles) {
-        return res.status(400).send("No particles provided")
-      }
+      if (!particles) return res.status(400).send("No particles provided")
 
-      if (!fileName) {
-        return res.status(400).send("No filename provided")
-      }
+      if (!fileName) return res.status(400).send("No filename provided")
 
       const folderPath = path.join(rootFolder, folderName)
       const filePath = path.join(folderPath, fileName)
 
       // Check if the file extension is allowed
-      if (!this.extensionOkay(filePath, res)) {
-        return
-      }
+      if (!this.extensionOkay(filePath, res)) return
 
+      particles = "\n" + particles // add a new line before new particles
       try {
         // Check if the file exists
         await fsp.access(filePath)
@@ -522,6 +515,7 @@ ${prefix}${hash}<br>
         if (isNaN(line) || line <= 0 || line > lines.length + 1) {
           // Append to the end if line is not provided or invalid
           lines.push(particles)
+          // todo: run a fast append
         } else {
           // Insert at the specified line (adjusting for 0-based array index)
           lines.splice(line - 1, 0, particles)
@@ -1034,11 +1028,11 @@ scrollVersionLink`
         return { errorMessage: `Invalid template url.`, folderName: rawInput }
       }
       await execAsync(`git clone ${template} ${folderName}`, { cwd: rootFolder })
-      await buildFolder(folderName)
+      await this.buildFolder(folderName)
     } else {
       await execAsync(`cp -R ${template} ${folderName};`, { cwd: rootFolder })
-      this.updateFolderAndBuildList(folderName)
     }
+    this.updateFolderAndBuildList(folderName)
 
     return { folderName }
   }

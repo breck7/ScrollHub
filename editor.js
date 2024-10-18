@@ -359,8 +359,11 @@ class EditorApp {
     this.codeMirrorInstance.setValue(value)
     const lines = value.split("\n")
     const lastLine = lines.pop()
-    this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
-    this.codeMirrorInstance.focus()
+    if (lines.length < 30) {
+      // if its a small file, put user right in editing experience
+      this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
+      this.codeMirrorInstance.focus()
+    }
   }
 
   get auth() {
