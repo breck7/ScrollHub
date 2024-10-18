@@ -13,7 +13,6 @@ list.scroll
 *.csv
 *.crt
 *.key
-hotTemplates/
 *.txt
 trash/
 now.txt

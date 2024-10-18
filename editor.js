@@ -260,7 +260,7 @@ class EditorApp {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `folderName=${encodeURIComponent(newFolderName)}&template=${encodeURIComponent(this.folderName)}`
+      body: `folderName=${encodeURIComponent(newFolderName)}`
     })
 
     const result = await response.text()
