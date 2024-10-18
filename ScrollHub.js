@@ -44,19 +44,6 @@ const sanitizeFolderName = name => {
   return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 }
 
-const isValidFolderName = name => {
-  if (name.length < 2) return false
-
-  // dont allow folder names that look like filenames.
-  // also, we reserve ".htm" for ScrollHub dynamic routes
-  if (name.includes(".")) {
-    const ext = path.extname(name).toLowerCase().slice(1)
-    if (allowedExtensions.includes(ext)) return false
-  }
-  if (/^[a-z][a-z0-9._]*$/.test(name)) return true
-  return false
-}
-
 class ScrollHub {
   constructor() {
     this.app = express()
@@ -401,7 +388,7 @@ ${prefix}${hash}<br>
   }
 
   initFileRoutes() {
-    const { app } = this
+    const { app, rootFolder, folderCache, allowedExtensions } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
     app.post("/create.htm", checkWritePermissions, async (req, res) => {
       try {
@@ -420,7 +407,7 @@ ${prefix}${hash}<br>
       const folderName = sanitizeFolderName(req.query.folderName)
       const folderPath = path.join(rootFolder, folderName)
 
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const files = (await fsp.readdir(folderPath)).filter(file => {
         const ext = path.extname(file).toLowerCase().slice(1)
@@ -463,7 +450,7 @@ ${prefix}${hash}<br>
       const folderName = req.body.folderName
       const folderPath = path.join(rootFolder, sanitizeFolderName(folderName))
 
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       // Check file extension
       const fileExtension = path.extname(file.name).toLowerCase().slice(1)
@@ -504,7 +491,7 @@ ${prefix}${hash}<br>
       const line = parseInt(req.query.line)
       const particles = req.body.particles
 
-      if (!this.folderCache[folderName]) {
+      if (!folderCache[folderName]) {
         return res.status(404).send("Folder not found")
       }
 
@@ -567,7 +554,7 @@ ${prefix}${hash}<br>
       const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
       const folderName = path.dirname(filePath).split(path.sep).pop()
 
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const ok = extensionOkay(filePath, res)
       if (!ok) return
@@ -597,7 +584,7 @@ ${prefix}${hash}<br>
 
     app.post("/trash.htm", checkWritePermissions, async (req, res) => {
       const folderName = sanitizeFolderName(req.body.folderName)
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const sourcePath = path.join(rootFolder, folderName)
       const timestamp = Date.now()
@@ -608,7 +595,7 @@ ${prefix}${hash}<br>
         await fsp.rename(sourcePath, destinationPath)
 
         // Remove the folder from the cache
-        delete this.folderCache[folderName]
+        delete folderCache[folderName]
 
         // Remove the zip file from cache if it exists
         zipCache.delete(folderName)
@@ -627,7 +614,7 @@ ${prefix}${hash}<br>
 
     app.post("/rename.htm", checkWritePermissions, async (req, res) => {
       const folderName = sanitizeFolderName(req.body.folderName)
-      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const oldFileName = req.body.oldFileName
       const newFileName = sanitizeFolderName(req.body.newFileName)
@@ -791,8 +778,9 @@ ${prefix}${hash}<br>
   }
 
   extensionOkay(filepath, res) {
+    const { allowedExtensions } = this
     const fileExtension = path.extname(filepath).toLowerCase().slice(1)
-    if (!this.allowedExtensions.includes(fileExtension)) {
+    if (!allowedExtensions.includes(fileExtension)) {
       res.status(400).send(`Cannot edit a ${fileExtension} file. Only editing of ${allowedExtensions} files is allowed.`)
       return false
     }
@@ -975,6 +963,19 @@ scrollVersionLink`
     res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
   }
 
+  isValidFolderName(name) {
+    if (name.length < 2) return false
+
+    // dont allow folder names that look like filenames.
+    // also, we reserve ".htm" for ScrollHub dynamic routes
+    if (name.includes(".")) {
+      const ext = path.extname(name).toLowerCase().slice(1)
+      if (this.allowedExtensions.includes(ext)) return false
+    }
+    if (/^[a-z][a-z0-9._]*$/.test(name)) return true
+    return false
+  }
+
   async createFolder(rawInput) {
     const { rootFolder, folderCache } = this
     const parts = rawInput.split(" ")
@@ -992,7 +993,7 @@ scrollVersionLink`
       folderName = sanitizeFolderName(rawInput)
       template = isUrl(rawInput) ? rawInput : "blank"
     }
-    if (!isValidFolderName(folderName))
+    if (!this.isValidFolderName(folderName))
       return {
         errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and not end in a common file extension.`,
         folderName: rawInput
@@ -1010,7 +1011,7 @@ scrollVersionLink`
       await buildFolder(folderName)
     } else {
       await execAsync(`cp -R ${template} ${folderName};`, { cwd: rootFolder })
-      updateFolderAndBuildList(folderName)
+      this.updateFolderAndBuildList(folderName)
     }
 
     return { folderName }
