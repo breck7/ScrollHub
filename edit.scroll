@@ -26,6 +26,6 @@ header.scroll
 
 div#gitClone.greyText
 
-editor.js
+scrollHubEditor.js
 
 footer.scroll

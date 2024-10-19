@@ -954,7 +954,7 @@ metaTags
 theme gazette
 title Folders
 
-style.css
+scrollHubStyle.css
 
 container 1000px
 ${this.hostname} serves ${folders.length} folders.
