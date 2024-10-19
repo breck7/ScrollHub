@@ -9,6 +9,7 @@ const execAsync = util.promisify(exec)
 
 // Web server
 const express = require("express")
+const compression = require("compression")
 const https = require("https")
 const http = require("http")
 const fileUpload = require("express-fileupload")
@@ -64,6 +65,7 @@ class ScrollHub {
     this.ensureTemplatesInstalled()
     this.warmFolderCache()
     this.initVandalProtection()
+    this.enableCompression()
     this.enableCors()
     this.enableFormParsing()
     this.enableFileUploads()
@@ -82,6 +84,10 @@ class ScrollHub {
     this.initCertRoutes()
     this.init404Routes()
     return this.startServers()
+  }
+
+  enableCompression() {
+    this.app.use(compression())
   }
 
   enableCors() {
