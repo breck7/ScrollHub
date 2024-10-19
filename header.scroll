@@ -4,5 +4,5 @@ settings.scroll
 metaTags
 inlineCss gazette.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
-viewSourceButton
+editButton
 

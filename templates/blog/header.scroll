@@ -5,5 +5,5 @@ buildHtml
 theme gazette
 homeButton
 leftRightButtons
-viewSourceButton
+editButton
 printTitle

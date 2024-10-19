@@ -4,7 +4,7 @@ settings.scroll
 metaTags
 inlineCss gazette.css scrollHubStyle.css
 homeButton
-viewSourceButton
+editButton
 
 css .thin {font-weight: 100;}
 
