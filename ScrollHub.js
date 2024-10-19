@@ -53,7 +53,7 @@ class ScrollHub {
     this.maxUploadSize = 100 * 1000 * 1024
     this.allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
     this.hostname = os.hostname()
-    this.rootFolder = path.join(__dirname, "folders")
+    this.rootFolder = path.join(os.homedir(), "folders")
     this.templatesFolder = path.join(__dirname, "templates")
     this.trashFolder = path.join(__dirname, "trash")
     this.folderCache = {}
