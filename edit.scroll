@@ -2,8 +2,6 @@ title Edit Folder
 
 header.scroll
 
-./ide/codeMirror.css
-
 ./ide/libs.js
 ./ide/parsers.js
 
@@ -26,6 +24,6 @@ header.scroll
 
 div#gitClone.greyText
 
-scrollHubEditor.js
+inlineJs scrollHubEditor.js
 
 footer.scroll

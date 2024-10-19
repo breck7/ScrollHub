@@ -2,7 +2,7 @@
 <input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Publish</button>
 <div class="templateButton">Popular templates: blog, paper, gallery, teaser</div>
 <div id="errorMessage"></div>
-<script>
+script
  {
  const el = document.getElementById("errorMessage")
  const params = new URLSearchParams(window.location.search)
@@ -15,5 +15,5 @@
     inputEl.value = folderName
   inputEl.focus()
  }
- </script>
+
 </form>

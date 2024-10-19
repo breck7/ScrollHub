@@ -2,7 +2,7 @@ importOnly
 
 settings.scroll
 metaTags
-theme gazette
+inlineCss gazette.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
 viewSourceButton
-scrollHubStyle.css
+
