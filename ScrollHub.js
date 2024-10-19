@@ -325,7 +325,7 @@ class ScrollHub {
 ${prefix}${hash}<br>
 <form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
   <input type="hidden" name="hash" value="${hash}">
-  <input type="submit" value="Revert to this commit" onclick="return confirm('Are you sure you want to revert to this commit?');">
+  <input type="submit" value="Restore this version" onclick="return confirm('Restore this version?');">
 </form>`
               })
               return line
@@ -351,7 +351,7 @@ ${prefix}${hash}<br>
 ${prefix}${hash}<br>
 <form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
   <input type="hidden" name="hash" value="${hash}">
-  <input type="submit" value="Revert to this commit" onclick="return confirm('Are you sure you want to revert to this commit?');">
+  <input type="submit" value="Restore this version" onclick="return confirm('Restore this version?');">
 </form>`
                 })
                 res.write(buffer)
@@ -1003,11 +1003,12 @@ JSON | CSV | TSV
  link folders.tsv TSV
 
 table folders.csv
- compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder}%20">clone</a> · <a href="diff.htm/{folder}">history</a>
+ compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder}%20">clone</a>
   select folder folderLink links revised hash files mb revisions
-   orderBy -revised
-    rename revised revisedtime
-     printTable
+   compose hashLink diff.htm/{folder}
+    orderBy -revised
+     rename revised revisedtime
+      printTable
 
 endColumns
 tableSearch
