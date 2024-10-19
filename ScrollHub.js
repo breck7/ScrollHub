@@ -190,7 +190,7 @@ class ScrollHub {
   }
 
   initGitRoutes() {
-    const { app } = this
+    const { app, rootFolder } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
     app.get("/:repo.git/*", (req, res) => {
       const repo = req.params.repo
@@ -852,7 +852,7 @@ ${prefix}${hash}<br>
       execSync(`cp -R ${sourcePath} ${destPath};`, { cwd: rootFolder })
 
       // Initialize Git repository
-      execSync("git init; git add .; git commit -m 'initial ${dir} template'", { cwd: destPath })
+      execSync(`git init; git add .; git commit -m 'initial ${dir} template'`, { cwd: destPath })
       this.buildFolderSync(dir)
     }
   }
@@ -1060,7 +1060,8 @@ scrollVersionLink`
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
     this.certCache = new Map()
-    this.pendingCerts = {}
+    const pendingCerts = {}
+    this.pendingCerts = pendingCerts
     this.makeCert = async domain => {
       pendingCerts[domain] = true
       const email = domain + "@hub.scroll.pub"
