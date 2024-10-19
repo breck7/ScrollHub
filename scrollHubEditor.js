@@ -44,10 +44,10 @@ class EditorApp {
     this.folderName = urlParams.get("folderName") || window.location.hostname
     this.fileList = document.getElementById("fileList")
     this.fileName = urlParams.get("fileName")
+    this.updatePreviewIFrame()
+    this.updateFooterLinks()
     if (!this.fileName) await this.fetchAndDisplayFileList()
     else this.fetchAndDisplayFileList()
-
-    this.updatePreviewIFrame()
 
     this.fileEditor = document.getElementById("fileEditor")
     document.getElementById("filePathInput").value = this.filePath
@@ -217,17 +217,24 @@ class EditorApp {
   }
 
   updatePreviewIFrame() {
-    const { folderName, isCustomDomain, rootUrl } = this
+    const { folderNameText, rootUrl } = this
     this.previewIFrame = document.getElementById("previewIFrame")
     this.previewIFrame.src = rootUrl
 
-    const serverName = window.location.hostname
-    const folderNameText = isCustomDomain ? folderName : `${serverName}/${folderName}`
     document.getElementById("folderNameLink").innerHTML = folderNameText
     document.getElementById("folderNameLink").href = rootUrl
+    document.title = `Editing ${folderNameText}`
+  }
+
+  get folderNameText() {
+    const { folderName } = this
+    return this.isCustomDomain ? folderName : `${window.location.hostname}/${folderName}`
+  }
+
+  updateFooterLinks() {
+    const { folderName, folderNameText } = this
     document.getElementById("gitClone").innerHTML =
       `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · <span title="Requires npm install -g scroll-cli. Or you can modify to do a standard git clone">clone ${folderNameText}</span> · <a href="#" class="deleteFolderLink" onclick="window.app.deleteFolder()">delete</a>`
-    document.title = `Editing ${folderNameText}`
   }
 
   async deleteFolder() {
