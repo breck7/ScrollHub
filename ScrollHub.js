@@ -887,18 +887,16 @@ ${prefix}${hash}<br>
         }
       })
     )
-
-    // Get number of git commits
+    // Get number of git commits and last commit hash
     let commitCount = 0
+    let lastCommitHash = ""
     try {
       const gitCommits = await new Promise((resolve, reject) => {
         const gitProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: fullPath })
-
         let result = ""
         gitProcess.stdout.on("data", data => {
           result += data.toString()
         })
-
         gitProcess.on("close", code => {
           if (code === 0) {
             resolve(result.trim())
@@ -908,10 +906,25 @@ ${prefix}${hash}<br>
         })
       })
       commitCount = parseInt(gitCommits, 10)
-    } catch (err) {
-      console.error(`Error getting git commits for folder: ${folder}`)
-    }
 
+      // Get last commit hash
+      lastCommitHash = await new Promise((resolve, reject) => {
+        const gitProcess = spawn("git", ["rev-parse", "HEAD"], { cwd: fullPath })
+        let result = ""
+        gitProcess.stdout.on("data", data => {
+          result += data.toString()
+        })
+        gitProcess.on("close", code => {
+          if (code === 0) {
+            resolve(result.trim())
+          } else {
+            reject(new Error(`git process exited with code ${code}`))
+          }
+        })
+      })
+    } catch (err) {
+      console.error(`Error getting git information for folder: ${folder}`)
+    }
     this.folderCache[folder] = {
       folder,
       folderLink: folder + "/",
@@ -919,7 +932,8 @@ ${prefix}${hash}<br>
       modified: mtime,
       files: fileCount,
       mb: Math.ceil(fileSize / (1024 * 1024)),
-      revisions: commitCount
+      revisions: commitCount,
+      hash: lastCommitHash.substr(0, 10)
     }
   }
 
@@ -973,7 +987,7 @@ JSON | CSV | TSV
 
 table folders.csv
  compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder}%20">clone</a> · <a href="diff.htm/{folder}">history</a>
-  select folder folderLink links modified files mb revisions
+  select folder folderLink links modified hash files mb revisions
    orderBy -modified
     rename modified updatedtime
      printTable
