@@ -887,9 +887,10 @@ ${prefix}${hash}<br>
         }
       })
     )
-    // Get number of git commits and last commit hash
+    // Get number of git commits, last commit hash, and last commit timestamp
     let commitCount = 0
     let lastCommitHash = ""
+    let lastCommitTimestamp = null
     try {
       const gitCommits = await new Promise((resolve, reject) => {
         const gitProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: fullPath })
@@ -922,6 +923,22 @@ ${prefix}${hash}<br>
           }
         })
       })
+
+      // Get last commit timestamp
+      lastCommitTimestamp = await new Promise((resolve, reject) => {
+        const gitProcess = spawn("git", ["log", "-1", "--format=%ct"], { cwd: fullPath })
+        let result = ""
+        gitProcess.stdout.on("data", data => {
+          result += data.toString()
+        })
+        gitProcess.on("close", code => {
+          if (code === 0) {
+            resolve(new Date(parseInt(result.trim(), 10) * 1000))
+          } else {
+            reject(new Error(`git process exited with code ${code}`))
+          }
+        })
+      })
     } catch (err) {
       console.error(`Error getting git information for folder: ${folder}`)
     }
@@ -929,7 +946,7 @@ ${prefix}${hash}<br>
       folder,
       folderLink: folder + "/",
       created: birthtime || ctime,
-      modified: mtime,
+      revised: lastCommitTimestamp,
       files: fileCount,
       mb: Math.ceil(fileSize / (1024 * 1024)),
       revisions: commitCount,
@@ -987,9 +1004,9 @@ JSON | CSV | TSV
 
 table folders.csv
  compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder}%20">clone</a> · <a href="diff.htm/{folder}">history</a>
-  select folder folderLink links modified hash files mb revisions
-   orderBy -modified
-    rename modified updatedtime
+  select folder folderLink links revised hash files mb revisions
+   orderBy -revised
+    rename revised revisedtime
      printTable
 
 endColumns
