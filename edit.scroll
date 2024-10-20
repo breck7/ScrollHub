@@ -1,6 +1,9 @@
 title Edit Folder
 
-header.scroll
+settings.scroll
+metaTags
+inlineCss gazette.css scrollHubStyle.css ./ide/codeMirror.css
+homeButton
 
 ./ide/libs.js
 ./ide/parsers.js
