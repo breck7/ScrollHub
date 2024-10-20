@@ -234,7 +234,7 @@ class EditorApp {
   updateFooterLinks() {
     const { folderName, folderNameText } = this
     document.getElementById("gitClone").innerHTML =
-      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a onclick="window.app.duplicate()" class="duplicateButton">duplicate</a> · <span title="Requires npm install -g scroll-cli. Or you can modify to do a standard git clone">clone ${folderNameText}</span> · <a href="#" class="deleteFolderLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a class="duplicateButton" onclick="window.app.duplicate()">clone ${folderNameText}</a> · <a href="#" class="deleteFolderLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async deleteFolder() {
@@ -260,7 +260,7 @@ class EditorApp {
   }
 
   async duplicate() {
-    const newFolderName = prompt("Folder name")
+    const newFolderName = prompt(`clone ${this.folderNameText} to:`)
     if (!newFolderName) return
     const response = await fetch("/create.htm", {
       method: "POST",
