@@ -122,8 +122,9 @@ class ScrollHub {
 
   async broadCastMessage(log, ip) {
     if (!this.sseClients.size) return
-    const geo = await this.dashboard.ipToGeo(ip)
-    log = [log.trim(), geo.lat, geo.lon].join(" ")
+    const geo = await this.dashboard.ipToGeo(ip === "::1" ? "98.150.188.43" : ip)
+    const name = (geo.regionName + "/" + geo.country).replace(/ /g, "")
+    log = [log.trim(), name, geo.lat, geo.lon].join(" ")
     this.sseClients.forEach(client => client.res.write(`data: ${JSON.stringify({ log })}\n\n`))
   }
 
