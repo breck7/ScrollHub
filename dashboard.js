@@ -1,5 +1,7 @@
 const fs = require("fs")
 const readline = require("readline")
+const fsp = require("fs").promises
+const path = require("path")
 
 class Dashboard {
   constructor(inputFile) {
@@ -7,6 +9,56 @@ class Dashboard {
     this.stats = {} // Combined daily and folder stats
     this.totalLines = 0
     this.parsedLines = 0
+    this.ipGeoMap = new Map()
+  }
+
+  async ipToGeo(ip4) {
+    const { ipGeoMap } = this
+    // Check if the IP exists in the in-memory map
+    if (ipGeoMap.has(ip4)) return ipGeoMap.get(ip4)
+
+    // Prepare the cache file path
+    const firstPart = ip4.split(".")[0]
+    const cacheDir = path.join(__dirname, "ipToGeo", firstPart)
+    const cacheFile = path.join(cacheDir, `${ip4}.json`)
+
+    try {
+      // Check if the IP data exists in the cache folder
+      const cachedData = await fsp.readFile(cacheFile, "utf-8")
+      const geoData = JSON.parse(cachedData)
+
+      // Store in the in-memory map and return
+      ipGeoMap.set(ip4, geoData)
+      return geoData
+    } catch (error) {
+      // If file doesn't exist or there's an error reading it, proceed to download
+      if (error.code !== "ENOENT") {
+        console.error(`Error reading cache file: ${error.message}`)
+      }
+    }
+
+    try {
+      // Download data from ip-api.com using fetch
+      const response = await fetch(`http://ip-api.com/json/${ip4}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const geoData = await response.json()
+
+      // Store the data in the in-memory map
+      ipGeoMap.set(ip4, geoData)
+
+      // Ensure the cache directory exists
+      await fsp.mkdir(cacheDir, { recursive: true })
+
+      // Write the data to the cache file
+      await fsp.writeFile(cacheFile, JSON.stringify(geoData, null, 2))
+
+      return geoData
+    } catch (error) {
+      console.error(`Error fetching or caching geo data: ${error.message}`)
+      throw error
+    }
   }
 
   parseLogEntry(entry) {

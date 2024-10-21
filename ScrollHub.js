@@ -21,6 +21,9 @@ const httpBackend = require("git-http-backend")
 // PPS
 const { Particle } = require("scrollsdk/products/Particle.js")
 
+// This
+const { Dashboard } = require("./dashboard.js")
+
 express.static.mime.define({ "text/plain": ["scroll", "parsers"] })
 
 const parseUserAgent = userAgent => {
@@ -57,7 +60,11 @@ class ScrollHub {
     this.templatesFolder = path.join(__dirname, "templates")
     this.trashFolder = path.join(__dirname, "trash")
     this.folderCache = {}
+    this.sseClients = new Set()
     this.storyCache = ""
+    this.globalLogFile = path.join(__dirname, "log.txt")
+    this.storyLogFile = path.join(__dirname, "now.txt")
+    this.dashboard = new Dashboard(this.globalLogFile)
   }
 
   startAll() {
@@ -78,12 +85,46 @@ class ScrollHub {
     this.initHistoryRoutes()
     this.initZipRoutes()
     this.initCommandRoutes()
+    this.initSSERoute()
 
     this.enableStaticFileServing()
 
     this.initCertRoutes()
     this.init404Routes()
     return this.startServers()
+  }
+
+  initSSERoute() {
+    const { app, globalLogFile } = this
+    app.get("/requests.htm", (req, res) => {
+      req.headers["accept-encoding"] = "identity"
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive"
+      })
+
+      // Send initial ping
+      res.write(": ping\n\n")
+
+      const id = Date.now()
+
+      const client = {
+        id,
+        res
+      }
+
+      this.sseClients.add(client)
+
+      req.on("close", () => this.sseClients.delete(client))
+    })
+  }
+
+  async broadCastMessage(log, ip) {
+    if (!this.sseClients.size) return
+    const geo = await this.dashboard.ipToGeo(ip)
+    log = [log.trim(), geo.lat, geo.lon].join(" ")
+    this.sseClients.forEach(client => client.res.write(`data: ${JSON.stringify({ log })}\n\n`))
   }
 
   enableCompression() {
@@ -143,8 +184,6 @@ class ScrollHub {
   }
 
   initAnalytics() {
-    this.globalLogFile = path.join(__dirname, "log.txt")
-    this.storyLogFile = path.join(__dirname, "now.txt")
     if (!fs.existsSync(this.storyLogFile)) fs.writeFileSync(this.storyLogFile, "", "utf8")
     const { app, folderCache, storyCache } = this
     app.use(this.logRequest.bind(this))
@@ -158,9 +197,8 @@ class ScrollHub {
       res.send(storyCache)
     })
 
-    const { Dashboard } = require("./dashboard.js")
     app.get("/dashboard.csv", async (req, res) => {
-      const dashboard = new Dashboard(this.globalLogFile)
+      const { dashboard } = this
       await dashboard.processLogFile()
       const { csv } = dashboard
       res.setHeader("Content-Type", "text/plain")
@@ -182,6 +220,8 @@ class ScrollHub {
     fs.appendFile(globalLogFile, logEntry, err => {
       if (err) console.error("Failed to log request:", err)
     })
+
+    this.broadCastMessage(logEntry, ip)
 
     if (folderName && folderCache[folderName]) {
       const folderPath = path.join(rootFolder, folderName)
