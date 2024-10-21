@@ -14,10 +14,11 @@ class Globe {
 
     // Initialize scene, camera, renderer, etc.
     this.scene = new THREE.Scene()
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-    this.camera.position.z = 2
+    const height = window.innerHeight - 100
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / height, 0.1, 1000)
+    this.camera.position.z = 1
     this.renderer = new THREE.WebGLRenderer()
-    this.renderer.setSize(window.innerWidth, window.innerHeight)
+    this.renderer.setSize(window.innerWidth, height)
     document.body.prepend(this.renderer.domElement)
 
     // Create Earth
