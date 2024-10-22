@@ -4,13 +4,21 @@ class EditorApp {
     this.folderName = ""
     this.previewIFrame = null
     this.fileList = null
-    const scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
-    this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
+    this.scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
+    this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => this.scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
       lineWrapping: true, // todo: some way to see wrapped lines? do we want to disable line wrapping? make a keyboard shortcut?
       lineNumbers: false
     })
     this.codeMirrorInstance.setSize(this.width, 490)
     window.addEventListener("resize", () => this.codeMirrorInstance.setSize(this.width, 490))
+  }
+
+  _scrollProgram
+  get scrollProgram() {
+    const { scrollParser } = this
+    this._scrollProgram = new scrollParser(this.codeMirrorInstance.getValue())
+    this._scrollProgram.setFile({ filename: this.fileName })
+    return this._scrollProgram
   }
 
   get width() {
@@ -44,7 +52,6 @@ class EditorApp {
     this.folderName = urlParams.get("folderName") || window.location.hostname
     this.fileList = document.getElementById("fileList")
     this.fileName = urlParams.get("fileName")
-    this.updatePreviewIFrame()
     this.updateFooterLinks()
     if (!this.fileName) await this.fetchAndDisplayFileList()
     else this.fetchAndDisplayFileList()
@@ -68,8 +75,14 @@ class EditorApp {
     return this
   }
 
+  get permalink() {
+    const dir = this.rootUrl.replace(/\/$/, "") + "/"
+    const { fileName } = this
+    return dir + (fileName.endsWith(".scroll") ? this.scrollProgram.permalink : fileName)
+  }
+
   updateVisitLink() {
-    document.querySelector(".visitLink").href = this.rootUrl.replace(/\/$/, "") + "/" + this.fileName
+    document.querySelector(".visitLink").href = this.permalink
   }
 
   async saveFile() {
@@ -219,7 +232,7 @@ class EditorApp {
   updatePreviewIFrame() {
     const { folderNameText, rootUrl } = this
     this.previewIFrame = document.getElementById("previewIFrame")
-    this.previewIFrame.src = rootUrl
+    this.previewIFrame.src = this.permalink
 
     document.getElementById("folderNameLink").innerHTML = folderNameText
     document.getElementById("folderNameLink").href = rootUrl
@@ -388,6 +401,7 @@ class EditorApp {
     const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
     this.setFileContent(content)
+    this.updatePreviewIFrame()
     this.updateVisitLink()
   }
 
