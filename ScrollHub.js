@@ -61,7 +61,6 @@ class ScrollHub {
     this.trashFolder = path.join(__dirname, "trash")
     this.folderCache = {}
     this.sseClients = new Set()
-    this.storyCache = ""
     this.globalLogFile = path.join(__dirname, "log.txt")
     this.storyLogFile = path.join(__dirname, "now.txt")
     this.dashboard = new Dashboard(this.globalLogFile)
@@ -186,16 +185,11 @@ class ScrollHub {
 
   initAnalytics() {
     if (!fs.existsSync(this.storyLogFile)) fs.writeFileSync(this.storyLogFile, "", "utf8")
-    const { app, folderCache, storyCache } = this
+    const { app, folderCache } = this
     app.use(this.logRequest.bind(this))
     app.get("/foldersPublished.htm", (req, res) => {
       res.setHeader("Content-Type", "text/plain")
       res.send(Object.values(folderCache).length.toString())
-    })
-
-    app.get("/now.htm", (req, res) => {
-      res.setHeader("Content-Type", "text/plain")
-      res.send(storyCache)
     })
 
     app.get("/dashboard.csv", async (req, res) => {
@@ -216,6 +210,7 @@ class ScrollHub {
     const userAgent = parseUserAgent(req.get("User-Agent") || "Unknown")
     const folderName = this.getFolderName(req)
 
+    // todo: log after request? save status response, etc? flag bots?
     const logEntry = `${method === "GET" ? "read" : "write"} ${folderName || hostname} ${protocol}://${hostname}${url} ${Date.now()} ${ip} ${userAgent}\n`
 
     fs.appendFile(globalLogFile, logEntry, err => {
@@ -872,7 +867,6 @@ ${prefix}${hash}<br>
     const storyEntry = `${formattedDate} ${clientIp} ${message}\n`
     // Append the new story entry to the story log file
     fs.appendFile(this.storyLogFile, storyEntry, err => (err ? console.error(err) : ""))
-    this.storyCache = storyEntry + this.storyCache
   }
 
   ensureInstalled() {
