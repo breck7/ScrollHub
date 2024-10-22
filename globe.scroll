@@ -1,8 +1,12 @@
 buildHtml
-title Globe: ScrollHub Real-time Request Viewer
+title ScrollHub Globe: Real-time Request Visualizer
+
+metaTags
 
 div#log-container
 
 globe.css
 external/three.min.js
 globe.js
+favicon globeFavicon.png
+openGraphImage https://hub.scroll.pub/globe.png
