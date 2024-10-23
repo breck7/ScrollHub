@@ -1,5 +1,5 @@
 <form method="post" action="create.htm" id="createForm">
-<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button>Publish</button>
+<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Publish</button>
 <div class="templateButton">Popular templates: blog, paper, gallery, teaser</div>
 <div id="errorMessage"></div>
 script

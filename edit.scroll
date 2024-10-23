@@ -9,18 +9,18 @@ homeButton
 ./ide/parsers.js
 
 # <a id="folderNameLink"></a>
-
-<form method="post" action="write.htm" id="editForm">
+<div id="spinner"></div>
+<form id="editForm">
 <div>
  <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
  <input type="hidden" name="filePath" id="filePathInput"/>
  <input type="hidden" name="folderName" id="folderNameInput"/>
  <div id="fileList"></div>
- <a class="createButton" onclick="app.createFileCommand()">+</a><br>
+ <a class="createFileButton" onclick="app.createFileCommand()">+</a><br>
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button class="publishButton">Publish</button> <a href="#" target="visit" class="visitLink">Visit</a> <a href="delete.htm" class="deleteLink">Delete</a>
+ <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button> <a href="#" target="visit" class="visitLink">Visit</a> <a href="delete.htm" class="deleteLink">Delete</a>
 </div>
 </form>
 // # Commands

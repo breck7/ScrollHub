@@ -85,7 +85,17 @@ class EditorApp {
     document.querySelector(".visitLink").href = this.permalink
   }
 
+  showSpinner(message) {
+    document.querySelector("#spinner").innerHTML = `<span>${message}</span>`
+    document.querySelector("#spinner").style.display = "block"
+  }
+
+  hideSpinner() {
+    document.querySelector("#spinner").style.display = "none"
+  }
+
   async saveFile() {
+    this.showSpinner("Publishing...")
     const formData = new FormData()
     formData.append("filePath", this.filePath)
     formData.append("folderName", this.folderName)
@@ -103,6 +113,7 @@ class EditorApp {
 
       const data = await response.text()
       console.log("File saved successfully")
+      this.hideSpinner()
       this.updatePreviewIFrame()
       return data
     } catch (error) {
@@ -178,12 +189,14 @@ class EditorApp {
 
   // New method to handle multiple file uploads
   uploadFiles(files) {
+    this.showSpinner("Uploading...")
     const uploadPromises = Array.from(files).map(file => this.uploadFile(file))
 
     Promise.all(uploadPromises)
       .then(() => {
         console.log("All files uploaded successfully")
         this.fetchAndDisplayFileList()
+        this.hideSpinner()
       })
       .catch(error => {
         console.error("Error uploading files:", error)
@@ -362,12 +375,14 @@ class EditorApp {
     const newFileName = fileName.includes(".") ? fileName : fileName + ".scroll"
     const filePath = `${folderName}/${newFileName}`
 
+    this.showSpinner("Creating file...")
+
     const response = await fetch("/write.htm", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
+      body: `content=&isCreate=true&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
     })
 
     await response.text()
@@ -416,6 +431,8 @@ class EditorApp {
       if (userInput !== fileName) return
 
       const filePath = `${folderName}/${fileName}`
+
+      this.showSpinner("Deleting...")
 
       const response = await fetch(`/delete.htm?filePath=${encodeURIComponent(filePath)}`, {
         method: "POST"

@@ -10,8 +10,6 @@
   --shadow-color: rgba(0, 0, 0, 0.1);
   --hover-bg-color: rgba(220, 220, 220, 0.3);
   --border-light: #ddd;
-  --button-hover: #45b069;
-  --button-active: #35a059;
 }
 
 /* Scroll Template Styles */
@@ -96,6 +94,10 @@ iframe {
   transform-origin: 0 0;
 }
 
+#folderName {
+  outline: none;
+}
+
 .iframeHolder {
   width: 200px;
   height: 125px;
@@ -118,7 +120,7 @@ iframe {
   color: grey;
 }
 
-.createButton {
+.createFileButton {
   cursor: pointer;
   padding: 1px 10px;
   margin: 8px;
@@ -127,7 +129,7 @@ iframe {
   text-align: center;
 }
 
-.createButton:hover {
+.createFileButton:hover {
   background-color: var(--hover-bg-color);
 }
 
@@ -182,24 +184,11 @@ textarea {
   border: 0;
 }
 
-button {
-  background-color: var(--secondary-color);
-  color: white;
-  border: none;
+.scrollButton.createButton {
   padding: 10px 20px;
   border-radius: 0 4px 4px 0;
-  cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.3s ease;
-  white-space: nowrap;
-}
-
-button:hover {
-  background-color: var(--button-hover);
-}
-
-button:active {
-  background-color: var(--button-active);
+  margin: 0;
 }
 
 .publishButton {
@@ -220,7 +209,21 @@ button:active {
     border-radius: 4px;
     margin-bottom: 10px;
   }
-  button {
-    border-radius: 4px;
-  }
+}
+
+#spinner {
+  position: fixed;
+  top: 0;
+  text-align: center;
+  left: 0;
+  right: 0;
+}
+
+#spinner span {
+  color: grey;
+  background-color: rgba(255,255,255,0.8);
+  border: 1px solid grey;
+  padding: 0 10px 5px 10px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
 }

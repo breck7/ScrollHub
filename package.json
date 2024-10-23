@@ -1,6 +1,6 @@
 {
   "name": "scrollhub",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "ScrollHub turns any server into a place where people can instantly launch unlimited new (ephemeral) website powered by Scroll.",
   "main": "server.js",
   "author": "Breck Yunits",
@@ -15,7 +15,7 @@
     "ky": "^1.4.0",
     "minimist": "^1.2.8",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^144.0.0",
+    "scroll-cli": "^145.0.0",
     "scrollsdk": "^88.0.0"
   },
   "bin": {

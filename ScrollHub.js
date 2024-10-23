@@ -20,6 +20,8 @@ const httpBackend = require("git-http-backend")
 
 // PPS
 const { Particle } = require("scrollsdk/products/Particle.js")
+const { ScrollFile, ScrollFileSystem } = require("scroll-cli/scroll.js")
+const scrollFs = new ScrollFileSystem()
 
 // This
 const { Dashboard } = require("./dashboard.js")
@@ -48,6 +50,8 @@ const sanitizeFolderName = name => {
   if (isUrl(name)) name = name.split("/").pop().replace(".git", "")
   return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 }
+
+const sanitizeFileName = name => name.replace(/[^a-z0-9._]/g, "")
 
 class ScrollHub {
   constructor() {
@@ -503,7 +507,7 @@ ${prefix}${hash}<br>
       if (file.size > this.maxUploadSize) return res.status(400).send("File size exceeds the maximum limit of 1MB.")
 
       // Save file to disk
-      const fileName = sanitizeFolderName(path.basename(file.name, path.extname(file.name))) + "." + fileExtension
+      const fileName = sanitizeFileName(path.basename(file.name, path.extname(file.name))) + "." + fileExtension
       const filePath = path.join(folderPath, fileName)
 
       try {
@@ -530,8 +534,8 @@ ${prefix}${hash}<br>
 
     app.post("/insert.htm", checkWritePermissions, async (req, res) => {
       const folderName = sanitizeFolderName(req.query.folderName)
-      const fileName = sanitizeFolderName(req.query.fileName)
-      const redirectUrl = sanitizeFolderName(req.query.redirect)
+      const fileName = sanitizeFileName(req.query.fileName)
+      const redirectUrl = sanitizeFileName(req.query.redirect)
       const line = parseInt(req.query.line)
       let particles = req.body.particles
 
@@ -656,7 +660,7 @@ ${prefix}${hash}<br>
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const oldFileName = req.body.oldFileName
-      const newFileName = sanitizeFolderName(req.body.newFileName)
+      const newFileName = sanitizeFileName(req.body.newFileName)
 
       const folderPath = path.join(rootFolder, folderName)
       const oldFilePath = path.join(folderPath, oldFileName)
@@ -824,36 +828,42 @@ ${prefix}${hash}<br>
   }
 
   async writeAndCommitFile(req, res, filePath, content) {
-    const { rootFolder } = this
+    const { rootFolder, folderCache } = this
     filePath = path.join(rootFolder, filePath)
 
     const ok = this.extensionOkay(filePath, res)
     if (!ok) return
 
     const folderPath = path.dirname(filePath)
-
-    // Check if the folder exists asynchronously
-    const folderExists = await fsp
-      .access(folderPath)
-      .then(() => true)
-      .catch(() => false)
-    if (!folderExists) return res.status(400).send("Folder does not exist")
-
-    // Extract folder name and file name for the redirect
     const folderName = path.relative(rootFolder, folderPath)
+
+    if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
     const fileName = path.basename(filePath)
     const clientIp = req.ip || req.connection.remoteAddress
     const hostname = req.hostname?.toLowerCase()
 
+    const {isCreate} = req.body
+
+    let formatted = content
+    if (!isCreate && filePath.endsWith(".scroll") || filePath.endsWith(".parsers"))
+      formatted = new ScrollFile(content, filePath, scrollFs).formatted
+
     try {
+      if (!isCreate) {
+      const currentContent = await fsp.readFile(filePath, "utf8")
+      if (currentContent === formatted)
+        return res.send(`Unchanged.`)
+    }
+
       // Write the file content asynchronously
-      await fsp.writeFile(filePath, content, "utf8")
+      await fsp.writeFile(filePath, formatted, "utf8")
 
       // Run the scroll build and git commands asynchronously
-      await execAsync(`scroll list | scroll format; git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
+      await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
       await this.buildFolder(folderName)
 
-      res.redirect(`/edit.html?folderName=${folderName}&fileName=${fileName}`)
+      res.send(`Ok`)
       this.addStory(req, `updated ${folderName}/${fileName}`)
       this.updateFolderAndBuildList(folderName)
     } catch (error) {
