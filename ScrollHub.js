@@ -25,6 +25,7 @@ const { Particle } = require("scrollsdk/products/Particle.js")
 const { Dashboard } = require("./dashboard.js")
 
 express.static.mime.define({ "text/plain": ["scroll", "parsers"] })
+express.static.mime.define({ "text/plain": ["ssv", "psv"] })
 
 const parseUserAgent = userAgent => {
   if (!userAgent) return "Unknown"
