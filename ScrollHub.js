@@ -491,7 +491,7 @@ ${prefix}${hash}<br>
         if (result.errorMessage) return this.handleCreateError(res, result)
         const { folderName } = result
         this.addStory(req, `cloned ${sourceFolderName} to ${cloneName}`)
-        res.send(folderName)
+        res.redirect(`/edit.html?folderName=${cloneName}`)
       } catch (error) {
         console.error(error)
         res.status(500).send("Sorry, an error occurred while cloning the folder:", error)
