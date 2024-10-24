@@ -453,6 +453,19 @@ ${prefix}${hash}<br>
     })
   }
 
+  getCloneName(folderName) {
+    const { folderCache } = this
+    const isSubdomain = folderName.includes(".")
+    // If its a domain name, add a subdomain
+    let newName = folderName
+    while (folderCache[newName]) {
+      // todo: would need to adjust if popular
+      const rand = Math.random().toString(16).slice(2, 7)
+      newName = isSubdomain ? `clone${rand}.` + folderName : folderName + rand
+    }
+    return newName
+  }
+
   initFileRoutes() {
     const { app, rootFolder, folderCache, allowedExtensions } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
@@ -466,6 +479,22 @@ ${prefix}${hash}<br>
       } catch (error) {
         console.error(error)
         res.status(500).send("Sorry, an error occurred while creating the folder:", error)
+      }
+    })
+
+    app.post("/clone.htm", checkWritePermissions, async (req, res) => {
+      try {
+        const sourceFolderName = req.body.folderName || (req.body.particle ? new Particle(req.body.particle).get("folderName") : "")
+        if (!sourceFolderName) return res.status(500).send("No folder name provided")
+        const cloneName = this.getCloneName(sourceFolderName)
+        const result = await this.createFolder(sourceFolderName + " " + cloneName)
+        if (result.errorMessage) return this.handleCreateError(res, result)
+        const { folderName } = result
+        this.addStory(req, `cloned ${sourceFolderName} to ${cloneName}`)
+        res.send(folderName)
+      } catch (error) {
+        console.error(error)
+        res.status(500).send("Sorry, an error occurred while cloning the folder:", error)
       }
     })
 

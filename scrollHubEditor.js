@@ -260,7 +260,7 @@ class EditorApp {
   updateFooterLinks() {
     const { folderName, folderNameText } = this
     document.getElementById("gitClone").innerHTML =
-      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a class="duplicateButton" onclick="window.app.duplicate()">clone ${folderNameText}</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a class="duplicateButton" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async renameFolder() {
@@ -301,18 +301,16 @@ class EditorApp {
   }
 
   async duplicate() {
-    const newFolderName = prompt(`clone ${this.folderNameText} to:`)
-    if (!newFolderName) return
-    const response = await fetch("/create.htm", {
+    const response = await fetch("/clone.htm", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `folderName=${this.folderName}%20${encodeURIComponent(newFolderName)}`
+      body: `folderName=${this.folderName}`
     })
 
     const result = await response.text()
-    window.location.href = `/edit.html?folderName=${newFolderName}`
+    window.location.href = `/edit.html?folderName=${result}`
   }
 
   async fetchAndDisplayFileList() {
