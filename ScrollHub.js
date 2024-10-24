@@ -58,8 +58,7 @@ const sanitizeFolderName = name => {
       const { hostname, pathname } = url
       // given http://hub.com/ return hub.com
       name = pathname.split("/").pop()
-      if (!name)
-        return hostname
+      if (!name) return hostname
       return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
     } catch (err) {
       console.log(name)
@@ -552,13 +551,17 @@ ${prefix}${hash}<br>
     })
 
     app.post("/insert.htm", checkWritePermissions, async (req, res) => {
-      const folderName = sanitizeFolderName(req.query.folderName)
+      const folderName = this.getFolderName(req)
+
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+      // Which file to insert data to
       const fileName = sanitizeFileName(req.query.fileName)
+
+      // Where to redirect after success
       const redirectUrl = sanitizeFileName(req.query.redirect)
       const line = parseInt(req.query.line)
       let particles = req.body.particles
-
-      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       if (!particles) return res.status(400).send("No particles provided")
 
@@ -572,24 +575,17 @@ ${prefix}${hash}<br>
 
       particles = "\n" + particles // add a new line before new particles
       try {
-        // Check if the file exists
-        await fsp.access(filePath)
-
-        let content = await fsp.readFile(filePath, "utf8")
-        let lines = content.split("\n")
-
+        // Default is append
         if (isNaN(line) || line <= 0 || line > lines.length + 1) {
-          // Append to the end if line is not provided or invalid
-          lines.push(particles)
-          // todo: run a fast append
+          await fsp.appendFile(filePath, particles)
         } else {
-          // Insert at the specified line (adjusting for 0-based array index)
+          await fsp.access(filePath)
+          let content = await fsp.readFile(filePath, "utf8")
+          let lines = content.split("\n")
           lines.splice(line - 1, 0, particles)
+          content = lines.join("\n")
+          await fsp.writeFile(filePath, content, "utf8")
         }
-
-        content = lines.join("\n")
-
-        await fsp.writeFile(filePath, content, "utf8")
 
         // Run git commands
         const clientIp = req.ip || req.connection.remoteAddress
@@ -862,18 +858,16 @@ ${prefix}${hash}<br>
     const clientIp = req.ip || req.connection.remoteAddress
     const hostname = req.hostname?.toLowerCase()
 
-    const {isCreate} = req.body
+    const { isCreate } = req.body
 
     let formatted = content
-    if (!isCreate && (filePath.endsWith(".scroll") || filePath.endsWith(".parsers")))
-      formatted = new ScrollFile(content, filePath, scrollFs).formatted
+    if (!isCreate && (filePath.endsWith(".scroll") || filePath.endsWith(".parsers"))) formatted = new ScrollFile(content, filePath, scrollFs).formatted
 
     try {
       if (!isCreate) {
-      const currentContent = await fsp.readFile(filePath, "utf8")
-      if (currentContent === formatted)
-        return res.send(`Unchanged.`)
-    }
+        const currentContent = await fsp.readFile(filePath, "utf8")
+        if (currentContent === formatted) return res.send(`Unchanged.`)
+      }
 
       // Write the file content asynchronously
       await fsp.writeFile(filePath, formatted, "utf8")
