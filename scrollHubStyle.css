@@ -68,11 +68,13 @@ body {
 }
 
 .historyLink,
-.duplicateButton,.deleteFolderLink {
+.duplicateButton,
+.folderActionLink {
   color: var(--light-grey);
 }
 .visitLink,
-.deleteLink {color: var(--light-grey);
+.deleteLink {
+  color: var(--light-grey);
   margin-left: 20px;
 }
 
@@ -221,7 +223,7 @@ textarea {
 
 #spinner span {
   color: grey;
-  background-color: rgba(255,255,255,0.8);
+  background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid grey;
   padding: 0 10px 2px 10px;
   border-bottom-left-radius: 5px;

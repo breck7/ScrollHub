@@ -701,6 +701,59 @@ ${prefix}${hash}<br>
         res.status(500).send(`An error occurred while renaming the file:\n ${error.toString().replace(/</g, "&lt;")}`)
       }
     })
+
+    app.post("/mv.htm", checkWritePermissions, async (req, res) => {
+      const oldFolderName = sanitizeFolderName(req.body.oldFolderName)
+      const newFolderName = sanitizeFolderName(req.body.newFolderName)
+
+      // Validate old folder exists
+      if (!folderCache[oldFolderName]) return res.status(404).send("Source folder not found")
+
+      // Validate new folder name
+      if (!this.isValidFolderName(newFolderName)) return res.status(400).send(`Invalid folder name "${newFolderName}". Folder names must start with a letter a-z, be more than 1 character, and not end in a common file extension.`)
+
+      // Check if new folder name already exists
+      if (folderCache[newFolderName]) return res.status(409).send(`A folder named "${newFolderName}" already exists`)
+
+      const oldPath = path.join(rootFolder, oldFolderName)
+      const newPath = path.join(rootFolder, newFolderName)
+
+      try {
+        // Rename the folder
+        await fsp.rename(oldPath, newPath)
+
+        // Remove from cache
+        delete folderCache[oldFolderName]
+        this.zipCache.delete(oldFolderName)
+
+        // Update folder cache with new name
+        await this.updateFolder(newFolderName)
+
+        // Rebuild the list file
+        this.buildListFile()
+
+        this.addStory(req, `renamed folder ${oldFolderName} to ${newFolderName}`)
+
+        res.send("Folder renamed successfully")
+      } catch (error) {
+        console.error(error)
+        res.status(500).send(`An error occurred while renaming the folder:\n ${error.toString().replace(/</g, "&lt;")}`)
+
+        // Try to revert if there was an error
+        try {
+          if (
+            await fsp
+              .access(newPath)
+              .then(() => true)
+              .catch(() => false)
+          ) {
+            await fsp.rename(newPath, oldPath)
+          }
+        } catch (revertError) {
+          console.error("Error reverting failed rename:", revertError)
+        }
+      }
+    })
   }
 
   initCommandRoutes() {

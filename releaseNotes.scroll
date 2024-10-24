@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.11.0 10/24/2024
+🎉 added folder renaming
+🎉 various improvements
+
 📦 0.10.0 10/23/2024
 🎉 significant bug fixes and improvements
 
