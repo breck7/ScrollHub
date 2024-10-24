@@ -21,6 +21,7 @@ const httpBackend = require("git-http-backend")
 // PPS
 const { Particle } = require("scrollsdk/products/Particle.js")
 const { ScrollFile, ScrollFileSystem } = require("scroll-cli/scroll.js")
+const { CloneCli } = require("scroll-cli/clone.js")
 const scrollFs = new ScrollFileSystem()
 
 // This
@@ -45,9 +46,27 @@ const parseUserAgent = userAgent => {
 
 const isUrl = str => str.startsWith("http://") || str.startsWith("https://")
 
+// todo: clean this up. add all test cases
 const sanitizeFolderName = name => {
+  name = name.replace(/\.git$/, "")
   // if given a url, return the last part
-  if (isUrl(name)) name = name.split("/").pop().replace(".git", "")
+  // given http://hub.com/foo returns foo
+  // given http://hub.com/foo.git returns foo
+  if (isUrl(name)) {
+    try {
+      const url = new URL(name)
+      const { hostname, pathname } = url
+      // given http://hub.com/ return hub.com
+      name = pathname.split("/").pop()
+      if (!name)
+        return hostname
+      return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
+    } catch (err) {
+      console.log(name)
+      console.error(name, err)
+    }
+  }
+  name = name.split("/").pop()
   return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 }
 
@@ -846,7 +865,7 @@ ${prefix}${hash}<br>
     const {isCreate} = req.body
 
     let formatted = content
-    if (!isCreate && filePath.endsWith(".scroll") || filePath.endsWith(".parsers"))
+    if (!isCreate && (filePath.endsWith(".scroll") || filePath.endsWith(".parsers")))
       formatted = new ScrollFile(content, filePath, scrollFs).formatted
 
     try {
@@ -1111,7 +1130,8 @@ scrollVersionLink`
       } catch (err) {
         return { errorMessage: `Invalid template url.`, folderName: rawInput }
       }
-      await execAsync(`git clone ${template} ${folderName}`, { cwd: rootFolder })
+      const cloner = new CloneCli()
+      await cloner.clone(rootFolder, template, folderName)
       await this.buildFolder(folderName)
     } else {
       await execAsync(`cp -R ${template} ${folderName};`, { cwd: rootFolder })
