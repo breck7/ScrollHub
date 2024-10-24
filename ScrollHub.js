@@ -576,7 +576,7 @@ ${prefix}${hash}<br>
       particles = "\n" + particles // add a new line before new particles
       try {
         // Default is append
-        if (isNaN(line) || line <= 0 || line > lines.length + 1) {
+        if (req.query.line === undefined) {
           await fsp.appendFile(filePath, particles)
         } else {
           await fsp.access(filePath)
