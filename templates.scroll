@@ -1,0 +1,58 @@
+buildHtml
+
+homeButton
+css
+ body {
+  font-family: "SF Pro", "Helvetica Neue", "Segoe UI", "Arial" !important;
+ }
+
+center
+# Create from template
+ style font-weight: 300; font-size: 200%;
+
+center
+table folders.json
+ where folder endsWith _template
+  limit 0 100
+   eval name "{folder}".split('_template')[0]
+    compose tag <form class="iframeHolder" method="post" action="clone.htm"><div>{name}</div><iframe sandbox="allow-scripts allow-same-origin allow-forms" allow="camera 'none'; microphone 'none'; geolocation 'none'; payment 'none'; battery 'none'; accelerometer 'none'; gyroscope 'none'" src="/{folder}/" frameborder="0"></iframe><div class="cloneButton" onclick="this.parentNode.submit()"></div><input type="hidden" name="folderName" value="{folder}" ></form>
+     printColumn tag
+css
+ iframe {
+   width: 800px;
+   height: 600px;
+   border-radius: 15px;
+   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+   padding: 20px;
+   display: inline-block;
+   border: 0;
+   transform: scale(0.5);
+   transform-origin: 0 0;
+ }
+ .cloneButton {
+   position: absolute;
+   top: 0;
+   left: 0;
+   z-index: 2;
+   right: 0;
+   bottom: 0;
+   cursor: pointer;
+   background: black;
+   opacity: 0.01;
+ }
+ .cloneButton:hover {
+   opacity: 0.05;
+ }
+ .cloneButton:active {
+   opacity: 0.1;
+ }
+ .iframeHolder {
+  width: 400px;
+  height: 300px;
+  box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  margin: 5px;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+ }

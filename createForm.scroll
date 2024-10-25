@@ -1,6 +1,5 @@
 <form method="post" action="create.htm" id="createForm">
-<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Publish</button>
-<div class="templateButton">Popular templates: blog, paper, gallery, teaser</div>
+<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Create</button>
 <div id="errorMessage"></div>
 script
  {
@@ -15,5 +14,10 @@ script
     inputEl.value = folderName
   inputEl.focus()
  }
-
+br 2
 </form>
+
+br 2
+center
+Start from template
+ templates.html

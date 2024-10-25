@@ -1191,12 +1191,12 @@ scrollVersionLink`
       if (folderCache[template]) {
         folderName = parts.join(" ")
       } else {
-        template = "blank"
+        template = "blank_template"
         folderName = sanitizeFolderName(rawInput)
       }
     } else {
       folderName = sanitizeFolderName(rawInput)
-      template = isUrl(rawInput) ? rawInput : "blank"
+      template = isUrl(rawInput) ? rawInput : "blank_template"
     }
     if (!this.isValidFolderName(folderName))
       return {

@@ -37,26 +37,6 @@ body {
   display: none;
 }
 
-.templateButton {
-  flex: 100%;
-  padding: 20px 0 0 0px;
-  font-size: 0.8em;
-  color: var(--light-grey);
-}
-
-#templateOptions a {
-  color: var(--light-grey);
-}
-
-#templateOptions a:hover {
-  cursor: pointer;
-  color: var(--hover-color);
-}
-
-#templateOptions a.selected {
-  color: var(--hover-color);
-}
-
 .greyText {
   color: var(--light-grey);
   text-align: center;
@@ -146,10 +126,6 @@ form {
   align-items: top;
   margin: 0 auto;
   max-width: 600px;
-}
-
-#createForm {
-  padding-bottom: 20px;
 }
 
 #importForm {
