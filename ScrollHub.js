@@ -469,6 +469,11 @@ ${prefix}${hash}<br>
   initFileRoutes() {
     const { app, rootFolder, folderCache, allowedExtensions } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
+
+    app.get("/e/:folderName", async (req, res) => {
+      res.redirect("/edit.html?folderName=" + req.params.folderName)
+    })
+
     app.post("/create.htm", checkWritePermissions, async (req, res) => {
       try {
         const result = await this.createFolder(req.body.folderName)
