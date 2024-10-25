@@ -69,7 +69,7 @@ const sanitizeFolderName = name => {
   return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 }
 
-const sanitizeFileName = name => name.replace(/[^a-z0-9._]/g, "")
+const sanitizeFileName = name => name.replace(/[^a-zA-Z0-9._]/g, "")
 
 class ScrollHub {
   constructor() {
