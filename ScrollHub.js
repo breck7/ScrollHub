@@ -28,7 +28,7 @@ const scrollFs = new ScrollFileSystem()
 const { Dashboard } = require("./dashboard.js")
 
 express.static.mime.define({ "text/plain": ["scroll", "parsers"] })
-express.static.mime.define({ "text/plain": ["ssv", "psv"] })
+express.static.mime.define({ "text/plain": ["ssv", "psv", "tsv", "csv"] })
 
 const parseUserAgent = userAgent => {
   if (!userAgent) return "Unknown"
