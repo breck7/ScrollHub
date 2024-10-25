@@ -15,6 +15,48 @@ testParticles.basics = areEqual => {
   areEqual(!!hub, true)
 }
 
+testParticles.create = areEqual => {
+  // Arrange
+  const hub = new ScrollHub()
+
+  const testCases = {
+    "http://pldb.io pldb7": {
+      errorMessage: undefined,
+      folderName: "pldb7",
+      template: "http://pldb.io"
+    },
+    foobar: {
+      errorMessage: undefined,
+      folderName: "foobar",
+      template: "blank_template"
+    },
+    "http://pldb.io": {
+      errorMessage: undefined,
+      folderName: "pldb.io",
+      template: "http://pldb.io"
+    },
+    "gallery_template my copy": {
+      errorMessage: undefined,
+      folderName: "mycopy",
+      template: "gallery_template",
+      folderCache: { gallery_template: true }
+    },
+    "missing my copy": {
+      errorMessage: undefined,
+      folderName: "missingmycopy",
+      template: "blank_template"
+    }
+  }
+
+  // Act/ Assert
+  Object.keys(testCases).forEach(key => {
+    const theCase = testCases[key]
+    const result = hub.makeFolderNameAndTemplateFromInput(key, theCase.folderCache || {})
+    const keys = "folderName template errorMessage".split(" ")
+    keys.forEach(testKey => areEqual(result[testKey], theCase[testKey], `${testKey} did not match`))
+  })
+}
+
 if (module && !module.parent) TestRacer.testSingleFile(__filename, testParticles)
 
 module.exports = { testParticles }

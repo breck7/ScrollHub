@@ -61,8 +61,7 @@ const sanitizeFolderName = name => {
       if (!name) return hostname
       return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
     } catch (err) {
-      console.log(name)
-      console.error(name, err)
+      console.error(err)
     }
   }
   name = name.split("/").pop()
@@ -1181,16 +1180,16 @@ scrollVersionLink`
     return false
   }
 
-  async createFolder(rawInput) {
-    const { rootFolder, folderCache } = this
+  makeFolderNameAndTemplateFromInput(rawInput, folderCache) {
     const parts = rawInput.split(" ")
     let template = ""
     let folderName = ""
+    // If more than 1 part, try to create from template
     if (parts.length > 1) {
       template = parts.shift()
-      if (folderCache[template]) {
-        folderName = parts.join(" ")
-      } else {
+      if (folderCache[template]) folderName = parts.join("")
+      else if (isUrl(template)) folderName = sanitizeFolderName(parts.join(" "))
+      else {
         template = "blank_template"
         folderName = sanitizeFolderName(rawInput)
       }
@@ -1203,9 +1202,21 @@ scrollVersionLink`
         errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and not end in a common file extension.`,
         folderName: rawInput
       }
+    return {
+      folderName,
+      template,
+      errorMessage: undefined
+    }
+  }
+
+  async createFolder(rawInput) {
+    const { folderCache } = this
+    const { folderName, template, errorMessage } = this.makeFolderNameAndTemplateFromInput(rawInput, folderCache)
+    if (errorMessage) return { errorMessage, folderName }
 
     if (folderCache[folderName]) return { errorMessage: `Sorry a folder named "${folderName}" already exists on this server.`, folderName: rawInput }
 
+    const { rootFolder } = this
     if (isUrl(template)) {
       try {
         new URL(template)
