@@ -301,15 +301,18 @@ class EditorApp {
   }
 
   async duplicate() {
+    this.showSpinner("Copying folder...")
     const response = await fetch("/clone.htm", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `folderName=${this.folderName}`
+      body: `folderName=${this.folderName}&redirect=false`
     })
 
     const result = await response.text()
+    this.hideSpinner()
+    console.log(result)
     window.location.href = `/edit.html?folderName=${result}`
   }
 
