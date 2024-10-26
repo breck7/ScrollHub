@@ -1,34 +1,31 @@
-title ScrollHub: the fastest way to publish
+title ScrollHub: publish faster
 
 settings.scroll
 metaTags
 inlineCss gazette.css scrollHubStyle.css
-homeButton
-editButton
 
 css .thin {font-weight: 100;}
 
-# ScrollHub The fastest way to publish
- class thin The fastest way to publish
- style font-size: 150%;
+# ScrollHub
+ style font-size: 200%;
 
 br 2
 
-### Scroll is a language and community for thinkers of all ages.
- https://scroll.pub language
- https://www.reddit.com/r/WorldWideScroll/ community
+center
+Start from template
+ templates.html
 
-br 3
+br 2
 
 createForm.scroll
 
-br 3
+br 2
 
 center
-<a id="foldersPublished" class="greyText" href="folders.html"></a>
-script fetch('/foldersPublished.htm').then(response => response.text()).then(data => document.getElementById('foldersPublished').innerText = `${data} folders`);
+foldersPublished.html
 
 br 2
+
 footer.scroll
 
 center

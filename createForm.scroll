@@ -14,10 +14,4 @@ script
     inputEl.value = folderName
   inputEl.focus()
  }
-br 2
 </form>
-
-br 2
-center
-Start from template
- templates.html

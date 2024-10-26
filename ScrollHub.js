@@ -209,10 +209,6 @@ class ScrollHub {
     if (!fs.existsSync(this.storyLogFile)) fs.writeFileSync(this.storyLogFile, "", "utf8")
     const { app, folderCache } = this
     app.use(this.logRequest.bind(this))
-    app.get("/foldersPublished.htm", (req, res) => {
-      res.setHeader("Content-Type", "text/plain")
-      res.send(Object.values(folderCache).length.toString())
-    })
 
     app.get("/dashboard.csv", async (req, res) => {
       const { dashboard } = this
@@ -1199,6 +1195,7 @@ endColumns
 tableSearch
 scrollVersionLink`
     await fsp.writeFile(path.join(__dirname, "folders.scroll"), scroll, "utf8")
+    await fsp.writeFile(path.join(__dirname, "foldersPublished.html"), `<a id="foldersPublished" class="greyText" href="folders.html">${folders.length} folders</a>`, "utf8")
     await execAsync(`scroll build`, { cwd: __dirname })
   }
 
