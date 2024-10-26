@@ -793,9 +793,36 @@ ${prefix}${hash}<br>
   initCommandRoutes() {
     const { app } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
-    app.get("/build.htm", checkWritePermissions, (req, res) => runCommand(req, res, "build"))
-    app.get("/format.htm", checkWritePermissions, (req, res) => runCommand(req, res, "format"))
-    app.get("/test.htm", checkWritePermissions, (req, res) => runCommand(req, res, "test"))
+
+    app.get("/t/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runCommand(req, res, "test")
+    })
+
+    app.get("/b/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runCommand(req, res, "build")
+    })
+
+    app.get("/f/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runCommand(req, res, "format")
+    })
+  }
+
+  async runCommand(req, res, command) {
+    const folderName = this.getFolderName(req)
+    const { rootFolder, folderCache } = this
+
+    if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+    try {
+      const folderPath = path.join(rootFolder, folderName)
+      const { stdout } = await execAsync(`scroll list | scroll ${command}`, { cwd: folderPath })
+      res.setHeader("Content-Type", "text/plain")
+      res.send(stdout.toString())
+      if (command !== "test") this.updateFolderAndBuildList(folderName)
+    } catch (error) {
+      console.error(`Error running '${command}' in '${folderName}':`, error)
+      res.status(500).send(`An error occurred while running '${command}' in '${folderName}'`)
+    }
   }
 
   initZipRoutes() {
@@ -950,6 +977,8 @@ ${prefix}${hash}<br>
     let formatted = content
     if (!isCreate && (filePath.endsWith(".scroll") || filePath.endsWith(".parsers"))) formatted = new ScrollFile(content, filePath, scrollFs).formatted
 
+    // todo: prettify js, html, and css
+
     try {
       if (!isCreate) {
         const currentContent = await fsp.readFile(filePath, "utf8")
@@ -961,7 +990,8 @@ ${prefix}${hash}<br>
 
       // Run the scroll build and git commands asynchronously
       await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
-      await this.buildFolder(folderName)
+
+      await this.buildFolder(folderName, fileName)
 
       res.send(`Ok`)
       this.addStory(req, `updated ${folderName}/${fileName}`)
@@ -1009,6 +1039,7 @@ ${prefix}${hash}<br>
     }
   }
 
+  // todo: speed this up. throttle?
   async updateFolder(folder) {
     const { rootFolder } = this
     const fullPath = path.join(rootFolder, folder)
@@ -1105,7 +1136,15 @@ ${prefix}${hash}<br>
     this.buildListFile()
   }
 
-  async buildFolder(folderName) {
+  async buildFolder(folderName, filePath) {
+    const folder = this.folderCache[folderName]
+    const scrollFs = new ScrollFileSystem()
+    // if fileName and a large folder do a fast build. todo: figure this out better. add dep graph to scrollsdk?
+    if (filePath && folder.revisions > 500) {
+      const file = new ScrollFile(undefined, filePath, scrollFs)
+      await file.buildAll()
+      return
+    }
     await execAsync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
   }
 
@@ -1114,7 +1153,7 @@ ${prefix}${hash}<br>
   }
 
   getFolderName(req) {
-    const folderName = req.body?.folderName || req.query?.folderName
+    const folderName = req.body?.folderName || req.query?.folderName || req.params?.folderName
     if (folderName && this.folderCache[folderName]) return folderName
 
     if (req.hostname && this.folderCache[req.hostname]) return req.hostname
@@ -1232,22 +1271,6 @@ scrollVersionLink`
     this.updateFolderAndBuildList(folderName)
 
     return { folderName }
-  }
-
-  async runCommand(req, res, command) {
-    const { rootFolder } = this
-    const folderName = sanitizeFolderName(req.query.folderName)
-    const folderPath = path.join(rootFolder, folderName)
-
-    if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
-
-    try {
-      const { stdout } = await execAsync(`scroll list | scroll ${command}`, { cwd: folderPath })
-      res.send(stdout.toString())
-    } catch (error) {
-      console.error(`Error running '${command}' in '${folderName}':`, error)
-      res.status(500).send(`An error occurred while running '${command}' in '${folderName}'`)
-    }
   }
 
   async initCertRoutes() {
