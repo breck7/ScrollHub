@@ -138,7 +138,8 @@ class Globe {
 
   bindToSSE() {
     const logContainer = document.getElementById("log-container")
-    const eventSource = new EventSource("/requests.htm")
+    const urlParams = new URLSearchParams(window.location.search)
+    const eventSource = new EventSource(`/requests.htm?folderName=${urlParams.get("folderName")}`)
     eventSource.onmessage = event => {
       const data = JSON.parse(event.data)
       const logEntry = document.createElement("div")

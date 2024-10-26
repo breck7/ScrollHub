@@ -47,8 +47,6 @@ body {
   padding: 0.5rem;
 }
 
-.historyLink,
-.duplicateButton,
 .folderActionLink {
   color: var(--light-grey);
 }
@@ -56,11 +54,6 @@ body {
 .deleteLink {
   color: var(--light-grey);
   margin-left: 20px;
-}
-
-.duplicateButton:hover {
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .drag-over {

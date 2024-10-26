@@ -118,6 +118,7 @@ class ScrollHub {
   initSSERoute() {
     const { app, globalLogFile } = this
     app.get("/requests.htm", (req, res) => {
+      const folderName = req.query?.folderName
       req.headers["accept-encoding"] = "identity"
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -132,7 +133,8 @@ class ScrollHub {
 
       const client = {
         id,
-        res
+        res,
+        folderName
       }
 
       this.sseClients.add(client)
@@ -141,12 +143,14 @@ class ScrollHub {
     })
   }
 
-  async broadCastMessage(log, ip) {
+  async broadCastMessage(folderName, log, ip) {
     if (!this.sseClients.size) return
     const geo = await this.dashboard.ipToGeo(ip === "::1" ? "98.150.188.43" : ip)
     const name = (geo.regionName + "/" + geo.country).replace(/ /g, "")
     log = [log.trim(), name, geo.lat, geo.lon].join(" ")
-    this.sseClients.forEach(client => client.res.write(`data: ${JSON.stringify({ log })}\n\n`))
+    this.sseClients.forEach(client => {
+      if (!client.folderName || client.folderName === folderName) client.res.write(`data: ${JSON.stringify({ log })}\n\n`)
+    })
   }
 
   enableCompression() {
@@ -235,7 +239,7 @@ class ScrollHub {
       if (err) console.error("Failed to log request:", err)
     })
 
-    this.broadCastMessage(logEntry, ip)
+    this.broadCastMessage(folderName, logEntry, ip)
 
     if (folderName && folderCache[folderName]) {
       const folderPath = path.join(rootFolder, folderName)

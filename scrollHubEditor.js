@@ -260,7 +260,7 @@ class EditorApp {
   updateFooterLinks() {
     const { folderName, folderNameText } = this
     document.getElementById("gitClone").innerHTML =
-      `<a class="historyLink" href="/diff.htm/${folderName}">history</a> · <a class="duplicateButton" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">traffic</a> · <a class="folderActionLink" href="/diff.htm/${folderName}">history</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async renameFolder() {
