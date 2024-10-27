@@ -852,8 +852,6 @@ ${prefix}${hash}<br>
       res.setHeader("Content-Type", "application/zip")
       res.setHeader("Content-Disposition", `attachment; filename=${folderName}.zip`)
       res.send(zipBuffer)
-
-      this.addStory(req, `downloaded ${folderName}.zip`)
     })
   }
 
