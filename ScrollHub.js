@@ -1190,7 +1190,7 @@ table folders.csv
   select folder folderLink links revised hash files mb revisions
    compose hashLink diff.htm/{folder}
     orderBy -revised
-     rename revised revisedtime
+     rename revised lastRevised
       printTable
 
 endColumns
