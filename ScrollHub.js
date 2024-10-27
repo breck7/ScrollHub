@@ -1177,8 +1177,9 @@ title Folders
 scrollHubStyle.css
 
 container 1000px
-${this.hostname} serves ${folders.length} folders.
+# ${this.hostname} serves ${folders.length} folders.
  index.html ${this.hostname}
+ style font-size: 150%;
 
 JSON | CSV | TSV
  link folders.json JSON
