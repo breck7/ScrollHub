@@ -84,7 +84,7 @@ class ScrollHub {
     this.folderCache = {}
     this.sseClients = new Set()
     this.globalLogFile = path.join(__dirname, "log.txt")
-    this.storyLogFile = path.join(__dirname, "now.txt")
+    this.storyLogFile = path.join(__dirname, "writes.txt")
     this.dashboard = new Dashboard(this.globalLogFile)
   }
 
@@ -267,10 +267,8 @@ class ScrollHub {
         ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
       })
       req.pipe(handlers).pipe(res)
-      this.addStory(req, `cloned ${repo}`)
     })
 
-    // todo: check pw
     app.post("/:repo.git/*", checkWritePermissions, async (req, res) => {
       const repo = req.params.repo
       const repoPath = path.join(rootFolder, repo)
