@@ -217,6 +217,7 @@ class ScrollHub {
     const dashboard = new Dashboard(this.globalLogFile)
     await dashboard.processLogFile()
     await fsp.writeFile(this.requestsLogPath, dashboard.csv, "utf8")
+    await this.buildScrollHubPages()
     this.isSummarizing = false
   }
 
@@ -1209,6 +1210,10 @@ tableSearch
 scrollVersionLink`
     await fsp.writeFile(path.join(__dirname, "folders.scroll"), scroll, "utf8")
     await fsp.writeFile(path.join(__dirname, "foldersPublished.html"), `<a id="foldersPublished" class="greyText" href="folders.html">${folders.length} folders</a>`, "utf8")
+    await this.buildScrollHubPages()
+  }
+
+  async buildScrollHubPages() {
     await execAsync(`scroll build`, { cwd: __dirname })
   }
 
