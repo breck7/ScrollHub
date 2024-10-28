@@ -106,7 +106,7 @@ class Dashboard {
       row.uniqueReaders.add(entry.ip)
 
       // Update page views
-      if (entry.filename.endsWith(".html") || entry.filename.endsWith(".htm")) {
+      if (entry.filename.endsWith(".html")) {
         const currentViews = row.pageViews.get(entry.filename) || 0
         row.pageViews.set(entry.filename, currentViews + 1)
       }
