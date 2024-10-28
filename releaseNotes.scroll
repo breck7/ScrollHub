@@ -1,9 +1,9 @@
 buildConcepts releaseNotes.csv releaseNotes.json releaseNotes.tsv
 buildMeasures releaseNotesMeasures.tsv
 title ScrollHub Release Notes
+linkTitle Release Notes
 
-header.scroll
-printTitle
+pageHeader.scroll
 ## A list of what has changed in ScrollHub releases.
 
 thinColumn
@@ -37,5 +37,4 @@ thinColumns 1
 
 endColumns
 
-scrollVersionLink
 footer.scroll

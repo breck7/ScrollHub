@@ -1,0 +1,243 @@
+title ScrollHub Documentation
+linkTitle Docs
+
+pageHeader.scroll
+
+container 600px
+
+## Overview
+ScrollHub is a web server application that provides git-based folder hosting with real-time collaboration features. It's built with Express.js and provides functionality for file management, version control, and live updates.
+
+## Core Features
+- File hosting and management
+- Git integration
+- Real-time collaboration via Server-Sent Events (SSE)
+- HTTPS support with dynamic certificate generation
+- Upload/download capabilities
+- Version history tracking
+- Folder cloning and templating
+- Analytics and logging
+
+## Main Components
+
+### Server Initialization
+```javascript
+class ScrollHub {
+  constructor() {
+    // Server configuration
+    this.port = 80
+    this.maxUploadSize = 100 * 1000 * 1024  // 100MB
+    this.rootFolder = path.join(os.homedir(), "folders")
+    // ... other configurations
+  }
+}
+```
+
+### Security Features
+
+#### Write Permission Control
+- IP-based rate limiting
+- Configurable allowed IPs list
+- Protection against excessive writes
+- Default limit: 30 writes per minute per IP
+
+#### File Extension Security
+- Whitelist of allowed file extensions
+- Sanitization of folder and file names
+- Protection against common web vulnerabilities
+
+### Core Routes
+
+#### File Management
+- `/create.htm` - Create new folders
+- `/clone.htm` - Clone existing folders
+- `/write.htm` - Write/update files
+- `/delete.htm` - Delete files
+- `/upload.htm` - File upload endpoint
+- `/rename.htm` - Rename files
+- `/mv.htm` - Move/rename folders
+
+#### Git Integration
+- `/:repo.git/*` - Git repository access
+- `/history.htm/:folderName` - View commit history
+- `/diff.htm/:folderName` - View file differences
+- `/revert.htm/:folderName` - Restore previous versions
+
+#### Real-time Features
+- `/requests.htm` - SSE endpoint for real-time updates
+- Broadcasts file changes to connected clients
+- Supports folder-specific subscriptions
+
+## Usage Examples
+
+### Creating a New Folder
+```javascript
+// POST to /create.htm
+const response = await fetch('/create.htm', {
+  method: 'POST',
+  body: new URLSearchParams({
+    folderName: 'my-project'
+  })
+});
+```
+
+### Writing a File
+```javascript
+// POST to /write.htm
+const response = await fetch('/write.htm', {
+  method: 'POST',
+  body: new URLSearchParams({
+    filePath: 'my-project/example.txt',
+    content: 'Hello, World!'
+  })
+});
+```
+
+### Subscribing to Real-time Updates
+```javascript
+const evtSource = new EventSource('/requests.htm?folderName=my-project');
+evtSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Update received:', data.log);
+};
+```
+
+## Configuration
+
+### Environment Setup
+Required directories:
+- `rootFolder`: Base directory for all hosted folders
+- `templatesFolder`: Directory containing folder templates
+- `trashFolder`: Directory for deleted folders
+
+### Security Configuration
+```javascript
+{
+  maxUploadSize: 100 * 1000 * 1024,  // Maximum upload size in bytes
+  allowedExtensions: ['scroll', 'txt', 'html', ...],  // Allowed file types
+  writeLimit: 30,  // Maximum writes per minute per IP
+  writeWindow: 60 * 1000  // Time window for write limit (ms)
+}
+```
+
+## Error Handling
+
+The server implements comprehensive error handling:
+- Invalid folder/file names
+- Unauthorized access attempts
+- Rate limiting violations
+- File system errors
+- Git operation failures
+
+Example error response:
+```javascript
+{
+  status: 400,
+  errorMessage: "Invalid folder name. Must start with a letter a-z..."
+}
+```
+
+## Folder Structure
+
+```
+root/
+├── folders/           # User folders
+│   ├── project1/
+│   └── project2/
+├── templates/         # Folder templates
+│   ├── blank_template/
+│   └── other_templates/
+└── trash/            # Deleted folders
+```
+
+## Best Practices
+
+1. **Folder Names**
+   - Must start with a lowercase letter
+   - Can contain letters, numbers, dots, and underscores
+   - Must be at least 2 characters long
+   - Cannot end in common file extensions
+
+2. **File Management**
+   - Use appropriate file extensions
+   - Keep file sizes under the upload limit
+   - Commit changes frequently
+   - Use meaningful commit messages
+
+3. **Security**
+   - Implement proper authentication if needed
+   - Monitor rate limits
+   - Regularly backup important folders
+   - Keep certificates up to date
+
+## Technical Notes
+
+1. **Certificate Management**
+   - Automatic certificate generation for HTTPS
+   - Certificates cached for performance
+   - Dynamic SNI support
+
+2. **Performance Considerations**
+   - File operations are asynchronous
+   - Git operations are optimized for large repositories
+   - SSE connections managed efficiently
+   - Response compression enabled
+
+3. **Monitoring**
+   - Request logging
+   - User activity tracking
+   - Error logging
+   - Analytics data collection
+
+## Limitations
+
+1. File size limited to 100MB
+2. Rate limited to 30 writes per minute per IP
+3. Limited to specific file extensions
+4. No built-in user authentication system
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Rate Limiting**
+   - Issue: "Your IP has been temporarily throttled"
+   - Solution: Wait for the write window to reset or contact administrator
+
+2. **Invalid File Types**
+   - Issue: "Editing 'xyz' files not yet supported"
+   - Solution: Use only allowed file extensions
+
+3. **Certificate Errors**
+   - Issue: SSL certificate errors
+   - Solution: Wait for automatic certificate generation or check domain configuration
+
+4. **Git Errors**
+   - Issue: Git operation failures
+   - Solution: Check repository status and permissions
+
+## Contributing
+
+When contributing to ScrollHub:
+
+1. Follow the existing code style
+2. Add tests for new features
+3. Update documentation
+4. Handle errors appropriately
+5. Consider backward compatibility
+
+## Dependencies
+
+Major dependencies:
+- Express.js
+- Node.js `child_process`
+- `git-http-backend`
+- `compression`
+- `express-fileupload`
+- Various file system utilities
+
+## Public Domain
+
+ScrollHub is open source, public domain software.
+
+footer.scroll

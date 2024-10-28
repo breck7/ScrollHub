@@ -1,15 +1,9 @@
-buildHtml
-title ScrollHub: The fastest way to publish. Run your own ScrollHub in 60 seconds.
+title ScrollHub: The fastest way to publish
 
-metaTags
-theme dark
-homeButton
-settings.scroll
-editButton
+linkTitle Readme
+pageHeader.scroll
 
-container
-
-# ScrollHub: The fastest way to publish
+container 560px
 
 ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more.
 
@@ -26,3 +20,5 @@ Optional steps:
 - Create a DNS A Record pointing from your domain or subdomain to your new server.
 
 ScrollHub is public domain.
+
+footer.scroll

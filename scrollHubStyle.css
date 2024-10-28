@@ -37,7 +37,8 @@ body {
   display: none;
 }
 
-.greyText {
+.greyText,
+.greyText a {
   color: var(--light-grey);
   text-align: center;
   font-size: 0.8rem;
@@ -61,7 +62,7 @@ body {
   background-color: rgba(0, 123, 255, 0.1);
 }
 
-iframe {
+#previewIFrame {
   height: 600px;
   width: 400px;
   border: 0;
