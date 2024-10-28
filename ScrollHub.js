@@ -85,6 +85,7 @@ class ScrollHub {
     this.sseClients = new Set()
     this.globalLogFile = path.join(__dirname, "log.txt")
     this.storyLogFile = path.join(__dirname, "writes.txt")
+    this.requestsLogPath = path.join(__dirname, "requests.csv")
     this.dashboard = new Dashboard(this.globalLogFile)
   }
 
@@ -209,17 +210,25 @@ class ScrollHub {
     })
   }
 
+  isSummarizing = false
+  async buildRequestsSummary() {
+    if (this.isSummarizing) return
+    this.isSummarizing = true
+    const dashboard = new Dashboard(this.globalLogFile)
+    await dashboard.processLogFile()
+    await fsp.writeFile(this.requestsLogPath, dashboard.csv, "utf8")
+    this.isSummarizing = false
+  }
+
   initAnalytics() {
+    const checkWritePermissions = this.checkWritePermissions.bind(this)
     if (!fs.existsSync(this.storyLogFile)) fs.writeFileSync(this.storyLogFile, "", "utf8")
     const { app, folderCache } = this
     app.use(this.logRequest.bind(this))
 
-    app.get("/dashboard.csv", async (req, res) => {
-      const { dashboard } = this
-      await dashboard.processLogFile()
-      const { csv } = dashboard
-      res.setHeader("Content-Type", "text/plain")
-      res.send(csv)
+    app.post("/summarizeRequests.htm", checkWritePermissions, async (req, res) => {
+      this.buildRequestsSummary()
+      res.send("Building Requests Summary")
     })
 
     app.get("/hostname.htm", (req, res) => res.send(req.hostname))
@@ -1178,6 +1187,9 @@ container 1000px
 # ${this.hostname} serves ${folders.length} folders.
  index.html ${this.hostname}
  style font-size: 150%;
+
+Traffic Data
+ requests.html
 
 JSON | CSV | TSV
  link folders.json JSON

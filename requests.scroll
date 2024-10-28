@@ -1,0 +1,20 @@
+title Traffic Data
+
+header.scroll
+printTitle
+
+container
+
+Real time view
+ globe.html
+
+button Refresh
+ link summarizeRequests.htm
+ post
+  // Anything
+
+requests.csv
+ printTable
+
+tableSearch
+footer.scroll

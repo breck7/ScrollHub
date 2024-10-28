@@ -65,10 +65,15 @@ class Dashboard {
     const regex = /^(read|write) ([^ ]+) ([^ ]+) (\d+) ([^ ]+) (.+)$/
     const match = entry.match(regex)
     if (match) {
+      const url = match[3]
+      // Extract filename from URL
+      const filename = url.split("/").pop().split("?")[0]
+
       return {
         method: match[1] === "read" ? "GET" : "POST",
         folder: match[2],
-        url: match[3],
+        url: url,
+        filename: filename,
         timestamp: new Date(parseInt(match[4])),
         ip: match[5],
         userAgent: match[6]
@@ -78,37 +83,61 @@ class Dashboard {
   }
 
   updateStats(entry) {
-    if (entry) {
-      const date = entry.timestamp.toISOString().split("T")[0]
-      const key = `${date}|${entry.folder}`
+    if (!entry) return
 
-      if (!this.stats[key]) {
-        this.stats[key] = {
-          date,
-          folder: entry.folder,
-          reads: 0,
-          writes: 0,
-          uniqueReaders: new Set(),
-          uniqueWriters: new Set()
-        }
+    const date = entry.timestamp.toISOString().split("T")[0]
+    const key = `${date}|${entry.folder}`
+
+    if (!this.stats[key])
+      this.stats[key] = {
+        date,
+        folder: entry.folder,
+        reads: 0,
+        writes: 0,
+        uniqueReaders: new Set(),
+        uniqueWriters: new Set(),
+        pageViews: new Map() // Track views per page
       }
 
-      if (entry.method === "GET") {
-        this.stats[key].reads++
-        this.stats[key].uniqueReaders.add(entry.ip)
-      } else if (entry.method === "POST") {
-        this.stats[key].writes++
-        this.stats[key].uniqueWriters.add(entry.ip)
+    const row = this.stats[key]
+
+    if (entry.method === "GET") {
+      row.reads++
+      row.uniqueReaders.add(entry.ip)
+
+      // Update page views
+      if (entry.filename.endsWith(".html") || entry.filename.endsWith(".htm")) {
+        const currentViews = row.pageViews.get(entry.filename) || 0
+        row.pageViews.set(entry.filename, currentViews + 1)
       }
+    } else if (entry.method === "POST") {
+      row.writes++
+      row.uniqueWriters.add(entry.ip)
     }
+  }
+
+  getTopPages(pageViews, count = 5) {
+    return Array.from(pageViews.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, count)
+      .map(([filename]) => filename)
   }
 
   finalizeStats() {
     Object.values(this.stats).forEach(stat => {
       stat.readers = stat.uniqueReaders.size
       stat.writers = stat.uniqueWriters.size
+
+      // Get top 5 pages and store them as rank1 through rank5
+      const topPages = this.getTopPages(stat.pageViews)
+      for (let i = 0; i < 5; i++) {
+        stat[`rank${i + 1}`] = topPages[i] || "" // Empty string if no page exists for this rank
+      }
+
+      // Clean up temporary data structures
       delete stat.uniqueReaders
       delete stat.uniqueWriters
+      delete stat.pageViews
     })
   }
 
@@ -145,9 +174,9 @@ class Dashboard {
   }
 
   get csv() {
-    const csvHeader = "Date,Folder,Reads,Readers,Writes,Writers\n"
+    const csvHeader = "Date,Folder,Reads,Readers,Writes,Writers,Rank1,Rank2,Rank3,Rank4,Rank5\n"
     const csvRows = Object.values(this.stats)
-      .map(({ date, folder, reads, readers, writes, writers }) => `${date},${folder},${reads},${readers},${writes},${writers}`)
+      .map(({ date, folder, reads, readers, writes, writers, rank1, rank2, rank3, rank4, rank5 }) => `${date},${folder},${reads},${readers},${writes},${writers},${rank1},${rank2},${rank3},${rank4},${rank5}`)
       .join("\n")
     return csvHeader + csvRows
   }
