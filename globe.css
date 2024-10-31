@@ -1,23 +1,29 @@
-
-      body {
-        background-color: black;
-        margin: 0;
-        font-family: Arial, sans-serif;
-      }
-      canvas {
-        display: block;
-      }
- #log-container {
-     padding: 10px;
-     height: 100px;
-     overflow-y: auto;
-     font-family: monospace;
-     white-space: pre-wrap;
-     word-wrap: break-word;
-     position: fixed;
-     bottom: 0px;
-     position: absolute;
-     left: 0;
-     right: 0;
-     color: white;
- }
+body {
+  background-color: black;
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+canvas {
+  display: block;
+}
+#log-container {
+  padding: 10px;
+  height: 100px;
+  overflow-y: auto;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  position: fixed;
+  bottom: 0px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  color: white;
+}
+#summaryLink {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.5);
+}

@@ -6,10 +6,10 @@ printTitle
 container
 
 Real time view
- globe.html
+ /globe.html
 
 button Refresh
- link summarizeRequests.htm
+ link /summarizeRequests.htm
  post
   // Anything
 

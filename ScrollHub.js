@@ -27,6 +27,31 @@ const scrollFs = new ScrollFileSystem()
 // This
 const { Dashboard } = require("./dashboard.js")
 
+const requestsFile = folderName => `title Traffic Data
+metaTags
+homeButton
+buildHtml
+theme gazette
+
+printTitle
+
+container
+
+Real time view
+ /globe.html?folderName=${folderName}
+
+button Refresh
+ link /summarizeRequests.htm?folderName=${folderName}
+ post
+  // Anything
+
+requests.csv
+ printTable
+
+tableSearch
+scrollVersionLink
+`
+
 express.static.mime.define({ "text/plain": ["scroll", "parsers"] })
 express.static.mime.define({ "text/plain": ["ssv", "psv", "tsv", "csv"] })
 
@@ -85,7 +110,6 @@ class ScrollHub {
     this.sseClients = new Set()
     this.globalLogFile = path.join(__dirname, "log.txt")
     this.storyLogFile = path.join(__dirname, "writes.txt")
-    this.requestsLogPath = path.join(__dirname, "requests.csv")
     this.dashboard = new Dashboard(this.globalLogFile)
   }
 
@@ -210,15 +234,23 @@ class ScrollHub {
     })
   }
 
-  isSummarizing = false
-  async buildRequestsSummary() {
-    if (this.isSummarizing) return
-    this.isSummarizing = true
-    const dashboard = new Dashboard(this.globalLogFile)
+  isSummarizing = {}
+  async buildRequestsSummary(folder = "") {
+    const { rootFolder, folderCache } = this
+    if (this.isSummarizing[folder]) return
+    this.isSummarizing[folder] = true
+    if (folder && !folderCache[folder]) return
+    const logFile = folder ? this.getFolderLogFile(folder) : this.globalLogFile
+    const outputPath = folder ? path.join(rootFolder, folder) : path.join(__dirname)
+    const dashboard = new Dashboard(logFile)
     await dashboard.processLogFile()
-    await fsp.writeFile(this.requestsLogPath, dashboard.csv, "utf8")
-    await this.buildScrollHubPages()
-    this.isSummarizing = false
+    await fsp.writeFile(path.join(outputPath, "requests.csv"), dashboard.csv, "utf8")
+    if (folder) {
+      const reqFile = path.join(outputPath, "requests.scroll")
+      await fsp.writeFile(reqFile, requestsFile(folder), "utf8")
+      await new ScrollFile(undefined, reqFile, new ScrollFileSystem()).buildAll()
+    } else await this.buildScrollHubPages()
+    this.isSummarizing[folder] = false
   }
 
   initAnalytics() {
@@ -227,9 +259,15 @@ class ScrollHub {
     const { app, folderCache } = this
     app.use(this.logRequest.bind(this))
 
-    app.post("/summarizeRequests.htm", checkWritePermissions, async (req, res) => {
-      this.buildRequestsSummary()
-      res.send("Building Requests Summary")
+    app.use("/summarizeRequests.htm", checkWritePermissions, async (req, res) => {
+      const folderName = this.getFolderName(req)
+      if (folderName) {
+        await this.buildRequestsSummary(folderName)
+        if (req.body.particle) return res.send("Done.")
+        return res.redirect(folderName + "/requests.html")
+      }
+      this.buildRequestsSummary(folderName)
+      res.send(`Building requests.csv ${folderName ? `for ${folderName}` : ""}`)
     })
 
     app.get("/hostname.htm", (req, res) => res.send(req.hostname))
@@ -252,8 +290,7 @@ class ScrollHub {
     this.broadCastMessage(folderName, logEntry, ip)
 
     if (folderName && folderCache[folderName]) {
-      const folderPath = path.join(rootFolder, folderName)
-      const folderLogFile = path.join(folderPath, "log.txt")
+      const folderLogFile = this.getFolderLogFile(folderName)
       try {
         await fsp.appendFile(folderLogFile, logEntry)
       } catch (err) {
@@ -261,6 +298,12 @@ class ScrollHub {
       }
     }
     next()
+  }
+
+  getFolderLogFile(folderName) {
+    const { rootFolder } = this
+    const folderPath = path.join(rootFolder, folderName)
+    return path.join(folderPath, "log.txt")
   }
 
   initGitRoutes() {

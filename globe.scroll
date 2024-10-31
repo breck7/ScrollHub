@@ -3,6 +3,8 @@ title ScrollHub Globe: Real-time Request Visualizer
 
 metaTags
 
+a#summaryLink Trends
+
 div#log-container
 
 globe.css

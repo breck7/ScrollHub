@@ -141,6 +141,8 @@ class Globe {
     const urlParams = new URLSearchParams(window.location.search)
     const folderName = urlParams.get("folderName")
     const queryString = folderName ? `?folderName=${folderName}` : ""
+    if (folderName) document.querySelector("#summaryLink").href = "summarizeRequests.htm?folderName=" + folderName
+    else document.querySelector("#summaryLink").href = "requests.html"
     const eventSource = new EventSource(`/requests.htm${queryString}`)
     eventSource.onmessage = event => {
       const data = JSON.parse(event.data)
