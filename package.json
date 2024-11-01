@@ -15,13 +15,14 @@
     "ky": "^1.4.0",
     "minimist": "^1.2.8",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^145.9.0",
+    "scroll-cli": "^145.11.1",
     "scrollsdk": "^88.0.0"
   },
   "bin": {
     "hub": "./cli.js"
   },
   "scripts": {
+    "beta": "npm install ~/scroll",
     "build": "scroll build",
     "test": " scroll test; node ScrollHub.test.js",
     "local": "scroll build; node server.js",
