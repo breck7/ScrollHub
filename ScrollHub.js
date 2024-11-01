@@ -46,6 +46,17 @@ button Refresh
   // Anything
 
 requests.csv
+ <br><br><span style="width: 200px; display:inline-block; color: blue;">Readers</span><span style="color:green;">Writers</span><br><br>
+ sparkline
+  y Readers
+  color blue
+  width 200
+  height 200
+ sparkline
+  y Writers
+  color green
+  width 200
+  height 200
  printTable
 
 tableSearch
