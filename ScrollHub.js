@@ -244,7 +244,8 @@ class ScrollHub {
     const outputPath = folder ? path.join(rootFolder, folder) : path.join(__dirname)
     const dashboard = new Dashboard(logFile)
     await dashboard.processLogFile()
-    await fsp.writeFile(path.join(outputPath, "requests.csv"), dashboard.csv, "utf8")
+    const content = folder ? dashboard.csv : dashboard.csvTotal
+    await fsp.writeFile(path.join(outputPath, "requests.csv"), content, "utf8")
     if (folder) {
       const reqFile = path.join(outputPath, "requests.scroll")
       await fsp.writeFile(reqFile, requestsFile(folder), "utf8")

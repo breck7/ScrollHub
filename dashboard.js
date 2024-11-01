@@ -135,8 +135,8 @@ class Dashboard {
       }
 
       // Clean up temporary data structures
-      delete stat.uniqueReaders
-      delete stat.uniqueWriters
+      stat.uniqueReaders
+      stat.uniqueWriters
       delete stat.pageViews
     })
   }
@@ -178,6 +178,40 @@ class Dashboard {
     const csvRows = Object.values(this.stats)
       .map(({ date, folder, reads, readers, writes, writers, rank1, rank2, rank3, rank4, rank5 }) => `${date},${folder},${reads},${readers},${writes},${writers},${rank1},${rank2},${rank3},${rank4},${rank5}`)
       .join("\n")
+    return csvHeader + csvRows
+  }
+
+  get csvTotal() {
+    // Create a map to store daily totals
+    const dailyTotals = new Map()
+
+    // Aggregate stats by date
+    Object.values(this.stats).forEach(({ date, reads, uniqueReaders, writes, uniqueWriters }) => {
+      if (!dailyTotals.has(date)) {
+        dailyTotals.set(date, {
+          reads: 0,
+          readers: new Set(),
+          writes: 0,
+          writers: new Set()
+        })
+      }
+
+      const totals = dailyTotals.get(date)
+      totals.reads += reads
+      totals.writes += writes
+
+      // For readers and writers, we need to add the counts since they're already unique per folder
+      totals.readers = new Set([...totals.readers, ...uniqueReaders])
+      totals.writers = new Set([...totals.writers, ...uniqueWriters])
+    })
+
+    // Convert to CSV
+    const csvHeader = "Date,Reads,Readers,Writes,Writers\n"
+    const csvRows = Array.from(dailyTotals.entries())
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, totals]) => `${date},${totals.reads},${totals.readers.size},${totals.writes},${totals.writers.size}`)
+      .join("\n")
+
     return csvHeader + csvRows
   }
 
