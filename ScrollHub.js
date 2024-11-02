@@ -146,9 +146,10 @@ class ScrollHub {
 
     this.enableStaticFileServing()
 
-    this.initCertRoutes()
     this.init404Routes()
-    return this.startServers()
+
+    this.servers = [this.startHttpsServer(), this.startHttpServer()]
+    return this
   }
 
   initSSERoute() {
@@ -1343,7 +1344,29 @@ scrollVersionLink`
     return { folderName }
   }
 
-  async initCertRoutes() {
+  loadCertAndKey(hostname) {
+    const { certCache, pendingCerts } = this
+    if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
+
+    const certPath = path.join(__dirname, `${hostname}.crt`)
+    const keyPath = path.join(__dirname, `${hostname}.key`)
+
+    // Check if both cert and key files exist
+    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      const sslOptions = {
+        cert: fs.readFileSync(certPath, "utf8"),
+        key: fs.readFileSync(keyPath, "utf8")
+      }
+      certCache.set(hostname, sslOptions) // Cache the cert and key
+      return sslOptions
+    } else {
+      if (pendingCerts[hostname]) return
+      this.makeCert(hostname)
+      throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
+    }
+  }
+
+  async startHttpsServer() {
     const { app } = this
     const tls = require("tls")
     const { CertificateMaker } = require("./CertificateMaker.js")
@@ -1376,34 +1399,34 @@ scrollVersionLink`
     )
 
     httpsServer.listen(443, () => console.log("HTTPS server running on port 443"))
+    return httpsServer
   }
 
-  loadCertAndKey(hostname) {
-    const { certCache, pendingCerts } = this
-    if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
-
-    const certPath = path.join(__dirname, `${hostname}.crt`)
-    const keyPath = path.join(__dirname, `${hostname}.key`)
-
-    // Check if both cert and key files exist
-    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
-      const sslOptions = {
-        cert: fs.readFileSync(certPath, "utf8"),
-        key: fs.readFileSync(keyPath, "utf8")
-      }
-      certCache.set(hostname, sslOptions) // Cache the cert and key
-      return sslOptions
-    } else {
-      if (pendingCerts[hostname]) return
-      this.makeCert(hostname)
-      throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
-    }
-  }
-
-  async startServers() {
+  async startHttpServer() {
     const { app, port } = this
     const httpServer = http.createServer(app)
     httpServer.listen(port, () => console.log(`HTTP server running at http://localhost:${port}`))
+    return httpServer
+  }
+
+  async stopServers() {
+    if (!this.servers) return
+
+    return Promise.all(
+      this.servers.map(server => {
+        return new Promise((resolve, reject) => {
+          server.close(err => {
+            if (err) reject(err)
+            else resolve()
+          })
+
+          // Force-close connections that don't finish after timeout
+          setTimeout(() => {
+            server.closeAllConnections?.()
+          }, 25000)
+        })
+      })
+    )
   }
 }
 
