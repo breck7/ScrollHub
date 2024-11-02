@@ -1,6 +1,7 @@
 // STDLib
 const { exec, execSync, spawn } = require("child_process")
 const fs = require("fs")
+const v8 = require("v8")
 const fsp = require("fs").promises
 const os = require("os")
 const path = require("path")
@@ -137,6 +138,7 @@ class ScrollHub {
 
     this.initAnalytics()
     this.addStory({ ip: "admin" }, "started scrollhub server")
+    console.log(`Max memory: ${v8.getHeapStatistics().heap_size_limit / 1024 / 1024} MB`)
 
     this.initFileRoutes()
     this.initGitRoutes()
