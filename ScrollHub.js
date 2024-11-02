@@ -1285,7 +1285,7 @@ scrollVersionLink`
       const ext = path.extname(name).toLowerCase().slice(1)
       if (this.allowedExtensions.includes(ext)) return false
     }
-    if (/^[a-z][a-z0-9._]*$/.test(name)) return true
+    if (/^[a-z0-9][a-z0-9._]*$/.test(name)) return true
     return false
   }
 
@@ -1308,7 +1308,7 @@ scrollVersionLink`
     }
     if (!this.isValidFolderName(folderName))
       return {
-        errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter a-z, be more than 1 character, and not end in a common file extension.`,
+        errorMessage: `Sorry, your folder name "${folderName}" did not meet our requirements. It should start with a letter or number, be more than 1 character, and not end in a common file extension.`,
         folderName: rawInput
       }
     return {
