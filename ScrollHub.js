@@ -125,6 +125,7 @@ class ScrollHub {
   }
 
   startAll() {
+    this.startTime = Date.now()
     this.ensureInstalled()
     this.ensureTemplatesInstalled()
     this.warmFolderCache()
@@ -939,7 +940,8 @@ ${prefix}${hash}<br>
   async warmFolderCache() {
     const folders = await fsp.readdir(this.rootFolder)
     await Promise.all(folders.map(this.updateFolder.bind(this)))
-    this.buildListFile()
+    await this.buildListFile()
+    console.log(`Folder cache warmed. Time: ${(Date.now() - this.startTime) / 1000}s`)
   }
 
   initVandalProtection() {
