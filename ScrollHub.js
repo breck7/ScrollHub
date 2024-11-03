@@ -118,6 +118,7 @@ class ScrollHub {
     this.rootFolder = path.join(os.homedir(), "folders")
     this.templatesFolder = path.join(__dirname, "templates")
     this.trashFolder = path.join(__dirname, "trash")
+    this.certsFolder = path.join(__dirname, "certs")
     this.folderCache = {}
     this.sseClients = new Set()
     this.globalLogFile = path.join(__dirname, "log.txt")
@@ -1077,8 +1078,9 @@ ${prefix}${hash}<br>
   }
 
   ensureInstalled() {
-    const { rootFolder, trashFolder } = this
+    const { rootFolder, trashFolder, certsFolder } = this
     if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
+    if (!fs.existsSync(certsFolder)) fs.mkdirSync(certsFolder)
     if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
   }
 
@@ -1349,11 +1351,11 @@ scrollVersionLink`
   }
 
   loadCertAndKey(hostname) {
-    const { certCache, pendingCerts } = this
+    const { certCache, pendingCerts, certsFolder } = this
     if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
 
-    const certPath = path.join(__dirname, `${hostname}.crt`)
-    const keyPath = path.join(__dirname, `${hostname}.key`)
+    const certPath = path.join(certsFolder, `${hostname}.crt`)
+    const keyPath = path.join(certsFolder, `${hostname}.key`)
 
     // Check if both cert and key files exist
     if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
@@ -1382,7 +1384,7 @@ scrollVersionLink`
     this.makeCert = async domain => {
       pendingCerts[domain] = true
       const email = domain + "@hub.scroll.pub"
-      await certMaker.makeCertificate(domain, email, __dirname)
+      await certMaker.makeCertificate(domain, email, certsFolder)
     }
 
     const that = this
