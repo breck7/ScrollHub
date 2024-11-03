@@ -150,9 +150,8 @@ class ScrollHub {
 
     this.enableStaticFileServing()
 
-    this.init404Routes()
-
     this.servers = [this.startHttpsServer(), this.startHttpServer()]
+    this.init404Routes()
     return this
   }
 
