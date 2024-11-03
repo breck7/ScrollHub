@@ -1373,7 +1373,7 @@ scrollVersionLink`
   }
 
   async startHttpsServer() {
-    const { app } = this
+    const { app, certsFolder } = this
     const tls = require("tls")
     const { CertificateMaker } = require("./CertificateMaker.js")
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
