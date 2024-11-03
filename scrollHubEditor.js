@@ -239,32 +239,28 @@ class EditorApp {
   }
 
   get rootUrl() {
-    if (!this.isCustomDomain) return "/" + this.folderName
-    return "https://" + this.folderName
+    const protocol = window.location.protocol
+    if (!this.isCustomDomain) return protocol + "//" + window.location.hostname + "/" + this.folderName
+    return protocol + "//" + this.folderName
   }
 
   updatePreviewIFrame() {
-    const { folderNameText, rootUrl } = this
+    const { rootUrl, folderName } = this
     this.previewIFrame = document.getElementById("previewIFrame")
     this.previewIFrame.src = this.permalink
 
     this.updateVisitLink()
-    document.title = `Editing ${folderNameText}`
-  }
-
-  get folderNameText() {
-    const { folderName } = this
-    return this.isCustomDomain ? folderName : `${window.location.hostname}/${folderName}`
+    document.title = `Editing ${folderName}`
   }
 
   updateFooterLinks() {
-    const { folderName, folderNameText } = this
+    const { folderName } = this
     document.getElementById("gitClone").innerHTML =
       `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">live traffic</a> · <a class="folderActionLink" href="/diff.htm/${folderName}">history</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async renameFolder() {
-    const newFolderName = prompt(`Rename ${this.folderNameText} to:`)
+    const newFolderName = prompt(`Rename ${this.folderName} to:`)
     if (!newFolderName) return
     const response = await fetch("/mv.htm", {
       method: "POST",
@@ -339,23 +335,23 @@ class EditorApp {
     const fileLinks = sorted.map(file => {
       const selected = currentFileName === file ? "selectedFile" : ""
       return file.endsWith(".scroll") || file.endsWith(".parsers")
-        ? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenamePrompt('${file}', event)">${file}</a>`
-        : `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenamePrompt('${file}', event)">${file}</a>`
+        ? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenameFilePrompt('${file}', event)">${file}</a>`
+        : `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenameFilePrompt('${file}', event)">${file}</a>`
     })
     this.fileList.innerHTML = fileLinks.join("<br>")
   }
 
-  maybeRenamePrompt(oldFileName, event) {
+  maybeRenameFilePrompt(oldFileName, event) {
     if (!event.ctrlKey) return true
 
     event.preventDefault()
     const newFileName = prompt(`Enter new name for "${oldFileName}":`, oldFileName)
     if (newFileName && newFileName !== oldFileName) {
-      this.performRename(oldFileName, newFileName)
+      this.performFileRename(oldFileName, this.sanitizeFileName(newFileName))
     }
   }
 
-  async performRename(oldFileName, newFileName) {
+  async performFileRename(oldFileName, newFileName) {
     try {
       const response = await fetch("/rename.htm", {
         method: "POST",
@@ -381,14 +377,18 @@ class EditorApp {
     }
   }
 
+  sanitizeFileName(fileName) {
+    fileName = fileName.replace(/[^a-zA-Z0-9\.\_\-]/g, "")
+
+    return fileName.includes(".") ? fileName : fileName + ".scroll"
+  }
+
   async createFileCommand() {
     let fileName = prompt("Enter a filename", "untitled")
     if (!fileName) return ""
     const { folderName } = this
 
-    fileName = fileName.replace(/[^a-zA-Z0-9._\-]/g, "")
-
-    const newFileName = fileName.includes(".") ? fileName : fileName + ".scroll"
+    const newFileName = this.sanitizeFileName(fileName)
     const filePath = `${folderName}/${newFileName}`
 
     this.showSpinner("Creating file...")
