@@ -8,7 +8,7 @@ homeButton
 ./ide/libs.js
 ./ide/parsers.js
 
-# <a id="folderNameLink"></a>
+# <a id="folderNameLink" target="visit"></a>
 <div id="spinner"></div>
 <form id="editForm">
 <div>
@@ -20,7 +20,7 @@ homeButton
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button> <a href="#" target="visit" class="visitLink">Visit</a> <a href="delete.htm" class="deleteLink">Delete</a>
+ <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button> <a href="delete.htm" class="deleteLink">Delete</a>
 </div>
 </form>
 // # Commands

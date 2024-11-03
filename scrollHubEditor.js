@@ -82,7 +82,8 @@ class EditorApp {
   }
 
   updateVisitLink() {
-    document.querySelector(".visitLink").href = this.permalink
+    document.getElementById("folderNameLink").innerHTML = this.permalink
+    document.getElementById("folderNameLink").href = this.permalink
   }
 
   showSpinner(message) {
@@ -247,8 +248,7 @@ class EditorApp {
     this.previewIFrame = document.getElementById("previewIFrame")
     this.previewIFrame.src = this.permalink
 
-    document.getElementById("folderNameLink").innerHTML = folderNameText
-    document.getElementById("folderNameLink").href = rootUrl
+    this.updateVisitLink()
     document.title = `Editing ${folderNameText}`
   }
 
