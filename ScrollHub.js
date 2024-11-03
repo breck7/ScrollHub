@@ -282,8 +282,8 @@ class ScrollHub {
         if (req.body.particle) return res.send("Done.")
         return res.redirect(folderName + "/requests.html")
       }
-      this.buildRequestsSummary(folderName)
-      res.send(`Building requests.csv ${folderName ? `for ${folderName}` : ""}`)
+      await this.buildRequestsSummary()
+      res.send(`Done.`)
     })
 
     app.get("/hostname.htm", (req, res) => res.send(req.hostname))
