@@ -28,6 +28,14 @@ const scrollFs = new ScrollFileSystem()
 // This
 const { Dashboard } = require("./dashboard.js")
 
+const exists = async filePath => {
+  const fileExists = await fsp
+    .access(filePath)
+    .then(() => true)
+    .catch(() => false)
+  return fileExists
+}
+
 const requestsFile = folderName => `title Traffic Data
 metaTags
 homeButton
@@ -592,10 +600,7 @@ ${prefix}${hash}<br>
       if (!ok) return
 
       try {
-        const fileExists = await fsp
-          .access(filePath)
-          .then(() => true)
-          .catch(() => false)
+        const fileExists = await exists(filePath)
         if (!fileExists) return res.status(404).send("File not found")
 
         const content = await fsp.readFile(filePath, "utf8")
@@ -603,7 +608,7 @@ ${prefix}${hash}<br>
         res.send(content)
       } catch (error) {
         console.error(error)
-        res.status(500).send("An error occurred while reading the file")
+        res.status(500).send(`An error occurred while reading '${filepath}'.`)
       }
     })
 
@@ -718,10 +723,7 @@ ${prefix}${hash}<br>
       if (!ok) return
 
       try {
-        const fileExists = await fsp
-          .access(filePath)
-          .then(() => true)
-          .catch(() => false)
+        const fileExists = await exists(filePath)
         if (!fileExists) return res.status(404).send("File not found")
 
         const fileName = path.basename(filePath)
@@ -1038,15 +1040,13 @@ ${prefix}${hash}<br>
     const clientIp = req.ip || req.connection.remoteAddress
     const hostname = req.hostname?.toLowerCase()
 
-    const { isCreate } = req.body
-
-    let formatted = content
-    if (!isCreate && (filePath.endsWith(".scroll") || filePath.endsWith(".parsers"))) formatted = new ScrollFile(content, filePath, scrollFs).formatted
-
-    // todo: prettify js, html, and css
-
     try {
-      if (!isCreate) {
+      const fileExists = await exists(filePath)
+      let formatted = content
+      // todo: prettify js, html, and css
+      const shouldFormat = filePath.endsWith(".scroll") || filePath.endsWith(".parsers")
+      if (fileExists && shouldFormat) new ScrollFile(content, filePath, scrollFs).formatted // todo: do we need to pass in file path?
+      if (fileExists) {
         const currentContent = await fsp.readFile(filePath, "utf8")
         if (currentContent === formatted) return res.send(`Unchanged.`)
       }

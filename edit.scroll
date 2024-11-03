@@ -13,14 +13,12 @@ homeButton
 <form id="editForm">
 <div>
  <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
- <input type="hidden" name="filePath" id="filePathInput"/>
- <input type="hidden" name="folderName" id="folderNameInput"/>
  <div id="fileList"></div>
  <a class="createFileButton" onclick="app.createFileCommand()">+</a><br>
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button> <a href="delete.htm" class="deleteLink">Delete</a>
+ <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button> <a href="delete.htm" class="deleteLink">Delete File</a>
 </div>
 </form>
 // # Commands

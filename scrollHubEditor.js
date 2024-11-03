@@ -3,7 +3,6 @@ class EditorApp {
   constructor() {
     this.folderName = ""
     this.previewIFrame = null
-    this.fileList = null
     this.scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
     this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => this.scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
       lineWrapping: true, // todo: some way to see wrapped lines? do we want to disable line wrapping? make a keyboard shortcut?
@@ -40,7 +39,7 @@ class EditorApp {
 
   showError(message) {
     console.error(message)
-    this.fileList.innerHTML = `<span style="color:red;">${message}</span>`
+    this.fileListEl.innerHTML = `<span style="color:red;">${message}</span>`
   }
 
   get filePath() {
@@ -48,31 +47,57 @@ class EditorApp {
   }
 
   async main() {
-    const urlParams = new URLSearchParams(window.location.search)
-    this.folderName = urlParams.get("folderName") || window.location.hostname
-    this.fileList = document.getElementById("fileList")
-    this.fileName = urlParams.get("fileName")
-    this.updateFooterLinks()
-    if (!this.fileName) await this.fetchAndDisplayFileList()
-    else this.fetchAndDisplayFileList()
-
-    this.fileEditor = document.getElementById("fileEditor")
-    document.getElementById("filePathInput").value = this.filePath
-    document.getElementById("folderNameInput").value = this.folderName
-    this.updateVisitLink()
-    this.loadFileContent()
     this.bindDeleteButton()
+    this.bindFileDrop()
+    this.bindKeyboardShortcuts()
 
-    // Add event listener for file drag and drop. If a file is dropped, upload it.
+    const urlParams = new URLSearchParams(window.location.search)
+    this.openFolder(urlParams.get("folderName") || window.location.hostname)
+    const fileName = urlParams.get("fileName") || ""
+    if (!fileName) {
+      let buffer = urlParams.get("buffer")
+      if (buffer) {
+        this.fetchAndDisplayFileList()
+        buffer = buffer.replace(/TODAYS_DATE/g, new Date().toLocaleDateString("en-US"))
+        this.setFileContent(decodeURIComponent(buffer))
+      } else {
+        await this.fetchAndDisplayFileList()
+        this.autoOpen()
+      }
+    } else {
+      this.fetchAndDisplayFileList()
+      this.openFile(fileName)
+    }
 
-    // Add event listeners for drag and drop
+    return this
+  }
+
+  autoOpen() {
+    const { scrollFiles } = this
+    this.openFile(scrollFiles.includes("index.scroll") ? "index.scroll" : scrollFiles[0])
+  }
+
+  async openFolder(folderName) {
+    this.folderName = folderName
+    this.updateFooterLinks()
+  }
+
+  async openFile(fileName) {
+    this.fileName = fileName
+    const filePath = `${this.folderName}/${fileName}`
+    const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
+    const content = await response.text()
+    this.setFileContent(content)
+    this.updatePreviewIFrame()
+    this.updateVisitLink()
+    this.renderFileList()
+  }
+
+  bindFileDrop() {
     const dropZone = document.getElementById("editForm")
     dropZone.addEventListener("dragover", this.handleDragOver.bind(this))
     dropZone.addEventListener("dragleave", this.handleDragLeave.bind(this))
     dropZone.addEventListener("drop", this.handleDrop.bind(this))
-    this.bindKeyboardShortcuts()
-
-    return this
   }
 
   get permalink() {
@@ -96,9 +121,16 @@ class EditorApp {
   }
 
   async saveFile() {
+    if (!this.fileName) {
+      let fileName = prompt("Enter a filename", "untitled")
+      if (!fileName) return ""
+      this.fileName = this.sanitizeFileName(fileName)
+    }
+
     this.showSpinner("Publishing...")
     const formData = new FormData()
-    formData.append("filePath", this.filePath)
+    const { filePath } = this
+    formData.append("filePath", filePath)
     formData.append("folderName", this.folderName)
     formData.append("content", this.codeMirrorInstance.getValue())
     try {
@@ -113,7 +145,7 @@ class EditorApp {
       }
 
       const data = await response.text()
-      console.log("File saved successfully")
+      console.log(`'${filePath}' saved`)
       this.hideSpinner()
       this.updatePreviewIFrame()
       return data
@@ -318,27 +350,29 @@ class EditorApp {
       if (!response.ok) throw new Error(await response.text())
       const data = await response.text()
       const files = data.split("\n")
-      this.updateFileList(files)
-      console.log("File list updated")
+      this.files = files
+      this.scrollFiles = files.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+      this.renderFileList()
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)
     }
   }
 
-  updateFileList(files) {
-    const scrollFiles = files.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
-    this.scrollFiles = scrollFiles
-    if (!this.fileName) this.fileName = scrollFiles.includes("index.scroll") ? "index.scroll" : scrollFiles[0]
+  renderFileList() {
+    const { files, scrollFiles, folderName } = this
     const currentFileName = this.fileName
     const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
-    const { folderName } = this
     const fileLinks = sorted.map(file => {
       const selected = currentFileName === file ? "selectedFile" : ""
       return file.endsWith(".scroll") || file.endsWith(".parsers")
         ? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenameFilePrompt('${file}', event)">${file}</a>`
         : `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenameFilePrompt('${file}', event)">${file}</a>`
     })
-    this.fileList.innerHTML = fileLinks.join("<br>")
+    this.fileListEl.innerHTML = fileLinks.join("<br>")
+  }
+
+  get fileListEl() {
+    return document.getElementById("fileList")
   }
 
   maybeRenameFilePrompt(oldFileName, event) {
@@ -367,10 +401,7 @@ class EditorApp {
       this.fetchAndDisplayFileList()
 
       // If the renamed file was the current file, update the fileName
-      if (this.fileName === oldFileName) {
-        this.fileName = newFileName
-        document.getElementById("filePathInput").value = `${this.folderName}/${newFileName}`
-      }
+      if (this.fileName === oldFileName) this.fileName = newFileName
     } catch (error) {
       console.error(error)
       alert("Rename error:" + error)
@@ -386,9 +417,8 @@ class EditorApp {
   async createFileCommand() {
     let fileName = prompt("Enter a filename", "untitled")
     if (!fileName) return ""
-    const { folderName } = this
-
     const newFileName = this.sanitizeFileName(fileName)
+    const { folderName } = this
     const filePath = `${folderName}/${newFileName}`
 
     this.showSpinner("Creating file...")
@@ -398,7 +428,7 @@ class EditorApp {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: `content=&isCreate=true&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
+      body: `content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
     })
 
     await response.text()
@@ -406,7 +436,7 @@ class EditorApp {
   }
 
   setFileContent(value) {
-    this.fileEditor.value = value
+    document.getElementById("fileEditor").value = value
     this.codeMirrorInstance.setValue(value)
     const lines = value.split("\n")
     const lastLine = lines.pop()
@@ -421,21 +451,6 @@ class EditorApp {
     return `?folderName=${this.folderName}&`
   }
 
-  async loadFileContent() {
-    if (!this.folderName || !this.fileName) {
-      console.error("Folder name or file name is missing")
-      return
-    }
-
-    const filePath = `${this.folderName}/${this.fileName}`
-
-    const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
-    const content = await response.text()
-    this.setFileContent(content)
-    this.updatePreviewIFrame()
-    this.updateVisitLink()
-  }
-
   bindDeleteButton() {
     const deleteLink = document.querySelector(".deleteLink")
     deleteLink.addEventListener("click", async e => {
@@ -444,7 +459,7 @@ class EditorApp {
       const { fileName, folderName } = this
       const userInput = prompt(`To delete this file, please type the file name: ${fileName}`)
 
-      if (userInput !== fileName) return
+      if (!userInput || userInput !== fileName) return
 
       const filePath = `${folderName}/${fileName}`
 
