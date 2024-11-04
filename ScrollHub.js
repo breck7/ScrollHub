@@ -1054,13 +1054,22 @@ ${prefix}${hash}<br>
       // Write the file content asynchronously
       await fsp.writeFile(filePath, formatted, "utf8")
 
-      // Run the scroll build and git commands asynchronously
-      await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
+      this.addStory(req, `updated ${folderName}/${fileName}`)
 
-      await this.buildFolder(folderName, fileName)
+      // Run the scroll build and git commands asynchronously
+      try {
+        await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
+      } catch (err) {
+        return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
+      }
+
+      try {
+        await this.buildFolder(folderName, fileName)
+      } catch (err) {
+        return res.status(500).send("Save and git okay but build did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
+      }
 
       res.send(`Ok`)
-      this.addStory(req, `updated ${folderName}/${fileName}`)
       this.updateFolderAndBuildList(folderName)
     } catch (error) {
       console.error(error)

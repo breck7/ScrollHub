@@ -90,7 +90,9 @@ class EditorApp {
     this.setFileContent(content)
     this.updatePreviewIFrame()
     this.updateVisitLink()
-    this.renderFileList()
+
+    if (!this.scrollFiles) await this.fetchAndDisplayFileList()
+    else this.renderFileList()
   }
 
   bindFileDrop() {
@@ -111,9 +113,13 @@ class EditorApp {
     document.getElementById("folderNameLink").href = this.permalink
   }
 
-  showSpinner(message) {
-    document.querySelector("#spinner").innerHTML = `<span>${message}</span>`
+  showSpinner(message, style) {
+    document.querySelector("#spinner").innerHTML = `<span${style}>${message}</span>`
     document.querySelector("#spinner").style.display = "block"
+  }
+
+  showError(message) {
+    this.showSpinner(message, ` style="color:red;"`)
   }
 
   hideSpinner() {
@@ -150,6 +156,7 @@ class EditorApp {
       this.updatePreviewIFrame()
       return data
     } catch (error) {
+      this.showError(error.message.split(".")[0])
       console.error("Error saving file:", error.message)
       throw error // Re-throw the error if you want calling code to handle it
     }
