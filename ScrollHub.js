@@ -36,6 +36,18 @@ const exists = async filePath => {
   return fileExists
 }
 
+const getBaseUrlForFolder = (folderName, hostname, protocol) => {
+  const isLocalHost = hostname.includes("local")
+  // if localhost, no custom domains
+  if (isLocalHost) return "http://localhost/" + folderName
+
+  if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
+
+  // now it might be a custom domain, serve it as if it is
+  // of course, sometimes it would not be
+  return protocol + "//" + folderName
+}
+
 const requestsFile = folderName => `title Traffic Data
 metaTags
 homeButton
@@ -1197,7 +1209,7 @@ ${prefix}${hash}<br>
     }
     this.folderCache[folder] = {
       folder,
-      folderLink: folder + "/",
+      folderLink: getBaseUrlForFolder(folder, this.hostname, "https"),
       created: birthtime || ctime,
       revised: lastCommitTimestamp,
       files: fileCount,
@@ -1268,7 +1280,7 @@ JSON | CSV | TSV
  link folders.tsv TSV
 
 table folders.csv
- compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a> · <a href="index.html?folderName={folder}%20">clone</a>
+ compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a>
   select folder folderLink links revised hash files mb revisions
    compose hashLink diff.htm/{folder}
     orderBy -revised

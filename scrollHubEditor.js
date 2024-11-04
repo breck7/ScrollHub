@@ -1,3 +1,13 @@
+const getBaseUrlForFolder = (folderName, hostname, protocol) => {
+  if (hostname === "localhost") return "http://localhost/" + folderName
+
+  if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
+
+  // now it might be a custom domain, serve it as if it is
+  // of course, sometimes it would not be
+  return protocol + "//" + folderName
+}
+
 // todo: before unload warn about unsaved changes
 class EditorApp {
   constructor() {
@@ -271,16 +281,8 @@ class EditorApp {
     }
   }
 
-  get isCustomDomain() {
-    const serverName = window.location.hostname
-    if (serverName === "localhost") return false
-    return this.folderName.includes(".")
-  }
-
   get rootUrl() {
-    const protocol = window.location.protocol
-    if (!this.isCustomDomain) return protocol + "//" + window.location.hostname + "/" + this.folderName
-    return protocol + "//" + this.folderName
+    return getBaseUrlForFolder(this.folderName, window.location.hostname, window.location.protocol)
   }
 
   updatePreviewIFrame() {
