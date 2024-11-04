@@ -25,9 +25,13 @@ class EditorApp {
   _scrollProgram
   get scrollProgram() {
     const { scrollParser } = this
-    this._scrollProgram = new scrollParser(this.codeMirrorInstance.getValue())
+    this._scrollProgram = new scrollParser(this.bufferValue)
     this._scrollProgram.setFile({ filename: this.fileName })
     return this._scrollProgram
+  }
+
+  get bufferValue() {
+    return this.codeMirrorInstance.getValue().replace(/\r/g, "")
   }
 
   get width() {
@@ -155,7 +159,7 @@ class EditorApp {
     const { filePath } = this
     formData.append("filePath", filePath)
     formData.append("folderName", this.folderName)
-    formData.append("content", this.codeMirrorInstance.getValue())
+    formData.append("content", this.bufferValue)
     try {
       const response = await fetch("/write.htm", {
         method: "POST",
@@ -453,7 +457,7 @@ class EditorApp {
   }
 
   setFileContent(value) {
-    document.getElementById("fileEditor").value = value
+    document.getElementById("fileEditor").value = value.replace(/\r/g, "")
     this.codeMirrorInstance.setValue(value)
     const lines = value.split("\n")
     const lastLine = lines.pop()
