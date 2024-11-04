@@ -61,9 +61,15 @@ class EditorApp {
     this.bindFileDrop()
     this.bindKeyboardShortcuts()
 
-    const urlParams = new URLSearchParams(window.location.search)
+    const url = new URL(window.location)
+    const urlParams = url.searchParams
     this.openFolder(urlParams.get("folderName") || window.location.hostname)
-    const fileName = urlParams.get("fileName") || ""
+    let fileName = urlParams.get("fileName") || ""
+    if (fileName.startsWith("/")) {
+      fileName = fileName.replace(/^\/+/, "") // strip leading slashes
+      urlParams.set("fileName", fileName)
+      window.history.replaceState(null, "", url)
+    }
     if (!fileName) {
       let buffer = urlParams.get("buffer")
       if (buffer) {
