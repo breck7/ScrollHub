@@ -613,7 +613,7 @@ ${prefix}${hash}<br>
 
       try {
         const fileExists = await exists(filePath)
-        if (!fileExists) return res.status(404).send("File not found")
+        if (!fileExists) return res.status(404).send(`File '${filePath}' not found`)
 
         const content = await fsp.readFile(filePath, "utf8")
         res.setHeader("Content-Type", "text/plain")
@@ -1044,9 +1044,9 @@ ${prefix}${hash}<br>
     if (!ok) return
 
     const folderPath = path.dirname(filePath)
-    const folderName = path.relative(rootFolder, folderPath)
+    const folderName = this.getFolderName(req)
 
-    if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+    if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
 
     const fileName = path.basename(filePath)
     const clientIp = req.ip || req.connection.remoteAddress

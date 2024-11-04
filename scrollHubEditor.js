@@ -99,9 +99,10 @@ class EditorApp {
   }
 
   async openFile(fileName) {
+    const { folderName } = this
     this.fileName = fileName
-    const filePath = `${this.folderName}/${fileName}`
-    const response = await fetch(`/read.htm${this.auth}filePath=${encodeURIComponent(filePath)}`)
+    const filePath = `${folderName}/${fileName}`
+    const response = await fetch(`/read.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
     this.setFileContent(content)
     this.updatePreviewIFrame()
@@ -361,7 +362,7 @@ class EditorApp {
 
   async fetchAndDisplayFileList() {
     try {
-      const response = await fetch(`/ls.htm${this.auth}`)
+      const response = await fetch(`/ls.htm?folderName=${folderName}`)
       if (!response.ok) throw new Error(await response.text())
       const data = await response.text()
       const files = data.split("\n")
@@ -460,10 +461,6 @@ class EditorApp {
       this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
       this.codeMirrorInstance.focus()
     }
-  }
-
-  get auth() {
-    return `?folderName=${this.folderName}&`
   }
 
   bindDeleteButton() {
