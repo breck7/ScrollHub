@@ -624,7 +624,7 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.post("/write.htm", checkWritePermissions, (req, res) => this.writeAndCommitFile(req, res, req.body.filePath, req.body.content))
+    app.post("/write.htm", checkWritePermissions, (req, res) => this.writeAndCommitTextFile(req, res, req.body.filePath, req.body.content))
 
     // Add a route for file uploads
     app.post("/upload.htm", checkWritePermissions, async (req, res) => {
@@ -1036,7 +1036,8 @@ ${prefix}${hash}<br>
     return true
   }
 
-  async writeAndCommitFile(req, res, filePath, content) {
+  async writeAndCommitTextFile(req, res, filePath, content) {
+    content = content.replace(/\r/g, "")
     const { rootFolder, folderCache } = this
     filePath = path.join(rootFolder, filePath)
 
