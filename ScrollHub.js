@@ -1209,7 +1209,7 @@ ${prefix}${hash}<br>
     }
     this.folderCache[folder] = {
       folder,
-      folderLink: getBaseUrlForFolder(folder, this.hostname, "https"),
+      folderLink: getBaseUrlForFolder(folder, this.hostname, "https:"),
       created: birthtime || ctime,
       revised: lastCommitTimestamp,
       files: fileCount,
