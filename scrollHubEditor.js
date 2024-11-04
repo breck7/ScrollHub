@@ -361,6 +361,7 @@ class EditorApp {
   }
 
   async fetchAndDisplayFileList() {
+    const { folderName } = this
     try {
       const response = await fetch(`/ls.htm?folderName=${folderName}`)
       if (!response.ok) throw new Error(await response.text())
