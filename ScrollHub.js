@@ -1052,41 +1052,43 @@ ${prefix}${hash}<br>
     const clientIp = req.ip || req.connection.remoteAddress
     const hostname = req.hostname?.toLowerCase()
 
+    const fileExists = await exists(filePath)
+    const currentVersion = fileExists ? await fsp.readFile(filePath, "utf8") : null
     try {
-      const fileExists = await exists(filePath)
-      let formatted = content
-      // todo: prettify js, html, and css
-      const shouldFormat = filePath.endsWith(".scroll") || filePath.endsWith(".parsers")
-      if (fileExists && shouldFormat) new ScrollFile(content, filePath, scrollFs).formatted // todo: do we need to pass in file path?
-      if (fileExists) {
-        const currentContent = await fsp.readFile(filePath, "utf8")
-        if (currentContent === formatted) return res.send(`Unchanged.`)
-      }
-
-      // Write the file content asynchronously
-      await fsp.writeFile(filePath, formatted, "utf8")
-
+      await fsp.writeFile(filePath, content, "utf8")
       this.addStory(req, `updated ${folderName}/${fileName}`)
-
-      // Run the scroll build and git commands asynchronously
-      try {
-        await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
-      } catch (err) {
-        return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
-      }
-
-      try {
-        await this.buildFolder(folderName, fileName)
-      } catch (err) {
-        return res.status(500).send("Save and git okay but build did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
-      }
-
-      res.send(`Ok`)
-      this.updateFolderAndBuildList(folderName)
-    } catch (error) {
-      console.error(error)
-      res.status(500).send(`An error occurred while writing the file or rebuilding the folder:\n ${error.toString().replace(/</g, "&lt;")}`)
+    } catch (err) {
+      return res.status(500).send("Failed to save file. Error: " + err.toString().replace(/</g, "&lt;"))
     }
+
+    if (fileExists && currentVersion === content) return res.send(`Unchanged.`)
+
+    // todo: prettify js, html, and css
+    const shouldFormat = filePath.endsWith(".scroll") || filePath.endsWith(".parsers")
+    if (shouldFormat) {
+      try {
+        const formatted = new ScrollFile(content, filePath, scrollFs).formatted // todo: do we need to pass in file path?
+        await fsp.writeFile(filePath, formatted, "utf8")
+      } catch (err) {
+        console.log("Error formatting. Continuing on. Error:", err)
+      }
+    }
+
+    // Run the scroll build and git commands asynchronously
+    try {
+      await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
+    } catch (err) {
+      return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
+    }
+
+    try {
+      await this.buildFolder(folderName, fileName)
+    } catch (err) {
+      return res.status(500).send("Save and git okay but build did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
+    }
+
+    res.send(`Ok`)
+    this.updateFolderAndBuildList(folderName)
   }
 
   async addStory(req, message) {
