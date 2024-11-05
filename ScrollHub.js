@@ -1419,7 +1419,7 @@ scrollVersionLink`
             const sslOptions = that.loadCertAndKey(hostname.toLowerCase())
             cb(null, tls.createSecureContext(sslOptions))
           } catch (err) {
-            console.error(`Error setting up SSL for ${hostname}: ${err.message}`)
+            console.error(`No cert found for ${hostname}: ${err.message}`)
             cb(err)
           }
         }
