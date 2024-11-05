@@ -23,6 +23,7 @@ const httpBackend = require("git-http-backend")
 const { Particle } = require("scrollsdk/products/Particle.js")
 const { ScrollFile, ScrollFileSystem } = require("scroll-cli/scroll.js")
 const { CloneCli } = require("scroll-cli/clone.js")
+const packageJson = require("./package.json")
 const scrollFs = new ScrollFileSystem()
 
 // This
@@ -158,7 +159,8 @@ class ScrollHub {
     this.enableFileUploads()
 
     this.initAnalytics()
-    this.addStory({ ip: "admin" }, "started scrollhub server")
+    this.addStory({ ip: "admin" }, `started ScrollHub v${packageJson.version}`)
+    console.log(`ScrollHub version: ${packageJson.version}`)
     console.log(`Max memory: ${v8.getHeapStatistics().heap_size_limit / 1024 / 1024} MB`)
 
     this.initFileRoutes()
@@ -1274,10 +1276,10 @@ container 1000px
  index.html ${this.hostname}
  style font-size: 150%;
 
-Traffic Data
- requests.html
-
-JSON | CSV | TSV
+center
+Traffic Data | ScrollHub Version ${packageJson.version}
+ requests.html Traffic Data
+Download folders as JSON | CSV | TSV
  link folders.json JSON
  link folders.csv CSV
  link folders.tsv TSV

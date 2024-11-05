@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.17.0 11/05/2024
+🎉 add ScrollHub version number to folders.html page and log to console on start
+🏥 error message improvements
+
 📦 0.16.0 11/04/2024
 🏥 bug fixes
 
