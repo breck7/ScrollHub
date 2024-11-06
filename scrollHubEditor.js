@@ -398,19 +398,13 @@ class EditorApp {
 
   bindFileListListeners() {
     this.fileListEl.addEventListener("click", event => {
+      if (event.metaKey || event.ctrlKey) return true
       const link = event.target.closest("a")
-      if (link) {
-        event.preventDefault()
-        this.openFile(link.textContent)
-      }
-    })
+      if (!link) return true
+      event.preventDefault()
 
-    this.fileListEl.addEventListener("contextmenu", event => {
-      const link = event.target.closest("a")
-      if (link) {
-        event.preventDefault()
-        this.maybeRenameFilePrompt(link.textContent, event)
-      }
+      if (event.shiftKey) this.maybeRenameFilePrompt(link.textContent, event)
+      else this.openFile(link.textContent)
     })
   }
 
@@ -419,9 +413,6 @@ class EditorApp {
   }
 
   maybeRenameFilePrompt(oldFileName, event) {
-    if (!event.ctrlKey) return true
-
-    event.preventDefault()
     const newFileName = prompt(`Enter new name for "${oldFileName}":`, oldFileName)
     if (newFileName && newFileName !== oldFileName) {
       this.performFileRename(oldFileName, this.sanitizeFileName(newFileName))
