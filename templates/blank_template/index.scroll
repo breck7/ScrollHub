@@ -2,3 +2,5 @@ buildHtml
 theme roboto
 
 Hello World my name is 
+
+<link rel="manifest" href="/pwa_manifest.json">
