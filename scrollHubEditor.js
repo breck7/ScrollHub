@@ -62,6 +62,7 @@ class EditorApp {
 
   async main() {
     this.bindFileButtons()
+    this.bindFileListListeners()
     this.bindFileDrop()
     this.bindKeyboardShortcuts()
 
@@ -389,11 +390,28 @@ class EditorApp {
     const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
     const fileLinks = sorted.map(file => {
       const selected = currentFileName === file ? "selectedFile" : ""
-      return file.endsWith(".scroll") || file.endsWith(".parsers")
-        ? `<a class="${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenameFilePrompt('${file}', event)">${file}</a>`
-        : `<a class="nonScrollFile ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}" oncontextmenu="app.maybeRenameFilePrompt('${file}', event)">${file}</a>`
+      const isScrollFile = file.endsWith(".scroll") || file.endsWith(".parsers")
+      return `<a class="${isScrollFile ? "" : "nonScrollFile"} ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
     })
     this.fileListEl.innerHTML = fileLinks.join("<br>")
+  }
+
+  bindFileListListeners() {
+    this.fileListEl.addEventListener("click", event => {
+      const link = event.target.closest("a")
+      if (link) {
+        event.preventDefault()
+        this.openFile(link.textContent)
+      }
+    })
+
+    this.fileListEl.addEventListener("contextmenu", event => {
+      const link = event.target.closest("a")
+      if (link) {
+        event.preventDefault()
+        this.maybeRenameFilePrompt(link.textContent, event)
+      }
+    })
   }
 
   get fileListEl() {
