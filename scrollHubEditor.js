@@ -431,6 +431,7 @@ class EditorApp {
   async performFileRename(oldFileName, newFileName) {
     const { folderName } = this
     try {
+      this.showSpinner("Renaming..")
       const response = await fetch("/rename.htm", {
         method: "POST",
         headers: {
@@ -441,6 +442,7 @@ class EditorApp {
 
       if (!response.ok) throw new Error(await response.text())
 
+      this.hideSpinner()
       console.log(`File renamed from ${oldFileName} to ${newFileName}`)
       this.fetchAndDisplayFileList()
 
@@ -522,6 +524,7 @@ class EditorApp {
       const data = await response.text()
       await this.fetchAndDisplayFileList()
       this.autoOpen()
+      this.hideSpinner()
     })
   }
 }
