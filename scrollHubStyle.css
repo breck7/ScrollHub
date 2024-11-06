@@ -51,9 +51,11 @@ body {
 .folderActionLink {
   color: var(--light-grey);
 }
-.deleteLink {
+.deleteLink,
+.renameLink {
   color: var(--light-grey);
   margin-left: 20px;
+  cursor: pointer;
 }
 
 .drag-over {

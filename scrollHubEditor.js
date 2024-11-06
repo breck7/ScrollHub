@@ -61,19 +61,15 @@ class EditorApp {
   }
 
   async main() {
-    this.bindDeleteButton()
+    this.bindFileButtons()
     this.bindFileDrop()
     this.bindKeyboardShortcuts()
 
-    const url = new URL(window.location)
-    const urlParams = url.searchParams
+    const urlParams = new URL(window.location).searchParams
     this.openFolder(urlParams.get("folderName") || window.location.hostname)
     let fileName = urlParams.get("fileName") || ""
-    if (fileName.startsWith("/")) {
-      fileName = fileName.replace(/^\/+/, "") // strip leading slashes
-      urlParams.set("fileName", fileName)
-      window.history.replaceState(null, "", url)
-    }
+    if (fileName.startsWith("/")) this.setFileNameInUrl(fileName.replace(/^\/+/, "")) // strip leading slashes
+
     if (!fileName) {
       let buffer = urlParams.get("buffer")
       if (buffer) {
@@ -90,6 +86,13 @@ class EditorApp {
     }
 
     return this
+  }
+
+  setFileNameInUrl(fileName) {
+    const url = new URL(window.location)
+    const urlParams = url.searchParams
+    urlParams.set("fileName", fileName)
+    window.history.replaceState(null, "", url)
   }
 
   autoOpen() {
@@ -109,6 +112,7 @@ class EditorApp {
     const response = await fetch(`/read.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
     this.setFileContent(content)
+    this.setFileNameInUrl(fileName)
     this.updatePreviewIFrame()
     this.updateVisitLink()
 
@@ -407,13 +411,14 @@ class EditorApp {
   }
 
   async performFileRename(oldFileName, newFileName) {
+    const { folderName } = this
     try {
       const response = await fetch("/rename.htm", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: `folderName=${encodeURIComponent(this.folderName)}&oldFileName=${encodeURIComponent(oldFileName)}&newFileName=${encodeURIComponent(newFileName)}`
+        body: `folderName=${encodeURIComponent(folderName)}&oldFileName=${encodeURIComponent(oldFileName)}&newFileName=${encodeURIComponent(newFileName)}`
       })
 
       if (!response.ok) throw new Error(await response.text())
@@ -421,8 +426,8 @@ class EditorApp {
       console.log(`File renamed from ${oldFileName} to ${newFileName}`)
       this.fetchAndDisplayFileList()
 
-      // If the renamed file was the current file, update the fileName
-      if (this.fileName === oldFileName) this.fileName = newFileName
+      // If the renamed file was the current file, open the new file
+      if (this.fileName === oldFileName) this.openFile(newFileName)
     } catch (error) {
       console.error(error)
       alert("Rename error:" + error)
@@ -468,9 +473,17 @@ class EditorApp {
     }
   }
 
-  bindDeleteButton() {
-    const deleteLink = document.querySelector(".deleteLink")
-    deleteLink.addEventListener("click", async e => {
+  bindFileButtons() {
+    const that = this
+    document.querySelector(".renameLink").addEventListener("click", async e => {
+      const oldFileName = that.fileName
+      const newFileName = prompt(`Enter new name for "${oldFileName}":`, oldFileName)
+      if (newFileName && newFileName !== oldFileName) {
+        this.performFileRename(oldFileName, this.sanitizeFileName(newFileName))
+      }
+    })
+
+    document.querySelector(".deleteLink").addEventListener("click", async e => {
       e.preventDefault()
 
       const { fileName, folderName } = this

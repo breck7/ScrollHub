@@ -18,7 +18,9 @@ homeButton
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
- <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button> <a href="delete.htm" class="deleteLink">Delete File</a>
+ <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button>
+ <a class="renameLink">Rename File</a>
+ <a class="deleteLink">Delete File</a>
 </div>
 </form>
 // # Commands
