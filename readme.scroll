@@ -16,8 +16,13 @@ Follow the steps below to run your own ScrollHub server in 60 seconds!
 
 serverSetup.scroll
 
+
 Optional steps:
 - Create a DNS A Record pointing from your domain or subdomain to your new server.
+
+Torify your site with an onion domain: https://www.torproject.org/about/history/
+
+sudo apt update && sudo apt install -y tor && echo -e "HiddenServiceDir /var/lib/tor/hidden_service/\nHiddenServicePort 80 127.0.0.1:3000" | sudo tee -a /etc/tor/torrc && sudo systemctl restart tor && sudo cat /var/lib/tor/hidden_service/hostname
 
 ScrollHub is public domain.
 
