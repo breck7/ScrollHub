@@ -13,11 +13,16 @@ It is the fastest way to publish. Don't take my word for it, try for yourself he
 Follow the steps below to run your own ScrollHub server in 60 seconds!
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/MmazCPKmU7c?si=-3_8-5iF0fjKo9-D&amp;clip=UgkxLL9gdK9ebmyJw6tKOerMYRZLBKvJ4M_s&amp;clipt=EMSRHBik5h8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
+```
 serverSetup.scroll
+```
 
 Optional steps:
 - Create a DNS A Record pointing from your domain or subdomain to your new server.
+
+Torify your site with an onion domain
+
+sudo apt update && sudo apt install -y tor && echo -e "HiddenServiceDir /var/lib/tor/hidden_service/\nHiddenServicePort 80 127.0.0.1:3000" | sudo tee -a /etc/tor/torrc && sudo systemctl restart tor && sudo cat /var/lib/tor/hidden_service/hostname
 
 ScrollHub is public domain.
 
