@@ -476,7 +476,9 @@ class EditorApp {
     })
 
     await response.text()
-    window.location = `/edit.html?folderName=${folderName}&fileName=${newFileName}`
+    delete this.scrollFiles
+    await this.openFile(newFileName)
+    this.hideSpinner()
   }
 
   setFileContent(value) {
@@ -518,7 +520,8 @@ class EditorApp {
       })
 
       const data = await response.text()
-      window.location.href = `/edit.html?folderName=${folderName}` // Redirect back to folder
+      await this.fetchAndDisplayFileList()
+      this.autoOpen()
     })
   }
 }
