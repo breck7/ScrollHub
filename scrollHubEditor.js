@@ -14,6 +14,7 @@ class EditorApp {
     this.folderName = ""
     this.previewIFrame = null
     this.scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
+    // todo: add code mirror support for html, css, javascript
     this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => this.scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
       lineWrapping: true, // todo: some way to see wrapped lines? do we want to disable line wrapping? make a keyboard shortcut?
       lineNumbers: false
@@ -164,7 +165,8 @@ class EditorApp {
     const { filePath } = this
     formData.append("filePath", filePath)
     formData.append("folderName", this.folderName)
-    formData.append("content", this.bufferValue)
+    const sentData = this.bufferValue
+    formData.append("content", sentData)
     try {
       const response = await fetch("/write.htm", {
         method: "POST",
@@ -176,11 +178,14 @@ class EditorApp {
         throw new Error(errorText || "Network response was not ok")
       }
 
-      const data = await response.text()
+      const newVersion = await response.text()
       console.log(`'${filePath}' saved`)
       this.hideSpinner()
+      if (this.bufferValue === sentData && newVersion !== sentData) {
+        // Todo: figure out how to restore cursor position.
+        // this.codeMirrorInstance.setValue(newVersion)
+      }
       this.updatePreviewIFrame()
-      return data
     } catch (error) {
       this.showError(error.message.split(".")[0])
       console.error("Error saving file:", error.message)

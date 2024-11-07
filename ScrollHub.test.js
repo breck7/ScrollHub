@@ -57,6 +57,41 @@ testParticles.create = areEqual => {
   })
 }
 
+testParticles.writeFlow = async areEqual => {
+  // Arrange
+  const testCases = {
+    "foo.scroll": {
+      error: undefined,
+      content: ``,
+      expected: ``
+    },
+    "foo2.scroll": {
+      error: undefined,
+      content: `\r\r`,
+      expected: ``
+    },
+    "foo.css": {
+      error: undefined,
+      content: `   body { color: red; }`,
+      expected: `body {\n color: red;\n}\n`
+    },
+    "foo.docx": {
+      error: true,
+      content: ``,
+      expected: ``
+    }
+  }
+  const hub = new ScrollHub()
+  // todo:
+  // // Act/ Assert
+  // Object.keys(testCases).forEach(filename => {
+  //   const theCase = testCases[key]
+  //   const result = hub.writeAndCommitTextFile(filename, theCase.content)
+  //   const keys = "content error".split(" ")
+  //   keys.forEach(testKey => areEqual(result[testKey], theCase[testKey], `${testKey} did not match`))
+  // })
+}
+
 if (module && !module.parent) TestRacer.testSingleFile(__filename, testParticles)
 
 module.exports = { testParticles }

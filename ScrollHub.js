@@ -1038,7 +1038,46 @@ ${prefix}${hash}<br>
     return true
   }
 
+  async formatFile(filePath, content) {
+    if (!this.shouldFormat(filePath)) return content
+
+    if (filePath.endsWith(".scroll") || filePath.endsWith(".parsers")) {
+      try {
+        const scrollFs = new ScrollFileSystem()
+        const formatted = new ScrollFile(undefined, filePath, scrollFs).formatted
+        await fsp.writeFile(filePath, formatted, "utf8")
+        return formatted
+      } catch (err) {
+        console.log(`Error formatting ${filePath}. Continuing on. Error:`, err)
+        return content
+      }
+    }
+
+    // Handle Prettier-supported files
+    return new Promise((resolve, reject) => {
+      const process = spawn("prettier", ["--write", filePath, "--ignore-path", "/dev/null"])
+      // set ignore path to dev/null to tell prettier to ignore .gitignore. todo: better ignore strategy in scroll?
+      process.on("close", async code => {
+        if (code === 0) {
+          const result = await fsp.readFile(filePath, "utf8")
+          resolve(result)
+        } else {
+          console.log(`Error formatting ${filePath}. Continuing on. Error:`, err)
+          reject(content)
+        }
+      })
+      process.on("error", reject)
+    })
+  }
+
+  shouldFormat(filePath) {
+    const prettierExtensions = [".js", ".html", ".css"]
+    const scrollExtensions = [".scroll", ".parsers"]
+    return prettierExtensions.some(ext => filePath.endsWith(ext)) || scrollExtensions.some(ext => filePath.endsWith(ext))
+  }
+
   async writeAndCommitTextFile(req, res, filePath, content) {
+    // todo: refactor into multiple methods and unit test heavily
     content = content.replace(/\r/g, "")
     const { rootFolder, folderCache } = this
     filePath = path.join(rootFolder, filePath)
@@ -1046,17 +1085,14 @@ ${prefix}${hash}<br>
     const ok = this.extensionOkay(filePath, res)
     if (!ok) return
 
-    const folderPath = path.dirname(filePath)
     const folderName = this.getFolderName(req)
-
+    const fileName = path.basename(filePath)
     if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
 
-    const fileName = path.basename(filePath)
-    const clientIp = req.ip || req.connection.remoteAddress
-    const hostname = req.hostname?.toLowerCase()
-
     const fileExists = await exists(filePath)
-    const currentVersion = fileExists ? await fsp.readFile(filePath, "utf8") : null
+    const previousVersion = fileExists ? await fsp.readFile(filePath, "utf8") : null
+
+    // Always write to disk.
     try {
       await fsp.writeFile(filePath, content, "utf8")
       this.addStory(req, `updated ${folderName}/${fileName}`)
@@ -1064,34 +1100,41 @@ ${prefix}${hash}<br>
       return res.status(500).send("Failed to save file. Error: " + err.toString().replace(/</g, "&lt;"))
     }
 
-    if (fileExists && currentVersion === content) return res.send(`Unchanged.`)
+    // If nothing changed, return early.
+    if (fileExists && previousVersion === content) return res.send(content)
 
-    // todo: prettify js, html, and css
-    const shouldFormat = filePath.endsWith(".scroll") || filePath.endsWith(".parsers")
-    if (shouldFormat) {
-      try {
-        const formatted = new ScrollFile(content, filePath, scrollFs).formatted // todo: do we need to pass in file path?
-        await fsp.writeFile(filePath, formatted, "utf8")
-      } catch (err) {
-        console.log("Error formatting. Continuing on. Error:", err)
-      }
-    }
+    const postFormat = await this.formatFile(filePath, content)
 
-    // Run the scroll build and git commands asynchronously
+    // If nothing changed, early return
+    if (fileExists && previousVersion === postFormat) return res.send(postFormat)
+
+    // Commit file
     try {
-      await execAsync(`git add -f ${fileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>"  -m 'Updated ${fileName}'`, { cwd: folderPath })
+      const clientIp = req.ip || req.connection.remoteAddress
+      const hostname = req.hostname?.toLowerCase()
+      const author = `${clientIp} <${clientIp}@${hostname}>`
+      await this.gitCommitFile(path.dirname(filePath), fileName, author)
     } catch (err) {
       return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
     }
 
+    // Build Folder
     try {
       await this.buildFolder(folderName, fileName)
     } catch (err) {
       return res.status(500).send("Save and git okay but build did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
     }
 
-    res.send(`Ok`)
+    // SUCCESS!!!
+    res.setHeader("Content-Type", "text/plain")
+    res.send(postFormat)
+
+    // Update folder metadata
     this.updateFolderAndBuildList(folderName)
+  }
+
+  async gitCommitFile(folderPath, fileName, author) {
+    await execAsync(`git add -f ${fileName}; git commit --author="${author}"  -m 'Updated ${fileName}'`, { cwd: folderPath })
   }
 
   async addStory(req, message) {

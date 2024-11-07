@@ -14,6 +14,7 @@
     "git-http-backend": "^1.1.2",
     "ky": "^1.4.0",
     "minimist": "^1.2.8",
+    "prettier": "^3.3.3",
     "rss-parser": "^3.13.0",
     "scroll-cli": "^146.1.0",
     "scrollsdk": "^93.0.0"
@@ -29,7 +30,7 @@
     "ssh": "ssh root@hub.scroll.pub",
     "up": "npm install scroll-cli@latest; cp ~/tryscroll/dist/constants.js ide/parsers.js; cp ~/tryscroll/dist/libs.js ide/libs.js",
     "deploy": "git push github; git push gitlab; ssh root@hub.scroll.pub 'cd ScrollHub && npm run upgrade'",
-    "upgrade": "git pull && npm install . && npm install -g scroll-cli && pm2 restart server && npm run build"
+    "upgrade": "git pull && npm install . && npm install -g scroll-cli prettier && pm2 restart server && npm run build"
   },
   "prettier": {
     "parser": "babel",
