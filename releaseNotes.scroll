@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.24.0 11/08/2024
+🎉 add syntax highlight support for html, css, and js files
+🏥 dont use scroll mode for non scroll files
+🏥 dont show folders in sidebar for now
+
 📦 0.23.0 11/08/2024
 🎉 show version tracking status of files in sidebar
 🎉 allow all file types

@@ -7,6 +7,7 @@ homeButton
 
 ./ide/libs.js
 ./ide/parsers.js
+modes.js
 
 # <a id="folderNameLink" target="visit"></a>
 <div id="spinner"></div>

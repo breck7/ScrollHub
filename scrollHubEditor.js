@@ -14,13 +14,55 @@ class EditorApp {
     this.folderName = ""
     this.previewIFrame = null
     this.scrollParser = new HandParsersProgram(AppConstants.parsers).compileAndReturnRootParser()
-    // todo: add code mirror support for html, css, javascript
-    this.codeMirrorInstance = new ParsersCodeMirrorMode("custom", () => this.scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(document.getElementById("fileEditor"), {
-      lineWrapping: true, // todo: some way to see wrapped lines? do we want to disable line wrapping? make a keyboard shortcut?
-      lineNumbers: false
-    })
-    this.codeMirrorInstance.setSize(this.width, 490)
+    this.initCodeMirror("custom")
     window.addEventListener("resize", () => this.codeMirrorInstance.setSize(this.width, 490))
+  }
+
+  getEditorMode(fileName) {
+    const extension = fileName ? fileName.split(".").pop().toLowerCase() : ""
+    const modeMap = {
+      html: "htmlmixed",
+      htm: "htmlmixed",
+      js: "javascript",
+      css: "css",
+      scroll: "custom",
+      parsers: "custom"
+    }
+    return modeMap[extension] || null
+  }
+
+  initCodeMirror(mode) {
+    const textarea = document.getElementById("fileEditor")
+
+    if (this.codeMirrorInstance) this.codeMirrorInstance.toTextArea()
+
+    if (mode === "custom") {
+      // Use custom scroll parser mode with its autocomplete
+      this.codeMirrorInstance = new ParsersCodeMirrorMode(mode, () => this.scrollParser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(textarea, {
+        lineWrapping: true,
+        lineNumbers: false,
+        mode
+      })
+    } else {
+      // Use standard CodeMirror with appropriate mode and hint addons
+      this.codeMirrorInstance = CodeMirror.fromTextArea(textarea, {
+        lineWrapping: true,
+        lineNumbers: false,
+        mode
+      })
+    }
+
+    this.codeMirrorInstance.setSize(this.width, 490)
+  }
+
+  mode = "custom"
+  updateEditorMode(fileName) {
+    const mode = this.getEditorMode(fileName)
+    if (mode === this.mode) return
+    const currentContent = this.codeMirrorInstance.getValue()
+    this.initCodeMirror(mode)
+    this.codeMirrorInstance.setValue(currentContent)
+    this.mode = mode
   }
 
   _scrollProgram
@@ -113,6 +155,10 @@ class EditorApp {
     const filePath = `${folderName}/${fileName}`
     const response = await fetch(`/read.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
+
+    // Update editor mode before setting content
+    this.updateEditorMode(fileName)
+
     this.setFileContent(content)
     this.setFileNameInUrl(fileName)
     this.updatePreviewIFrame()

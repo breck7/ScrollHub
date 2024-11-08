@@ -598,9 +598,7 @@ ${prefix}${hash}<br>
 
       if (!cachedEntry) return res.status(404).send(`Folder '${folderName}' not found`)
 
-      const fileNames = (await fsp.readdir(folderPath)).filter(file => {
-        return file !== ".git" && file !== ".DS_Store"
-      })
+      const fileNames = (await fsp.readdir(folderPath, { withFileTypes: true })).filter(dirent => dirent.isFile() && dirent.name !== ".git" && dirent.name !== ".DS_Store").map(dirent => dirent.name)
 
       const files = {}
       fileNames.forEach(file => {
