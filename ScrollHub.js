@@ -1020,9 +1020,25 @@ ${prefix}${hash}<br>
     return zipBuffer
   }
 
+  async isScrollFolder(folderName) {
+    if (folderName.startsWith(".")) return false
+    const folderPath = path.join(this.rootFolder, folderName)
+    try {
+      // Check if folder contains a .git directory
+      const gitPath = path.join(folderPath, ".git")
+      const stats = await fsp.stat(gitPath)
+      if (stats.isDirectory()) return true
+    } catch (err) {}
+    return false
+  }
+
   async warmFolderCache() {
     const folders = await fsp.readdir(this.rootFolder)
-    await Promise.all(folders.map(this.updateFolder.bind(this)))
+    const scrollFolders = []
+    for (const folder of folders) {
+      if (await this.isScrollFolder(folder)) scrollFolders.push(folder)
+    }
+    await Promise.all(scrollFolders.map(this.updateFolder.bind(this)))
     await this.buildListFile()
     console.log(`Folder cache warmed. Time: ${(Date.now() - this.startTime) / 1000}s`)
   }
@@ -1244,32 +1260,45 @@ ${prefix}${hash}<br>
   async updateFolder(folder) {
     const { rootFolder } = this
     const fullPath = path.join(rootFolder, folder)
-    const stats = await fsp.stat(fullPath)
 
-    if (!stats.isDirectory()) return null
-
-    const { ctime, mtime, birthtime } = stats
-
-    // Get number of files and total size
-    let fileSize = 0
+    // Get list of files tracked by git and their sizes
     let fileCount = 0
-    const files = await fsp.readdir(fullPath)
-
-    await Promise.all(
-      files.map(async file => {
-        const filePath = path.join(fullPath, file)
-        const fileStats = await fsp.stat(filePath)
-        if (fileStats.isFile()) {
-          fileSize += fileStats.size
-          fileCount++
-        }
-      })
-    )
-    // Get number of git commits, last commit hash, and last commit timestamp
-    let commitCount = 0
-    let lastCommitHash = ""
-    let lastCommitTimestamp = null
+    let fileSize = 0
     try {
+      // Get list of tracked files with their sizes
+      const gitLsFiles = await new Promise((resolve, reject) => {
+        const gitProcess = spawn("git", ["ls-files", "-z", "--with-tree=HEAD"], { cwd: fullPath })
+        let result = ""
+        gitProcess.stdout.on("data", data => {
+          result += data.toString()
+        })
+        gitProcess.on("close", code => {
+          if (code === 0) {
+            resolve(result.trim())
+          } else {
+            reject(new Error(`git process exited with code ${code}`))
+          }
+        })
+      })
+
+      // Split by null character and filter empty entries
+      const files = gitLsFiles.split("\0").filter(Boolean)
+      fileCount = files.length
+
+      // Get size of each tracked file
+      await Promise.all(
+        files.map(async file => {
+          const filePath = path.join(fullPath, file)
+          try {
+            const fileStats = await fsp.stat(filePath)
+            fileSize += fileStats.size
+          } catch (err) {
+            console.error(`Error getting stats for file: ${file}`, err)
+          }
+        })
+      )
+
+      // Get number of git commits
       const gitCommits = await new Promise((resolve, reject) => {
         const gitProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: fullPath })
         let result = ""
@@ -1284,10 +1313,10 @@ ${prefix}${hash}<br>
           }
         })
       })
-      commitCount = parseInt(gitCommits, 10)
+      const commitCount = parseInt(gitCommits, 10)
 
       // Get last commit hash
-      lastCommitHash = await new Promise((resolve, reject) => {
+      const lastCommitHash = await new Promise((resolve, reject) => {
         const gitProcess = spawn("git", ["rev-parse", "HEAD"], { cwd: fullPath })
         let result = ""
         gitProcess.stdout.on("data", data => {
@@ -1303,7 +1332,7 @@ ${prefix}${hash}<br>
       })
 
       // Get last commit timestamp
-      lastCommitTimestamp = await new Promise((resolve, reject) => {
+      const lastCommitTimestamp = await new Promise((resolve, reject) => {
         const gitProcess = spawn("git", ["log", "-1", "--format=%ct"], { cwd: fullPath })
         let result = ""
         gitProcess.stdout.on("data", data => {
@@ -1317,18 +1346,36 @@ ${prefix}${hash}<br>
           }
         })
       })
+
+      // Get folder creation time from git
+      const firstCommitTimestamp = await new Promise((resolve, reject) => {
+        const gitProcess = spawn("git", ["log", "--reverse", "--format=%ct", "--max-count=1"], { cwd: fullPath })
+        let result = ""
+        gitProcess.stdout.on("data", data => {
+          result += data.toString()
+        })
+        gitProcess.on("close", code => {
+          if (code === 0) {
+            resolve(new Date(parseInt(result.trim(), 10) * 1000))
+          } else {
+            reject(new Error(`git process exited with code ${code}`))
+          }
+        })
+      })
+
+      this.folderCache[folder] = {
+        folder,
+        folderLink: getBaseUrlForFolder(folder, this.hostname, "https:"),
+        created: firstCommitTimestamp,
+        revised: lastCommitTimestamp,
+        files: fileCount,
+        mb: Math.ceil(fileSize / (1024 * 1024)),
+        revisions: commitCount,
+        hash: lastCommitHash.substr(0, 10)
+      }
     } catch (err) {
-      console.error(`Error getting git information for folder: ${folder}`)
-    }
-    this.folderCache[folder] = {
-      folder,
-      folderLink: getBaseUrlForFolder(folder, this.hostname, "https:"),
-      created: birthtime || ctime,
-      revised: lastCommitTimestamp,
-      files: fileCount,
-      mb: Math.ceil(fileSize / (1024 * 1024)),
-      revisions: commitCount,
-      hash: lastCommitHash.substr(0, 10)
+      console.error(`Error getting git information for folder: ${folder}`, err)
+      return null
     }
   }
 
