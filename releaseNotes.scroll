@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.21.0 11/07/2024
+🎉 added new way to create a folder by dropping a zip onto index page
+
 📦 0.20.0 11/07/2024
 🎉 run prettier on save of js, css, and html files if hand edited
 🎉 cleanup of write files

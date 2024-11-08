@@ -1,17 +1,6 @@
+<div id="spinner"></div>
 <form method="post" action="create.htm" id="createForm">
 <input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Create</button>
 <div id="errorMessage"></div>
-script
- {
- const el = document.getElementById("errorMessage")
- const params = new URLSearchParams(window.location.search)
- const errorMessage = params.get('errorMessage') || ''
- el.textContent = errorMessage
- el.style.display = errorMessage ? 'block' : "none"
- const folderName = params.get('folderName') || ''
- const inputEl = document.getElementById("folderName")
- if (folderName)
-    inputEl.value = folderName
-  inputEl.focus()
- }
+inlineJs create.js
 </form>

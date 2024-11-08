@@ -665,6 +665,71 @@ ${prefix}${hash}<br>
       }
     })
 
+    // In the initFileRoutes method, add this new route:
+    app.post("/createFromZip.htm", checkWritePermissions, async (req, res) => {
+      if (!req.files || !req.files.zipFile) return res.status(400).send("No zip file was uploaded.")
+
+      const zipFile = req.files.zipFile
+      const suggestedName = req.body.folderName || path.basename(zipFile.name, ".zip").toLowerCase()
+      const folderName = sanitizeFolderName(suggestedName)
+
+      // Validate folder name
+      if (!this.isValidFolderName(folderName)) return res.status(400).send(`Invalid folder name "${folderName}". Folder names must start with a letter a-z, ` + `be more than 1 character, and not end in a common file extension.`)
+
+      // Check if folder already exists
+      if (this.folderCache[folderName]) return res.status(409).send(`A folder named "${folderName}" already exists`)
+
+      const folderPath = path.join(this.rootFolder, folderName)
+      const tempPath = path.join(os.tmpdir(), `scroll-${Date.now()}`)
+
+      try {
+        // Create temp directory
+        await fsp.mkdir(tempPath, { recursive: true })
+
+        // Write zip file to temp location
+        const tempZipPath = path.join(tempPath, "upload.zip")
+        await zipFile.mv(tempZipPath)
+
+        // Create the target folder
+        await fsp.mkdir(folderPath, { recursive: true })
+
+        // Unzip the file
+        await execAsync(`unzip "${tempZipPath}"`, { cwd: folderPath })
+
+        // Initialize git repository
+        if (!fs.existsSync(path.join(folderPath, ".git"))) await execAsync(`git init; git add .; git commit -m "Initial import from zip file"`, { cwd: folderPath })
+
+        // Build the folder
+        await this.buildFolder(folderName)
+
+        // Add to story and update caches
+        this.addStory(req, `created ${folderName} from zip file`)
+        this.updateFolderAndBuildList(folderName)
+
+        // Redirect to editor
+        res.send(folderName)
+      } catch (error) {
+        console.error(`Error creating folder from zip:`, error)
+
+        // Clean up on error
+        try {
+          await fsp.rm(folderPath, { recursive: true, force: true })
+          await fsp.rm(tempPath, { recursive: true, force: true })
+        } catch (cleanupError) {
+          console.error("Error during cleanup:", cleanupError)
+        }
+
+        res.status(500).send(`An error occurred while creating folder from zip: ${error.toString().replace(/</g, "&lt;")}`)
+      } finally {
+        // Clean up temp directory
+        try {
+          await fsp.rm(tempPath, { recursive: true, force: true })
+        } catch (cleanupError) {
+          console.error("Error cleaning up temp directory:", cleanupError)
+        }
+      }
+    })
+
     app.post("/echo.htm", checkWritePermissions, async (req, res) => {
       res.setHeader("Content-Type", "text/plain")
       res.send(req.body)
