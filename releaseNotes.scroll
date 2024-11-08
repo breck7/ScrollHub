@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.22.0 11/07/2024
+🎉 perf for big sites: build saved file immediately, then kick off bigger build jobs
+🎉 perf for big sites: only have at most 1 build job in queue per folder
+
 📦 0.21.0 11/07/2024
 🎉 added new way to create a folder by dropping a zip onto index page
 

@@ -1185,7 +1185,7 @@ ${prefix}${hash}<br>
 
     // Build Folder
     try {
-      await this.buildFolder(folderName, fileName)
+      await this.buildFolder(folderName, filePath)
     } catch (err) {
       return res.status(500).send("Save and git okay but build did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
     }
@@ -1337,16 +1337,24 @@ ${prefix}${hash}<br>
     this.buildListFile()
   }
 
+  async buildFile(filePath) {
+    const file = new ScrollFile(undefined, filePath, new ScrollFileSystem())
+    await file.buildAll()
+  }
+
+  buildRequests = {}
   async buildFolder(folderName, filePath) {
-    const folder = this.folderCache[folderName]
-    const scrollFs = new ScrollFileSystem()
-    // if fileName and a large folder do a fast build. todo: figure this out better. add dep graph to scrollsdk?
-    if (filePath && folder.revisions > 500) {
-      const file = new ScrollFile(undefined, filePath, scrollFs)
-      await file.buildAll()
+    // Build the changed file immediately, then build the rest of folder
+    if (filePath) await this.buildFile(filePath)
+    if (!this.buildRequests[folderName]) this.buildRequests[folderName] = 1
+    else {
+      this.buildRequests[folderName]++
       return
     }
     await execAsync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
+    const buildAgain = this.buildRequests[folderName] > 1
+    this.buildRequests[folderName] = 0
+    if (buildAgain) return this.buildFolder(folderName)
   }
 
   buildFolderSync(folderName) {
