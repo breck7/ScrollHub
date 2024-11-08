@@ -114,7 +114,6 @@ Required directories:
 ```javascript
 {
   maxUploadSize: 100 * 1000 * 1024,  // Maximum upload size in bytes
-  allowedExtensions: ['scroll', 'txt', 'html', ...],  // Allowed file types
   writeLimit: 30,  // Maximum writes per minute per IP
   writeWindow: 60 * 1000  // Time window for write limit (ms)
 }

@@ -98,8 +98,8 @@ class EditorApp {
   }
 
   autoOpen() {
-    const { scrollFiles } = this
-    this.openFile(scrollFiles.includes("index.scroll") ? "index.scroll" : scrollFiles[0])
+    const { filenames } = this
+    this.openFile(filenames.includes("index.scroll") ? "index.scroll" : filenames[0])
   }
 
   async openFolder(folderName) {
@@ -118,7 +118,7 @@ class EditorApp {
     this.updatePreviewIFrame()
     this.updateVisitLink()
 
-    if (!this.scrollFiles) await this.fetchAndDisplayFileList()
+    if (!this.files) await this.fetchAndDisplayFileList()
     else this.renderFileList()
   }
 
@@ -318,7 +318,7 @@ class EditorApp {
   updateFooterLinks() {
     const { folderName } = this
     document.getElementById("gitClone").innerHTML =
-      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">live traffic</a> · <a class="folderActionLink" href="/diff.htm/${folderName}">history</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">live traffic</a> · <a class="folderActionLink" href="/diff.htm/${folderName}">history</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async renameFolder() {
@@ -377,26 +377,30 @@ class EditorApp {
   async fetchAndDisplayFileList() {
     const { folderName } = this
     try {
-      const response = await fetch(`/ls.htm?folderName=${folderName}`)
+      const response = await fetch(`/ls.json?folderName=${folderName}`)
       if (!response.ok) throw new Error(await response.text())
-      const data = await response.text()
-      const files = data.split("\n")
-      this.files = files
-      this.scrollFiles = files.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+      this.files = await response.json()
       this.renderFileList()
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)
     }
   }
 
+  get filenames() {
+    return Object.keys(this.files)
+  }
+
   renderFileList() {
-    const { files, scrollFiles, folderName } = this
+    const { files, filenames, folderName } = this
     const currentFileName = this.fileName
-    const sorted = scrollFiles.concat(files.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+    const scrollFiles = filenames.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+    const sorted = scrollFiles.concat(filenames.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
     const fileLinks = sorted.map(file => {
+      const stats = files[file]
       const selected = currentFileName === file ? "selectedFile" : ""
       const isScrollFile = file.endsWith(".scroll") || file.endsWith(".parsers")
-      return `<a class="${isScrollFile ? "" : "nonScrollFile"} ${selected}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
+      const isTrackedByGit = stats.versioned ? "" : " untracked"
+      return `<a class="${isScrollFile ? "" : "nonScrollFile"} ${selected} ${isTrackedByGit}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
     })
     this.fileListEl.innerHTML = fileLinks.join("<br>")
   }
@@ -474,7 +478,7 @@ class EditorApp {
     })
 
     await response.text()
-    delete this.scrollFiles
+    delete this.files
     await this.openFile(newFileName)
     this.hideSpinner()
   }

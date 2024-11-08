@@ -18,6 +18,13 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.23.0 11/08/2024
+🎉 show version tracking status of files in sidebar
+🎉 allow all file types
+🎉 add download button
+🎉 folder stats should show # of versioned files, not # of files
+🎉 a scrollhub folder is one not starting with . that contains a git repo
+
 📦 0.22.0 11/07/2024
 🎉 perf for big sites: build saved file immediately, then kick off bigger build jobs
 🎉 perf for big sites: only have at most 1 build job in queue per folder

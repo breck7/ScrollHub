@@ -97,6 +97,9 @@ body {
 .nonScrollFile {
   color: grey;
 }
+.untracked {
+  opacity: 0.5;
+}
 
 .createFileButton {
   cursor: pointer;

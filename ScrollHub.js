@@ -134,7 +134,6 @@ class ScrollHub {
     const app = this.app
     this.port = 80
     this.maxUploadSize = 100 * 1000 * 1024
-    this.allowedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
     this.hostname = os.hostname()
     this.rootFolder = path.join(os.homedir(), "folders")
     this.templatesFolder = path.join(__dirname, "templates")
@@ -555,7 +554,7 @@ ${prefix}${hash}<br>
   }
 
   initFileRoutes() {
-    const { app, rootFolder, folderCache, allowedExtensions } = this
+    const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
 
     app.get("/e/:folderName", async (req, res) => {
@@ -592,27 +591,30 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.get("/ls.htm", async (req, res) => {
+    app.get("/ls.json", async (req, res) => {
       const folderName = sanitizeFolderName(req.query.folderName)
       const folderPath = path.join(rootFolder, folderName)
+      const cachedEntry = folderCache[folderName]
 
-      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!cachedEntry) return res.status(404).send(`Folder '${folderName}' not found`)
 
-      const files = (await fsp.readdir(folderPath)).filter(file => {
-        const ext = path.extname(file).toLowerCase().slice(1)
-        return allowedExtensions.includes(ext)
+      const fileNames = (await fsp.readdir(folderPath)).filter(file => {
+        return file !== ".git" && file !== ".DS_Store"
       })
 
-      res.setHeader("Content-Type", "text/plain")
-      res.send(files.join("\n"))
+      const files = {}
+      fileNames.forEach(file => {
+        files[file] = {
+          versioned: cachedEntry.tracked.has(file)
+        }
+      })
+
+      res.setHeader("Content-Type", "text/json")
+      res.send(JSON.stringify(files))
     })
 
     app.get("/read.htm", async (req, res) => {
       const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
-
-      const ok = this.extensionOkay(filePath, res)
-      if (!ok) return
-
       try {
         const fileExists = await exists(filePath)
         if (!fileExists) return res.status(404).send(`File '${filePath}' not found`)
@@ -640,7 +642,6 @@ ${prefix}${hash}<br>
 
       // Check file extension
       const fileExtension = path.extname(file.name).toLowerCase().slice(1)
-      if (!allowedExtensions.includes(fileExtension)) return res.status(400).send(`Invalid file type. Only ${allowedExtensions.join(" ")} files are allowed.`)
 
       if (file.size > this.maxUploadSize) return res.status(400).send("File size exceeds the maximum limit of 1MB.")
 
@@ -755,9 +756,6 @@ ${prefix}${hash}<br>
       const folderPath = path.join(rootFolder, folderName)
       const filePath = path.join(folderPath, fileName)
 
-      // Check if the file extension is allowed
-      if (!this.extensionOkay(filePath, res)) return
-
       particles = "\n" + particles // add a new line before new particles
       try {
         // Default is append
@@ -798,9 +796,6 @@ ${prefix}${hash}<br>
 
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
-      const ok = this.extensionOkay(filePath, res)
-      if (!ok) return
-
       try {
         const fileExists = await exists(filePath)
         if (!fileExists) return res.status(404).send("File not found")
@@ -837,9 +832,6 @@ ${prefix}${hash}<br>
         // Remove the folder from the cache
         delete folderCache[folderName]
 
-        // Remove the zip file from cache if it exists
-        this.zipCache.delete(folderName)
-
         // Rebuild the list file
         this.buildListFile()
 
@@ -862,8 +854,6 @@ ${prefix}${hash}<br>
       const folderPath = path.join(rootFolder, folderName)
       const oldFilePath = path.join(folderPath, oldFileName)
       const newFilePath = path.join(folderPath, newFileName)
-
-      if (!this.extensionOkay(oldFilePath, res) || !this.extensionOkay(newFilePath, res)) return
 
       try {
         // Check if the old file exists
@@ -906,7 +896,6 @@ ${prefix}${hash}<br>
 
         // Remove from cache
         delete folderCache[oldFolderName]
-        this.zipCache.delete(oldFolderName)
 
         // Update folder cache with new name
         await this.updateFolder(newFolderName)
@@ -975,16 +964,13 @@ ${prefix}${hash}<br>
 
   initZipRoutes() {
     const { app, folderCache } = this
-    const zipCache = new Map()
-    this.zipCache = zipCache
-
     app.get("/:folderName.zip", async (req, res) => {
       const folderName = sanitizeFolderName(req.params.folderName)
-
-      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+      const cacheEntry = folderCache[folderName]
+      if (!cacheEntry) return res.status(404).send("Folder not found")
 
       // Check if the zip is in memory cache
-      let zipBuffer = zipCache.get(folderName)
+      let zipBuffer = cacheEntry.zip
 
       if (!zipBuffer) {
         try {
@@ -1004,7 +990,7 @@ ${prefix}${hash}<br>
   }
 
   async zipFolder(folderName) {
-    const { rootFolder, zipCache } = this
+    const { rootFolder, folderCache } = this
     const folderPath = path.join(rootFolder, folderName)
     const zipBuffer = await new Promise((resolve, reject) => {
       const output = []
@@ -1016,7 +1002,7 @@ ${prefix}${hash}<br>
         else reject(new Error("Error creating zip file"))
       })
     })
-    zipCache.set(folderName, zipBuffer)
+    folderCache[folderName].zip = zipBuffer
     return zipBuffer
   }
 
@@ -1109,16 +1095,6 @@ ${prefix}${hash}<br>
     res.status(403).send(msg)
   }
 
-  extensionOkay(filepath, res) {
-    const { allowedExtensions } = this
-    const fileExtension = path.extname(filepath).toLowerCase().slice(1)
-    if (!allowedExtensions.includes(fileExtension)) {
-      res.status(400).send(`Editing '${fileExtension}' files not yet supported. Only editing of ${allowedExtensions} files is allowed.`)
-      return false
-    }
-    return true
-  }
-
   async formatFile(filePath, content) {
     if (!this.shouldFormat(filePath)) return content
 
@@ -1162,9 +1138,6 @@ ${prefix}${hash}<br>
     content = content.replace(/\r/g, "")
     const { rootFolder, folderCache } = this
     filePath = path.join(rootFolder, filePath)
-
-    const ok = this.extensionOkay(filePath, res)
-    if (!ok) return
 
     const folderName = this.getFolderName(req)
     const fileName = path.basename(filePath)
@@ -1364,14 +1337,18 @@ ${prefix}${hash}<br>
       })
 
       this.folderCache[folder] = {
-        folder,
-        folderLink: getBaseUrlForFolder(folder, this.hostname, "https:"),
-        created: firstCommitTimestamp,
-        revised: lastCommitTimestamp,
-        files: fileCount,
-        mb: Math.ceil(fileSize / (1024 * 1024)),
-        revisions: commitCount,
-        hash: lastCommitHash.substr(0, 10)
+        tracked: new Set(files),
+        stats: {
+          folder,
+          folderLink: getBaseUrlForFolder(folder, this.hostname, "https:"),
+          created: firstCommitTimestamp,
+          revised: lastCommitTimestamp,
+          files: fileCount,
+          mb: Math.ceil(fileSize / (1024 * 1024)),
+          revisions: commitCount,
+          hash: lastCommitHash.substr(0, 10)
+        },
+        zip: undefined
       }
     } catch (err) {
       console.error(`Error getting git information for folder: ${folder}`, err)
@@ -1420,7 +1397,7 @@ ${prefix}${hash}<br>
   }
 
   async buildListFile() {
-    const folders = Object.values(this.folderCache)
+    const folders = Object.values(this.folderCache).map(folder => folder.stats)
     const particles = new Particle(folders)
     await fsp.writeFile(path.join(__dirname, "folders.csv"), particles.asCsv, "utf8")
     await fsp.writeFile(path.join(__dirname, "folders.tsv"), particles.asTsv, "utf8")
@@ -1471,6 +1448,8 @@ scrollVersionLink`
     res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
   }
 
+  reservedExtensions = "scroll parsers txt html htm css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
+
   isValidFolderName(name) {
     if (name.length < 2) return false
 
@@ -1478,7 +1457,7 @@ scrollVersionLink`
     // also, we reserve ".htm" for ScrollHub dynamic routes
     if (name.includes(".")) {
       const ext = path.extname(name).toLowerCase().slice(1)
-      if (this.allowedExtensions.includes(ext)) return false
+      if (this.reservedExtensions.includes(ext)) return false
     }
     if (/^[a-z0-9][a-z0-9._]*$/.test(name)) return true
     return false
@@ -1533,7 +1512,7 @@ scrollVersionLink`
     } else {
       await execAsync(`cp -R ${template} ${folderName};`, { cwd: rootFolder })
     }
-    this.updateFolderAndBuildList(folderName)
+    await this.updateFolderAndBuildList(folderName)
 
     return { folderName }
   }
