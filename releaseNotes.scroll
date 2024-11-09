@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.25.0 11/09/2024
+🎉 add support for php, python, ruby and perl
+
 📦 0.24.0 11/08/2024
 🎉 add syntax highlight support for html, css, and js files
 🏥 dont use scroll mode for non scroll files
