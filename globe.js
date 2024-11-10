@@ -8,22 +8,40 @@ class Globe {
     this.animationId = null
     this.stars = null
 
-    // Mouse control properties
+    // Camera control properties
     this.isDragging = false
     this.previousMousePosition = {
       x: 0,
       y: 0
     }
-    this.rotation = {
-      x: 0,
-      y: 0
+
+    // Camera orbit properties
+    this.cameraDistance = 1
+    this.cameraRotation = {
+      x: Math.PI * 0.1, // slightly above equator
+      y: Math.PI * 0.6 // west of prime meridian
     }
 
     // Zoom properties
-    this.minZoom = 0.8
-    this.maxZoom = 3
+    this.minZoom = 0.1
+    this.maxZoom = 10
     this.currentZoom = 1
-    this.zoomSpeed = 0.01
+    this.zoomSpeed = 0.02
+  }
+
+  updateCameraPosition() {
+    // Convert spherical coordinates to Cartesian
+    const phi = this.cameraRotation.x // vertical angle
+    const theta = this.cameraRotation.y // horizontal angle
+    const radius = this.cameraDistance / this.currentZoom
+
+    this.camera.position.x = radius * Math.cos(phi) * Math.cos(theta)
+    this.camera.position.y = radius * Math.sin(phi)
+    this.camera.position.z = radius * Math.cos(phi) * Math.sin(theta)
+
+    // Always look at the center
+    this.camera.lookAt(0, 0, 0)
+    this.camera.up.set(0, 1, 0) // Keep "up" direction consistent
   }
 
   createStarField() {
@@ -65,20 +83,42 @@ class Globe {
     this.scene = new THREE.Scene()
     const height = window.innerHeight - 100
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / height, 0.1, 1000)
-    this.camera.position.z = 1
-    this.renderer = new THREE.WebGLRenderer()
+
+    // Set initial camera position
+    this.cameraDistance = 1
+    this.updateCameraPosition()
+
+    // Set up renderer with alpha and better quality
+    this.renderer = new THREE.WebGLRenderer({ antialias: true })
     this.renderer.setSize(window.innerWidth, height)
+    this.renderer.setClearColor(0x000000) // Set background to black
     document.body.prepend(this.renderer.domElement)
 
     // Create starry background
     this.createStarField()
 
-    // Create Earth
+    // Create Earth with better lighting
     const geometry = new THREE.SphereGeometry(0.5, 32, 32)
     const texture = new THREE.TextureLoader().load("earth_atmos_2048.jpg")
-    const material = new THREE.MeshBasicMaterial({ map: texture })
+
+    // Use PhongMaterial for better lighting
+    const material = new THREE.MeshPhongMaterial({
+      map: texture,
+      specular: 0x333333,
+      shininess: 5
+    })
+
     this.earth = new THREE.Mesh(geometry, material)
     this.scene.add(this.earth)
+
+    // Add ambient light
+    const ambientLight = new THREE.AmbientLight(0xfffffff)
+    this.scene.add(ambientLight)
+
+    // Add directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4)
+    directionalLight.position.set(5, 3, 5)
+    this.scene.add(directionalLight)
 
     // Add mouse and zoom controls
     this.setupMouseControls()
@@ -90,24 +130,66 @@ class Globe {
     return this
   }
 
+  setupMouseControls() {
+    const canvas = this.renderer.domElement
+
+    canvas.addEventListener("mousedown", e => {
+      this.isDragging = true
+      this.previousMousePosition = {
+        x: e.clientX,
+        y: e.clientY
+      }
+    })
+
+    canvas.addEventListener("mousemove", e => {
+      if (!this.isDragging) return
+
+      const deltaMove = {
+        x: e.clientX - this.previousMousePosition.x,
+        y: e.clientY - this.previousMousePosition.y
+      }
+
+      // Adjust rotation speed based on movement
+      const rotationSpeed = 0.005
+
+      // Update camera orbit angles
+      this.cameraRotation.y += deltaMove.x * rotationSpeed
+      this.cameraRotation.x += deltaMove.y * rotationSpeed
+
+      // Limit vertical rotation to prevent flipping
+      this.cameraRotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.cameraRotation.x))
+
+      // Update camera position
+      this.updateCameraPosition()
+
+      this.previousMousePosition = {
+        x: e.clientX,
+        y: e.clientY
+      }
+    })
+
+    window.addEventListener("mouseup", () => {
+      this.isDragging = false
+    })
+
+    canvas.addEventListener("selectstart", e => {
+      e.preventDefault()
+    })
+  }
+
   setupZoomControls() {
     const canvas = this.renderer.domElement
 
-    // Mouse wheel zoom
     canvas.addEventListener("wheel", e => {
       e.preventDefault()
 
-      // Determine zoom direction
       const zoomDelta = e.deltaY > 0 ? -this.zoomSpeed : this.zoomSpeed
 
-      // Update zoom level
       this.currentZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.currentZoom + zoomDelta))
 
-      // Update camera position
-      this.camera.position.z = 1 / this.currentZoom
+      this.updateCameraPosition()
     })
 
-    // Touch pinch zoom
     let touchDistance = 0
 
     canvas.addEventListener("touchstart", e => {
@@ -131,59 +213,35 @@ class Globe {
 
         this.currentZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.currentZoom + zoomDelta))
 
-        this.camera.position.z = 1 / this.currentZoom
+        this.updateCameraPosition()
         touchDistance = newDistance
       }
     })
   }
 
-  setupMouseControls() {
-    const canvas = this.renderer.domElement
+  animate() {
+    if (!this.earth) return
 
-    canvas.addEventListener("mousedown", e => {
-      this.isDragging = true
-      this.previousMousePosition = {
-        x: e.clientX,
-        y: e.clientY
+    const { earth, spikes, renderer, scene, camera } = this
+
+    this.animationId = requestAnimationFrame(this.animate.bind(this))
+
+    // Auto-rotate camera when not dragging
+    if (this.shouldRotate && !this.isDragging) {
+      this.cameraRotation.y += 0.001
+      this.updateCameraPosition()
+    }
+
+    // Update spikes
+    spikes.forEach((spike, index) => {
+      spike.scale.y *= 0.95
+      if (spike.scale.y < 0.01) {
+        earth.remove(spike)
+        spikes.splice(index, 1)
       }
     })
 
-    canvas.addEventListener("mousemove", e => {
-      if (!this.isDragging) return
-
-      const deltaMove = {
-        x: e.clientX - this.previousMousePosition.x,
-        y: e.clientY - this.previousMousePosition.y
-      }
-
-      // Adjust rotation speed based on movement and zoom level
-      const rotationSpeed = 0.005 * this.currentZoom
-
-      // Update rotation based on mouse movement
-      this.rotation.x += deltaMove.y * rotationSpeed
-      this.rotation.y += deltaMove.x * rotationSpeed
-
-      // Limit vertical rotation to prevent flipping
-      this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x))
-
-      // Apply rotation to earth
-      this.earth.rotation.x = this.rotation.x
-      this.earth.rotation.y = this.rotation.y
-
-      this.previousMousePosition = {
-        x: e.clientX,
-        y: e.clientY
-      }
-    })
-
-    window.addEventListener("mouseup", () => {
-      this.isDragging = false
-    })
-
-    // Prevent text selection while dragging
-    canvas.addEventListener("selectstart", e => {
-      e.preventDefault()
-    })
+    renderer.render(scene, camera)
   }
 
   removeGlobe() {
@@ -197,9 +255,6 @@ class Globe {
       const canvas = this.renderer.domElement
       canvas.removeEventListener("mousedown", this.onMouseDown)
       canvas.removeEventListener("mousemove", this.onMouseMove)
-      canvas.removeEventListener("wheel", this.onWheel)
-      canvas.removeEventListener("touchstart", this.onTouchStart)
-      canvas.removeEventListener("touchmove", this.onTouchMove)
       canvas.removeEventListener("selectstart", this.onSelectStart)
     }
 
@@ -220,34 +275,6 @@ class Globe {
     this.renderer = null
     this.scene = null
     this.earth = null
-  }
-
-  animate() {
-    if (!this.earth) return
-
-    const { earth, spikes, renderer, scene, camera } = this
-
-    // Store the animation frame ID so we can cancel it if needed
-    this.animationId = requestAnimationFrame(this.animate.bind(this))
-
-    // Auto-rotate only when not dragging and shouldRotate is true
-    if (this.shouldRotate && !this.isDragging) {
-      earth.rotation.y += 0.001
-      // Update our stored rotation value to match
-      this.rotation.y += 0.001
-    }
-
-    // Update spikes
-    spikes.forEach((spike, index) => {
-      spike.scale.y *= 0.95
-      if (spike.scale.y < 0.01) {
-        earth.remove(spike)
-        spikes.splice(index, 1)
-      }
-    })
-
-    // Render the scene
-    renderer.render(scene, camera)
   }
 
   latLongToVector3(lat, lon) {
