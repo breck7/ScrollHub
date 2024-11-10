@@ -25,6 +25,10 @@ class EditorApp {
       htm: "htmlmixed",
       js: "javascript",
       css: "css",
+      py: "python",
+      rb: "ruby",
+      php: "php",
+      perl: "perl",
       scroll: "custom",
       parsers: "custom"
     }

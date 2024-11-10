@@ -1,2 +1,2 @@
 buildJs
-inlineJs codemirror5/mode/xml/xml.js codemirror5/mode/javascript/javascript.js codemirror5/mode/css/css.js codemirror5/mode/htmlmixed/htmlmixed.js
+inlineJs codemirror5/mode/xml/xml.js codemirror5/mode/javascript/javascript.js codemirror5/mode/css/css.js codemirror5/mode/htmlmixed/htmlmixed.js codemirror5/mode/python/python.js codemirror5/mode/perl/perl.js codemirror5/mode/ruby/ruby.js codemirror5/mode/php/php.js
