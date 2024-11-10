@@ -226,9 +226,11 @@ class Globe {
 
     this.animationId = requestAnimationFrame(this.animate.bind(this))
 
+    const AUTO_ROTATE_SPEED = 0.0003
+
     // Auto-rotate camera when not dragging
     if (this.shouldRotate && !this.isDragging) {
-      this.cameraRotation.y += 0.001
+      this.cameraRotation.y += AUTO_ROTATE_SPEED
       this.updateCameraPosition()
     }
 
