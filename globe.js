@@ -5,7 +5,56 @@ class Globe {
     this.camera = null
     this.earth = null
     this.spikes = []
-    this.animationId = null // To store the current animation frame ID
+    this.animationId = null
+    this.stars = null
+
+    // Mouse control properties
+    this.isDragging = false
+    this.previousMousePosition = {
+      x: 0,
+      y: 0
+    }
+    this.rotation = {
+      x: 0,
+      y: 0
+    }
+
+    // Zoom properties
+    this.minZoom = 0.8
+    this.maxZoom = 3
+    this.currentZoom = 1
+    this.zoomSpeed = 0.01
+  }
+
+  createStarField() {
+    const starsGeometry = new THREE.BufferGeometry()
+    const starsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.02,
+      transparent: true,
+      opacity: 0.8,
+      sizeAttenuation: true
+    })
+
+    const starsVertices = []
+    const radius = 10 // Radius of our star sphere
+    const starsCount = 2000 // Number of stars
+
+    for (let i = 0; i < starsCount; i++) {
+      // Create random spherical coordinates
+      const theta = 2 * Math.PI * Math.random()
+      const phi = Math.acos(2 * Math.random() - 1)
+      const x = radius * Math.sin(phi) * Math.cos(theta)
+      const y = radius * Math.sin(phi) * Math.sin(theta)
+      const z = radius * Math.cos(phi)
+
+      starsVertices.push(x, y, z)
+    }
+
+    starsGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starsVertices, 3))
+
+    this.stars = new THREE.Points(starsGeometry, starsMaterial)
+    this.scene.add(this.stars)
   }
 
   createGlobe() {
@@ -21,6 +70,9 @@ class Globe {
     this.renderer.setSize(window.innerWidth, height)
     document.body.prepend(this.renderer.domElement)
 
+    // Create starry background
+    this.createStarField()
+
     // Create Earth
     const geometry = new THREE.SphereGeometry(0.5, 32, 32)
     const texture = new THREE.TextureLoader().load("earth_atmos_2048.jpg")
@@ -28,16 +80,127 @@ class Globe {
     this.earth = new THREE.Mesh(geometry, material)
     this.scene.add(this.earth)
 
+    // Add mouse and zoom controls
+    this.setupMouseControls()
+    this.setupZoomControls()
+
     // Start the animation loop
     this.animate()
 
     return this
   }
 
+  setupZoomControls() {
+    const canvas = this.renderer.domElement
+
+    // Mouse wheel zoom
+    canvas.addEventListener("wheel", e => {
+      e.preventDefault()
+
+      // Determine zoom direction
+      const zoomDelta = e.deltaY > 0 ? -this.zoomSpeed : this.zoomSpeed
+
+      // Update zoom level
+      this.currentZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.currentZoom + zoomDelta))
+
+      // Update camera position
+      this.camera.position.z = 1 / this.currentZoom
+    })
+
+    // Touch pinch zoom
+    let touchDistance = 0
+
+    canvas.addEventListener("touchstart", e => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0]
+        const touch2 = e.touches[1]
+        touchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY)
+      }
+    })
+
+    canvas.addEventListener("touchmove", e => {
+      if (e.touches.length === 2) {
+        e.preventDefault()
+
+        const touch1 = e.touches[0]
+        const touch2 = e.touches[1]
+        const newDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY)
+
+        const delta = newDistance - touchDistance
+        const zoomDelta = delta * 0.01 * this.zoomSpeed
+
+        this.currentZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.currentZoom + zoomDelta))
+
+        this.camera.position.z = 1 / this.currentZoom
+        touchDistance = newDistance
+      }
+    })
+  }
+
+  setupMouseControls() {
+    const canvas = this.renderer.domElement
+
+    canvas.addEventListener("mousedown", e => {
+      this.isDragging = true
+      this.previousMousePosition = {
+        x: e.clientX,
+        y: e.clientY
+      }
+    })
+
+    canvas.addEventListener("mousemove", e => {
+      if (!this.isDragging) return
+
+      const deltaMove = {
+        x: e.clientX - this.previousMousePosition.x,
+        y: e.clientY - this.previousMousePosition.y
+      }
+
+      // Adjust rotation speed based on movement and zoom level
+      const rotationSpeed = 0.005 * this.currentZoom
+
+      // Update rotation based on mouse movement
+      this.rotation.x += deltaMove.y * rotationSpeed
+      this.rotation.y += deltaMove.x * rotationSpeed
+
+      // Limit vertical rotation to prevent flipping
+      this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x))
+
+      // Apply rotation to earth
+      this.earth.rotation.x = this.rotation.x
+      this.earth.rotation.y = this.rotation.y
+
+      this.previousMousePosition = {
+        x: e.clientX,
+        y: e.clientY
+      }
+    })
+
+    window.addEventListener("mouseup", () => {
+      this.isDragging = false
+    })
+
+    // Prevent text selection while dragging
+    canvas.addEventListener("selectstart", e => {
+      e.preventDefault()
+    })
+  }
+
   removeGlobe() {
     // Cancel the previous animation frame to stop multiple animations
     if (this.animationId) {
       cancelAnimationFrame(this.animationId)
+    }
+
+    // Remove event listeners if they exist
+    if (this.renderer) {
+      const canvas = this.renderer.domElement
+      canvas.removeEventListener("mousedown", this.onMouseDown)
+      canvas.removeEventListener("mousemove", this.onMouseMove)
+      canvas.removeEventListener("wheel", this.onWheel)
+      canvas.removeEventListener("touchstart", this.onTouchStart)
+      canvas.removeEventListener("touchmove", this.onTouchMove)
+      canvas.removeEventListener("selectstart", this.onSelectStart)
     }
 
     // Dispose of the renderer, scene, and event listeners
@@ -59,31 +222,6 @@ class Globe {
     this.earth = null
   }
 
-  listenToResize() {
-    window.addEventListener("resize", () => {
-      this.createGlobe() // Recreate the globe on resize
-    })
-    return this
-  }
-
-  listenForClicks() {
-    document.body.addEventListener("dblclick", () => {
-      if (!document.fullscreenElement) {
-        document.body.requestFullscreen().catch(err => {
-          console.log(`Error trying to go fullscreen: ${err.message} (${err.name})`)
-        })
-      } else {
-        document.exitFullscreen()
-      }
-    })
-
-    // Pause/Resume on single-click
-    document.body.addEventListener("click", () => (this.shouldRotate = !this.shouldRotate))
-    return this
-  }
-
-  shouldRotate = true
-
   animate() {
     if (!this.earth) return
 
@@ -92,8 +230,12 @@ class Globe {
     // Store the animation frame ID so we can cancel it if needed
     this.animationId = requestAnimationFrame(this.animate.bind(this))
 
-    // Rotate Earth
-    if (this.shouldRotate) earth.rotation.y += 0.001
+    // Auto-rotate only when not dragging and shouldRotate is true
+    if (this.shouldRotate && !this.isDragging) {
+      earth.rotation.y += 0.001
+      // Update our stored rotation value to match
+      this.rotation.y += 0.001
+    }
 
     // Update spikes
     spikes.forEach((spike, index) => {
@@ -135,6 +277,31 @@ class Globe {
     this.earth.add(spike) // Add spike to earth instead of scene
     this.spikes.push(spike)
   }
+
+  listenToResize() {
+    window.addEventListener("resize", () => {
+      this.createGlobe() // Recreate the globe on resize
+    })
+    return this
+  }
+
+  listenForClicks() {
+    document.body.addEventListener("dblclick", () => {
+      if (!document.fullscreenElement) {
+        document.body.requestFullscreen().catch(err => {
+          console.log(`Error trying to go fullscreen: ${err.message} (${err.name})`)
+        })
+      } else {
+        document.exitFullscreen()
+      }
+    })
+
+    // Pause/Resume on single-click
+    document.body.addEventListener("click", () => (this.shouldRotate = !this.shouldRotate))
+    return this
+  }
+
+  shouldRotate = true
 
   bindToSSE() {
     const logContainer = document.getElementById("log-container")
