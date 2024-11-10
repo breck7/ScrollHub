@@ -1223,6 +1223,7 @@ ${prefix}${hash}<br>
   ensureTemplatesInstalled() {
     const { rootFolder, templatesFolder } = this
     const templateDirs = fs.readdirSync(templatesFolder)
+    const standardGitIgnore = fs.readFileSync(path.join(templatesFolder, "blank_template", ".gitignore"), "utf8")
 
     for (const dir of templateDirs) {
       const sourcePath = path.join(templatesFolder, dir)
@@ -1236,6 +1237,8 @@ ${prefix}${hash}<br>
 
       // Copy the template folder to the root folder
       execSync(`cp -R ${sourcePath} ${destPath};`, { cwd: rootFolder })
+
+      fs.writeFileSync(path.join(destPath, ".gitignore"), standardGitIgnore, "utf8")
 
       // Initialize Git repository
       execSync(`git init; git add .; git commit -m 'initial ${dir} template'`, { cwd: destPath })
