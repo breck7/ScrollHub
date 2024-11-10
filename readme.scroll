@@ -24,6 +24,17 @@ Torify your site with an onion domain: https://www.torproject.org/about/history/
 
 sudo apt update && sudo apt install -y tor && echo -e "HiddenServiceDir /var/lib/tor/hidden_service/\nHiddenServicePort 80 127.0.0.1:3000" | sudo tee -a /etc/tor/torrc && sudo systemctl restart tor && sudo cat /var/lib/tor/hidden_service/hostname
 
+
+#Development Environmet Steps
+ Add '''
+git config --global alias.acp '!git add . && git commit -m "local Update" && git push'
+'''
+
+and use git acp to push to remote
+
+Make sure server side .gitignore includes all log and often changed files, to avoid local push conflicts.
+
+
 ScrollHub is public domain.
 
 footer.scroll
