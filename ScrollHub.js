@@ -936,17 +936,27 @@ ${prefix}${hash}<br>
     const { app } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
 
-    app.get("/t/:folderName", checkWritePermissions, async (req, res) => {
-      await this.runCommand(req, res, "test")
+    app.get("/test/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runScrollCommand(req, res, "test")
     })
 
-    app.get("/b/:folderName", checkWritePermissions, async (req, res) => {
-      await this.runCommand(req, res, "build")
+    app.get("/build/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runScrollCommand(req, res, "build")
+      this.updateFolderAndBuildList(this.getFolderName(req))
     })
 
-    app.get("/f/:folderName", checkWritePermissions, async (req, res) => {
-      await this.runCommand(req, res, "format")
+    app.get("/format/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runScrollCommand(req, res, "format")
+      this.updateFolderAndBuildList(this.getFolderName(req))
     })
+
+    app.get("/status/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runCommand(req, res, "git status")
+    })
+  }
+
+  async runScrollCommand(req, res, command) {
+    await this.runCommand(req, res, `scroll list | scroll ${command}`)
   }
 
   async runCommand(req, res, command) {
@@ -957,10 +967,9 @@ ${prefix}${hash}<br>
 
     try {
       const folderPath = path.join(rootFolder, folderName)
-      const { stdout } = await execAsync(`scroll list | scroll ${command}`, { cwd: folderPath })
+      const { stdout } = await execAsync(command, { cwd: folderPath })
       res.setHeader("Content-Type", "text/plain")
       res.send(stdout.toString())
-      if (command !== "test") this.updateFolderAndBuildList(folderName)
     } catch (error) {
       console.error(`Error running '${command}' in '${folderName}':`, error)
       res.status(500).send(`An error occurred while running '${command}' in '${folderName}'`)
