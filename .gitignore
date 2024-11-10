@@ -6,7 +6,6 @@ myenv/
 nohup.out
 package-lock.json
 certs/
-ScrollHub/
 folders/doom.publicserver.live/
 folders/blank_template/
 folders/blog_template/
@@ -20,3 +19,11 @@ folders/ScrollHub/
 ./.local/state/pipx/log/
 ./.pm2/
 output.log
+rking directory)
+ScrollHub/folders.csv
+ScrollHub/folders.html
+ScrollHub/folders.json
+ScrollHub/folders.tsv
+ScrollHub/templates.html
+ScrollHub/log.txt
+ScrollHub/writes.txt
