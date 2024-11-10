@@ -44,6 +44,18 @@ code
  alias acp="git add . && git commit --allow-empty-message -m '' && git push"
  # Make sure server side .gitignore includes all log and often changed files, to avoid local push conflicts.
 
+# Git Troubleshooting
+
+ScrollHub uses git for versioning files.
+
+If developing locally, occasionally you may run into merge conflicts.
+
+To see the "git status" for a folder visit: https://hub.scroll.pub/status/[folderName]
+
+It is recommended to prevent force pushes on your server with `git config --system receive.denyNonFastForwards true`.
+
+****
+
 ScrollHub is public domain.
 
 footer.scroll
