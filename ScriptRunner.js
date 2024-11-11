@@ -53,6 +53,7 @@ class ScriptRunner {
           ...process.env,
           FOLDER_NAME: folderName,
           REQUEST_METHOD: req.method,
+          REQUEST_BODY: JSON.stringify(req.body),
           QUERY_STRING: new URLSearchParams(req.query).toString(),
           CONTENT_TYPE: req.get("content-type") || "",
           CONTENT_LENGTH: req.get("content-length") || "0",

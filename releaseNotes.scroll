@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.29.0 11/11/2024
+🎉 update scroll
+🎉 pass request body to script runner
+
 📦 0.28.0 11/10/2024
 🏥 temporary cleanup of git issues with templates
 
