@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.30.0 11/11/2024
+🏥 fix script runner by enabling json form parsing
+
 📦 0.29.0 11/11/2024
 🎉 update scroll
 🎉 pass request body to script runner
