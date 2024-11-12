@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.33.0 11/12/2024
+🎉 updated Scroll
+
 📦 0.32.0 11/11/2024
 🎉 updated to Scroll 148
 ⚠️ BREAKING: see Scroll release notes for breaks in 148
