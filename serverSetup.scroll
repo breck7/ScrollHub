@@ -2,4 +2,4 @@
  https://www.digitalocean.com Digital Ocean
 2. SSH into your new server and run this oneliner:
 code
- apt install make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && git config --global receive.denyCurrentBranch updateInstead && pm2 start server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
+ apt install make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.pub" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && git config --global receive.denyCurrentBranch updateInstead && pm2 start server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
