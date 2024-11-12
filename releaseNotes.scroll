@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.32.0 11/11/2024
+🎉 updated to Scroll 148
+⚠️ BREAKING: see Scroll release notes for breaks in 148
+ https://scroll.pub/releaseNotes.html Scroll release notes
+
 📦 0.31.0 11/11/2024
 🏥 more open cors
 
@@ -25,7 +30,7 @@ thinColumns 1
 🏥 fix script runner by enabling json form parsing
 
 📦 0.29.0 11/11/2024
-🎉 update scroll
+🎉 updated scroll
 🎉 pass request body to script runner
 
 📦 0.28.0 11/10/2024
