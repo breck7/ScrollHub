@@ -301,7 +301,7 @@ class ScrollHub {
     if (folder) {
       const reqFile = path.join(outputPath, "requests.scroll")
       await fsp.writeFile(reqFile, requestsFile(folder), "utf8")
-      await new ScrollFile(undefined, reqFile, new ScrollFileSystem()).buildAll()
+      await new ScrollFile(undefined, reqFile, new ScrollFileSystem()).scrollProgram.buildAll()
     } else await this.buildScrollHubPages()
     this.isSummarizing[folder] = false
   }
@@ -1393,7 +1393,7 @@ ${prefix}${hash}<br>
 
   async buildFile(filePath) {
     const file = new ScrollFile(undefined, filePath, new ScrollFileSystem())
-    await file.buildAll()
+    await file.scrollProgram.buildAll()
   }
 
   buildRequests = {}
