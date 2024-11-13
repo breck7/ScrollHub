@@ -9,7 +9,7 @@ Try it yourself at: [https://hub.scroll.pub](https://hub.scroll.pub)
 Launch a new Ubuntu Droplet on [Digital Ocean](https://www.digitalocean.com) (or your cloud provider of choice), then SSH into your server and run this oneliner:
 
 ```bash
-apt install make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.pub" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && git config --global receive.denyCurrentBranch updateInstead && pm2 start server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
+apt install -y make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.pub" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && git config --global receive.denyCurrentBranch updateInstead && pm2 start server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
 ```
 
 ### Optional Steps:
