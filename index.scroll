@@ -6,8 +6,9 @@ inlineCss gazette.css scrollHubStyle.css
 
 css .thin {font-weight: 100;}
 
-# ScrollHub
- style font-size: 200%;
+# *Scroll*Hub
+ style font-size: 320%; font-weight:200;
+## The _fastest_ way to publish
 
 br 2
 
