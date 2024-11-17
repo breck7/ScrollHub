@@ -1,3 +1,0 @@
-buildRss feed.xml
- // This file generates the "RSS Feed" for your blog.
-printFeed All

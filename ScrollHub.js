@@ -38,8 +38,7 @@ const exists = async filePath => {
   return fileExists
 }
 
-const getBaseUrlForFolder = (folderName, hostname, protocol) => {
-  const isLocalHost = hostname.includes("local")
+const getBaseUrlForFolder = (folderName, hostname, protocol, isLocalHost) => {
   // if localhost, no custom domains
   if (isLocalHost) return "http://localhost/" + folderName
 
@@ -130,20 +129,21 @@ const sanitizeFolderName = name => {
 const sanitizeFileName = name => name.replace(/[^a-zA-Z0-9._]/g, "")
 
 class ScrollHub {
-  constructor() {
+  constructor(dir = path.join(os.homedir(), "folders")) {
     this.app = express()
     const app = this.app
     this.port = 80
     this.maxUploadSize = 100 * 1000 * 1024
     this.hostname = os.hostname()
-    this.rootFolder = path.join(os.homedir(), "folders")
-    this.templatesFolder = path.join(__dirname, "templates")
-    this.trashFolder = path.join(__dirname, "trash")
-    this.certsFolder = path.join(__dirname, "certs")
+    this.rootFolder = dir
+    const hubFolder = path.join(dir, ".hub")
+    this.hubFolder = hubFolder
+    this.trashFolder = path.join(hubFolder, "trash")
+    this.certsFolder = path.join(hubFolder, "certs")
+    this.globalLogFile = path.join(hubFolder, "log.txt")
+    this.storyLogFile = path.join(hubFolder, "writes.txt")
     this.folderCache = {}
     this.sseClients = new Set()
-    this.globalLogFile = path.join(__dirname, "log.txt")
-    this.storyLogFile = path.join(__dirname, "writes.txt")
     this.dashboard = new Dashboard(this.globalLogFile)
   }
 
@@ -161,6 +161,8 @@ class ScrollHub {
     this.initAnalytics()
     this.addStory({ ip: "admin" }, `started ScrollHub v${packageJson.version}`)
     console.log(`ScrollHub version: ${packageJson.version}`)
+    console.log(`Serving all folders in: ${this.rootFolder}`)
+    console.log(`Saving runtime data in: ${this.hubFolder}`)
     console.log(`Max memory: ${v8.getHeapStatistics().heap_size_limit / 1024 / 1024} MB`)
 
     this.initFileRoutes()
@@ -173,7 +175,10 @@ class ScrollHub {
 
     this.enableStaticFileServing()
 
-    this.servers = [this.startHttpsServer(), this.startHttpServer()]
+    this.servers = []
+    if (!this.isLocalHost) this.servers.push(this.startHttpsServer())
+
+    this.servers.push(this.startHttpServer())
     this.init404Routes()
     return this
   }
@@ -1227,14 +1232,16 @@ ${prefix}${hash}<br>
   }
 
   ensureInstalled() {
-    const { rootFolder, trashFolder, certsFolder } = this
+    const { hubFolder, rootFolder, trashFolder, certsFolder } = this
+    if (!fs.existsSync(hubFolder)) fs.mkdirSync(hubFolder)
     if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
     if (!fs.existsSync(certsFolder)) fs.mkdirSync(certsFolder)
     if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
   }
 
   ensureTemplatesInstalled() {
-    const { rootFolder, templatesFolder } = this
+    const { rootFolder } = this
+    const templatesFolder = path.join(__dirname, "templates")
     const templateDirs = fs.readdirSync(templatesFolder)
     const standardGitIgnore = fs.readFileSync(path.join(templatesFolder, "blank_template", ".gitignore"), "utf8")
 
@@ -1370,7 +1377,7 @@ ${prefix}${hash}<br>
         tracked: new Set(files),
         stats: {
           folder,
-          folderLink: getBaseUrlForFolder(folder, this.hostname, "https:"),
+          folderLink: getBaseUrlForFolder(folder, this.hostname, "https:", this.isLocalHost),
           created: firstCommitTimestamp,
           revised: lastCommitTimestamp,
           files: fileCount,
@@ -1603,6 +1610,12 @@ scrollVersionLink`
 
     httpsServer.listen(443, () => console.log("HTTPS server running on port 443"))
     return httpsServer
+  }
+
+  get isLocalHost() {
+    const hostname = require("os").hostname().toLowerCase()
+    if (/(localhost|macbook)/.test(hostname)) return true
+    return false
   }
 
   async startHttpServer() {

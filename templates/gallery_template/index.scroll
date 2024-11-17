@@ -1,9 +1,0 @@
-buildHtml
-
-gallery.css
-theme dark
-div#theGal.gallery
-disk
- where name includes jpg
-  compose tag <a href="{name}" class="photo"><img src="{name}"/></a>
-   printColumn tag

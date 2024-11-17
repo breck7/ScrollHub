@@ -16,8 +16,8 @@ const packageJson = require("./package.json")
 class ScrollHubCLI extends SimpleCLI {
   welcomeMessage = `\n🛜 WELCOME TO SCROLLHUB (v${packageJson.version})`
 
-  startCommand() {
-    new ScrollHub().startAll()
+  startCommand(cwd) {
+    new ScrollHub(cwd).startAll()
   }
 }
 

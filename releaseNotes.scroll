@@ -18,6 +18,12 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.36.0 11/17/2024
+🎉 hub can now serve any/all folders on a machine. will serve whatever cwd is.
+🎉 moved all hub data storage (logs, certs, etc) under new `.hub` folder in `folders` dir.
+🎉 whatever cwd is when you launch hub, that will be the folders dir now.
+⚠️ BREAKING: you may need 
+
 📦 0.35.0 11/14/2024
 🎉 updated Scroll
 
