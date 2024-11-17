@@ -20,8 +20,9 @@ modes.js
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>
  <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button>
- <a class="renameLink">Rename File</a>
- <a class="deleteLink">Delete File</a>
+ <a class="renameFileLink">Rename File</a>
+ <a class="duplicateFileLink">Duplicate File</a>
+ <a class="deleteFileLink">Delete File</a>
 </div>
 </form>
 // # Commands

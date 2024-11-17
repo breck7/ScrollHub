@@ -52,8 +52,9 @@ body {
 .folderActionLink {
   color: var(--light-grey);
 }
-.deleteLink,
-.renameLink {
+.deleteFileLink,
+.duplicateFileLink,
+.renameFileLink {
   color: var(--light-grey);
   margin-left: 20px;
   cursor: pointer;

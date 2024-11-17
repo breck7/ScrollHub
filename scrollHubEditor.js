@@ -547,9 +547,51 @@ class EditorApp {
     }
   }
 
+  async duplicateFile() {
+    const { fileName, folderName } = this
+
+    // Generate default name for the duplicate file
+    const extension = fileName.includes(".") ? "." + fileName.split(".").pop() : ""
+    const baseName = fileName.replace(extension, "")
+    const defaultNewName = `${baseName}-copy${extension}`
+
+    const newFileName = prompt(`Enter name for the duplicate of "${fileName}":`, defaultNewName)
+    if (!newFileName || newFileName === fileName) return
+
+    const sanitizedNewFileName = this.sanitizeFileName(newFileName)
+    const newFilePath = `${folderName}/${sanitizedNewFileName}`
+
+    this.showSpinner("Duplicating...")
+
+    try {
+      // First read the content of the current file
+      const content = this.bufferValue
+
+      // Then write it to the new file
+      const formData = new FormData()
+      formData.append("filePath", newFilePath)
+      formData.append("folderName", folderName)
+      formData.append("content", content)
+
+      const response = await fetch("/write.htm", {
+        method: "POST",
+        body: formData
+      })
+
+      if (!response.ok) throw new Error(await response.text())
+
+      await this.fetchAndDisplayFileList()
+      this.openFile(sanitizedNewFileName)
+      this.hideSpinner()
+    } catch (error) {
+      console.error("Error duplicating file:", error)
+      this.showError(error.message)
+    }
+  }
+
   bindFileButtons() {
     const that = this
-    document.querySelector(".renameLink").addEventListener("click", async e => {
+    document.querySelector(".renameFileLink").addEventListener("click", async e => {
       const oldFileName = that.fileName
       const newFileName = prompt(`Enter new name for "${oldFileName}":`, oldFileName)
       if (newFileName && newFileName !== oldFileName) {
@@ -557,7 +599,12 @@ class EditorApp {
       }
     })
 
-    document.querySelector(".deleteLink").addEventListener("click", async e => {
+    document.querySelector(".duplicateFileLink").addEventListener("click", async evt => {
+      evt.preventDefault()
+      this.duplicateFile()
+    })
+
+    document.querySelector(".deleteFileLink").addEventListener("click", async e => {
       e.preventDefault()
 
       const { fileName, folderName } = this
