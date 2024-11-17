@@ -1,4 +1,5 @@
 #! /usr/bin/env node
 const { ScrollHub } = require("./ScrollHub.js")
+const os = require("os")
 
-new ScrollHub(process.cwd()).startAll()
+new ScrollHub(os.homedir()).startAll()
