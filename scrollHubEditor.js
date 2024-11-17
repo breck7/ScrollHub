@@ -186,8 +186,10 @@ class EditorApp {
   }
 
   updateVisitLink() {
-    document.getElementById("folderNameLink").innerHTML = this.permalink
-    document.getElementById("folderNameLink").href = this.permalink
+    const { permalink } = this
+    const text = permalink.replace(/\/index.html$/, "")
+    document.getElementById("folderNameLink").innerHTML = text
+    document.getElementById("folderNameLink").href = permalink
   }
 
   showSpinner(message, style) {
