@@ -207,7 +207,8 @@ class EditorApp {
 
   async saveFile() {
     if (!this.fileName) {
-      let fileName = prompt("Enter a filename", "untitled")
+      const name = new URL(window.location).searchParams.get("bufferName") || "untitled"
+      let fileName = prompt("Enter a filename", name)
       if (!fileName) return ""
       this.fileName = this.sanitizeFileName(fileName)
     }
@@ -507,8 +508,6 @@ class EditorApp {
   }
 
   sanitizeFileName(fileName) {
-    fileName = fileName.replace(/[^a-zA-Z0-9\.\_\-]/g, "")
-
     return fileName.includes(".") ? fileName : fileName + ".scroll"
   }
 

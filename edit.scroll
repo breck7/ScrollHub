@@ -9,7 +9,7 @@ homeButton
 ./ide/parsers.js
 modes.js
 
-# <a id="folderNameLink" target="visit"></a>
+# <a id="folderNameLink" target="visit">New file</a>
 <div id="spinner"></div>
 <form id="editForm">
 <div>

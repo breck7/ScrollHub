@@ -1180,6 +1180,7 @@ ${prefix}${hash}<br>
 
     // Always write to disk.
     try {
+      await fsp.mkdir(path.dirname(filePath), { recursive: true })
       await fsp.writeFile(filePath, content, "utf8")
       this.addStory(req, `updated ${folderName}/${fileName}`)
     } catch (err) {
