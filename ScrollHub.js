@@ -670,8 +670,6 @@ ${prefix}${hash}<br>
 
         // Run git and scroll commands asynchronously
         await execAsync(`git add -f ${fileName}; git commit -m 'Added ${fileName}'`, { cwd: folderPath })
-        await this.buildFolder(folderName)
-
         this.addStory(req, `uploaded ${fileName} to ${folderName}`)
         res.send("File uploaded successfully")
         this.updateFolderAndBuildList(folderName)
@@ -789,10 +787,9 @@ ${prefix}${hash}<br>
         const clientIp = req.ip || req.connection.remoteAddress
         const hostname = req.hostname?.toLowerCase()
         await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'`, { cwd: folderPath })
-        await this.buildFolder(folderName)
 
         this.addStory(req, `inserted particles into ${folderPath}/${fileName}`)
-
+        this.buildFolder(folderName)
         res.redirect(redirectUrl)
         this.updateFolderAndBuildList(folderName)
       } catch (error) {
@@ -820,7 +817,6 @@ ${prefix}${hash}<br>
 
         await fsp.unlink(filePath)
         await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'`, { cwd: folderPath })
-        await this.buildFolder(folderName)
 
         res.send("File deleted successfully")
         this.addStory(req, `deleted ${fileName} in ${folderName}`)
@@ -859,7 +855,7 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.post("/rename.htm", checkWritePermissions, async (req, res) => {
+    app.post("/renameFile.htm", checkWritePermissions, async (req, res) => {
       const folderName = sanitizeFolderName(req.body.folderName)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
@@ -878,8 +874,6 @@ ${prefix}${hash}<br>
         const clientIp = req.ip || req.connection.remoteAddress
         const hostname = req.hostname?.toLowerCase()
         await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'`, { cwd: folderPath })
-        await this.buildFolder(folderName)
-
         this.addStory(req, `renamed ${oldFileName} to ${newFileName} in ${folderName}`)
         res.send("File renamed successfully")
         this.updateFolderAndBuildList(folderName)
@@ -959,6 +953,11 @@ ${prefix}${hash}<br>
     })
 
     app.get("/build/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runScrollCommand(req, res, "build")
+      this.updateFolderAndBuildList(this.getFolderName(req))
+    })
+
+    app.post("/build.htm", checkWritePermissions, async (req, res) => {
       await this.runScrollCommand(req, res, "build")
       this.updateFolderAndBuildList(this.getFolderName(req))
     })
@@ -1077,7 +1076,7 @@ ${prefix}${hash}<br>
 
     this.allowedIPs = readAllowedIPs()
     this.annoyingIps = new Set(["24.199.111.182", "198.54.134.120"])
-    this.writeLimit = 30 // Maximum number of writes per minute
+    this.writeLimit = 50 // Maximum number of writes per minute
     this.writeWindow = 60 * 1000 // 1 minute in milliseconds
     this.ipWriteOperations = new Map()
     const ipWriteOperations = this.ipWriteOperations
@@ -1205,11 +1204,10 @@ ${prefix}${hash}<br>
       return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
     }
 
-    // Build Folder
     try {
-      await this.buildFolder(folderName, filePath)
+      await this.buildFile(filePath)
     } catch (err) {
-      return res.status(500).send("Save and git okay but build did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
+      return res.status(500).send("Save and git okay but build file did not completely succeed. Error: " + err.toString().replace(/</g, "&lt;"))
     }
 
     // SUCCESS!!!
@@ -1405,9 +1403,7 @@ ${prefix}${hash}<br>
   }
 
   buildRequests = {}
-  async buildFolder(folderName, filePath) {
-    // Build the changed file immediately, then build the rest of folder
-    if (filePath) await this.buildFile(filePath)
+  async buildFolder(folderName) {
     if (!this.buildRequests[folderName]) this.buildRequests[folderName] = 1
     else {
       this.buildRequests[folderName]++

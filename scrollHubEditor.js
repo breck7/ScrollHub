@@ -212,43 +212,55 @@ class EditorApp {
       if (!fileName) return ""
       this.fileName = this.sanitizeFileName(fileName)
     }
+    await this.writeFile("Publishing...", this.bufferValue, this.fileName)
+    this.updatePreviewIFrame()
+  }
 
-    this.showSpinner("Publishing...")
+  async writeFile(spinnerText, content, fileName) {
+    const { folderName } = this
+    fileName = this.sanitizeFileName(fileName)
+    const filePath = `${folderName}/${fileName}`
+    this.showSpinner(spinnerText)
     const formData = new FormData()
-    const { filePath } = this
     formData.append("filePath", filePath)
-    formData.append("folderName", this.folderName)
-    const sentData = this.bufferValue
-    formData.append("content", sentData)
+    formData.append("folderName", folderName)
+    formData.append("content", content)
     try {
       const response = await fetch("/write.htm", {
         method: "POST",
         body: formData
       })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(errorText || "Network response was not ok")
-      }
-
-      const newVersion = await response.text()
-      console.log(`'${filePath}' saved`)
       this.hideSpinner()
-      if (this.bufferValue === sentData && newVersion !== sentData) {
-        // Todo: figure out how to restore cursor position.
-        // this.codeMirrorInstance.setValue(newVersion)
-      }
-      this.updatePreviewIFrame()
+      await this.fetchAndDisplayFileList()
+      if (this.fileName !== fileName) this.openFile(fileName)
+      this.buildFolderCommand()
     } catch (error) {
-      this.showError(error.message.split(".")[0])
-      console.error("Error saving file:", error.message)
-      throw error // Re-throw the error if you want calling code to handle it
+      console.error("Error duplicating file:", error)
+      this.showError(error.message)
     }
+  }
+
+  async buildFolderCommand() {
+    const formData = new FormData()
+    const { folderName } = this
+    formData.append("folderName", folderName)
+    const response = await fetch("/build.htm", {
+      method: "POST",
+      body: formData
+    })
+    if (!response.ok) {
+      const error = await response.text()
+      console.error(error)
+      this.showError(error.message.split(".")[0])
+    }
+
+    console.log(`'${folderName}' built`)
   }
 
   async saveCommand() {
     await this.saveFile()
     await this.fetchAndDisplayFileList()
+    await this.buildFolderCommand()
   }
 
   bindKeyboardShortcuts() {
@@ -303,16 +315,18 @@ class EditorApp {
     event.currentTarget.classList.remove("drag-over")
   }
 
-  handleDrop(event) {
+  async handleDrop(event) {
     event.preventDefault()
     event.stopPropagation()
     event.currentTarget.classList.remove("drag-over")
     const files = event.dataTransfer.files
-    if (files.length > 0) this.uploadFiles(files)
+    if (!files.length) return
+
+    await this.uploadFiles(files)
   }
 
   // New method to handle multiple file uploads
-  uploadFiles(files) {
+  async uploadFiles(files) {
     this.showSpinner("Uploading...")
     const uploadPromises = Array.from(files).map(file => this.uploadFile(file))
 
@@ -321,6 +335,7 @@ class EditorApp {
         console.log("All files uploaded successfully")
         this.fetchAndDisplayFileList()
         this.hideSpinner()
+        this.buildFolderCommand()
       })
       .catch(error => {
         console.error("Error uploading files:", error)
@@ -485,7 +500,7 @@ class EditorApp {
     const { folderName } = this
     try {
       this.showSpinner("Renaming..")
-      const response = await fetch("/rename.htm", {
+      const response = await fetch("/renameFile.htm", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
@@ -498,6 +513,7 @@ class EditorApp {
       this.hideSpinner()
       console.log(`File renamed from ${oldFileName} to ${newFileName}`)
       this.fetchAndDisplayFileList()
+      this.buildFolderCommand()
 
       // If the renamed file was the current file, open the new file
       if (this.fileName === oldFileName) this.openFile(newFileName)
@@ -514,24 +530,7 @@ class EditorApp {
   async createFileCommand() {
     let fileName = prompt("Enter a filename", "untitled")
     if (!fileName) return ""
-    const newFileName = this.sanitizeFileName(fileName)
-    const { folderName } = this
-    const filePath = `${folderName}/${newFileName}`
-
-    this.showSpinner("Creating file...")
-
-    const response = await fetch("/write.htm", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: `content=&folderName=${encodeURIComponent(folderName)}&filePath=${encodeURIComponent(filePath)}`
-    })
-
-    await response.text()
-    delete this.files
-    await this.openFile(newFileName)
-    this.hideSpinner()
+    await this.writeFile("Creating file...", "", fileName)
   }
 
   setFileContent(value) {
@@ -545,10 +544,8 @@ class EditorApp {
       this.codeMirrorInstance.focus()
     }
   }
-
   async duplicateFile() {
-    const { fileName, folderName } = this
-
+    const { fileName } = this
     // Generate default name for the duplicate file
     const extension = fileName.includes(".") ? "." + fileName.split(".").pop() : ""
     const baseName = fileName.replace(extension, "")
@@ -556,36 +553,7 @@ class EditorApp {
 
     const newFileName = prompt(`Enter name for the duplicate of "${fileName}":`, defaultNewName)
     if (!newFileName || newFileName === fileName) return
-
-    const sanitizedNewFileName = this.sanitizeFileName(newFileName)
-    const newFilePath = `${folderName}/${sanitizedNewFileName}`
-
-    this.showSpinner("Duplicating...")
-
-    try {
-      // First read the content of the current file
-      const content = this.bufferValue
-
-      // Then write it to the new file
-      const formData = new FormData()
-      formData.append("filePath", newFilePath)
-      formData.append("folderName", folderName)
-      formData.append("content", content)
-
-      const response = await fetch("/write.htm", {
-        method: "POST",
-        body: formData
-      })
-
-      if (!response.ok) throw new Error(await response.text())
-
-      await this.fetchAndDisplayFileList()
-      this.openFile(sanitizedNewFileName)
-      this.hideSpinner()
-    } catch (error) {
-      console.error("Error duplicating file:", error)
-      this.showError(error.message)
-    }
+    await this.writeFile("Duplicating...", this.bufferValue, this.sanitizeFileName(newFileName))
   }
 
   bindFileButtons() {
