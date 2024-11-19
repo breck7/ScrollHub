@@ -574,6 +574,29 @@ ${prefix}${hash}<br>
     return newName
   }
 
+  async getFileList(folderName) {
+    const { folderCache, rootFolder } = this
+    const folderPath = path.join(rootFolder, folderName)
+    const cachedEntry = folderCache[folderName]
+
+    // Get all unique directories containing tracked files
+    const directoriesSet = new Set()
+    const trackedFiles = Array.from(cachedEntry.tracked)
+    trackedFiles.forEach(file => directoriesSet.add(path.join(folderPath, path.dirname(file))))
+
+    const files = {}
+    for (let dir of directoriesSet) {
+      const fileNames = (await fsp.readdir(dir, { withFileTypes: true })).filter(dirent => dirent.isFile() && dirent.name !== ".git" && dirent.name !== ".DS_Store").map(dirent => dirent.name)
+      fileNames.forEach(file => {
+        const relativePath = path.join(dir, file).replace(folderPath, "").substr(1)
+        files[relativePath] = {
+          versioned: cachedEntry.tracked.has(relativePath)
+        }
+      })
+    }
+    return files
+  }
+
   initFileRoutes() {
     const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
@@ -610,21 +633,9 @@ ${prefix}${hash}<br>
 
     app.get("/ls.json", async (req, res) => {
       const folderName = sanitizeFolderName(req.query.folderName)
-      const folderPath = path.join(rootFolder, folderName)
-      const cachedEntry = folderCache[folderName]
-
-      if (!cachedEntry) return res.status(404).send(`Folder '${folderName}' not found`)
-
-      const fileNames = (await fsp.readdir(folderPath, { withFileTypes: true })).filter(dirent => dirent.isFile() && dirent.name !== ".git" && dirent.name !== ".DS_Store").map(dirent => dirent.name)
-
-      const files = {}
-      fileNames.forEach(file => {
-        files[file] = {
-          versioned: cachedEntry.tracked.has(file)
-        }
-      })
-
+      if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
       res.setHeader("Content-Type", "text/json")
+      const files = await this.getFileList(folderName)
       res.send(JSON.stringify(files))
     })
 
