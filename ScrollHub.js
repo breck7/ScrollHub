@@ -6,6 +6,7 @@ const fsp = require("fs").promises
 const os = require("os")
 const path = require("path")
 const util = require("util")
+const crypto = require("crypto")
 const execAsync = util.promisify(exec)
 
 // Web server
@@ -36,6 +37,64 @@ const exists = async filePath => {
     .then(() => true)
     .catch(() => false)
   return fileExists
+}
+
+const generateFileName = async (basePath, strategy, content) => {
+  let name = "untitled.scroll"
+  switch (strategy) {
+    case "timestamp":
+      name = Date.now() + ".scroll"
+      break
+    case "autoincrement":
+      // Find the highest numbered file and increment
+      if (!(await exists(basePath))) {
+        name = `1.scroll`
+        break
+      }
+      const files = await fsp.readdir(basePath)
+      const scrollFiles = files.filter(file => file.endsWith(".scroll"))
+      const numbers = scrollFiles
+        .map(file => {
+          const match = file.match(/^(\d+)\.scroll$/)
+          return match ? parseInt(match[1], 10) : 0
+        })
+        .filter(num => num > 0)
+
+      const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1
+
+      name = `${nextNumber}.scroll`
+      break
+    case "hash":
+      // Generate a hash from the content or a random string
+      const hash = crypto
+        .createHash("md5")
+        .update(content || crypto.randomBytes(16))
+        .digest("hex")
+        .slice(0, 10)
+
+      name = `${hash}.scroll`
+      break
+    case "random":
+      // Generate a random string
+      const randomStr = crypto.randomBytes(8).toString("hex")
+      name = `${randomStr}.scroll`
+      break
+    case "datetime":
+      // Use formatted date and time
+      const now = new Date()
+      const formattedDateTime = now.toISOString().replace(/[:\.]/g, "-").slice(0, 19)
+
+      name = `${formattedDateTime}.scroll`
+      break
+  }
+
+  const fullPath = path.join(basePath, name)
+  const fileExists = await exists(fullPath)
+
+  // Recursive check to ensure unique filename
+  if (fileExists) throw new Error(`File ${fullPath} exists`)
+
+  return fullPath
 }
 
 const getBaseUrlForFolder = (folderName, hostname, protocol, isLocalHost) => {
@@ -656,6 +715,22 @@ ${prefix}${hash}<br>
 
     app.post("/writeFile.htm", checkWritePermissions, (req, res) => this.writeAndCommitTextFile(req, res, req.body.filePath, req.body.content))
 
+    app.post("/new", checkWritePermissions, async (req, res) => {
+      const parts = req.body.content.replace(/\r/g, "").split("\n\n")
+      const topMatter = new Particle(parts.shift())
+      const content = parts.join("\n\n")
+      const folderName = topMatter.get("folderName") || this.getFolderName(req)
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+      const subfolders = topMatter.get("subfolder")?.split("/") || []
+      const basePath = path.join(folderName, ...subfolders)
+      try {
+        const filePath = await generateFileName(basePath, topMatter.get("filenameStrategy"), content)
+        this.writeAndCommitTextFile(req, res, filePath, content, folderName)
+      } catch (err) {
+        return res.status(400).send(err.message)
+      }
+    })
+
     // Add a route for file uploads
     app.post("/uploadFile.htm", checkWritePermissions, async (req, res) => {
       if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.")
@@ -1175,24 +1250,25 @@ ${prefix}${hash}<br>
     return prettierExtensions.some(ext => filePath.endsWith(ext)) || scrollExtensions.some(ext => filePath.endsWith(ext))
   }
 
-  async writeAndCommitTextFile(req, res, filePath, content) {
+  async writeAndCommitTextFile(req, res, filePath, content, folderName) {
     // todo: refactor into multiple methods and unit test heavily
     content = content.replace(/\r/g, "")
     const { rootFolder, folderCache } = this
     filePath = path.join(rootFolder, filePath)
 
-    const folderName = this.getFolderName(req)
+    folderName = folderName || this.getFolderName(req)
     const fileName = path.basename(filePath)
     if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
 
     const fileExists = await exists(filePath)
+    const action = fileExists ? "updated" : "created"
     const previousVersion = fileExists ? await fsp.readFile(filePath, "utf8") : null
 
     // Always write to disk.
     try {
       await fsp.mkdir(path.dirname(filePath), { recursive: true })
       await fsp.writeFile(filePath, content, "utf8")
-      this.addStory(req, `updated ${folderName}/${fileName}`)
+      this.addStory(req, `${action} ${folderName}/${fileName}`)
     } catch (err) {
       return res.status(500).send("Failed to save file. Error: " + err.toString().replace(/</g, "&lt;"))
     }
@@ -1210,7 +1286,7 @@ ${prefix}${hash}<br>
       const clientIp = req.ip || req.connection.remoteAddress
       const hostname = req.hostname?.toLowerCase()
       const author = `${clientIp} <${clientIp}@${hostname}>`
-      await this.gitCommitFile(path.dirname(filePath), fileName, author)
+      await this.gitCommitFile(path.dirname(filePath), fileName, author, action)
     } catch (err) {
       return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
     }
@@ -1229,8 +1305,8 @@ ${prefix}${hash}<br>
     this.updateFolderAndBuildList(folderName)
   }
 
-  async gitCommitFile(folderPath, fileName, author) {
-    await execAsync(`git add -f ${fileName}; git commit --author="${author}"  -m 'Updated ${fileName}'`, { cwd: folderPath })
+  async gitCommitFile(folderPath, fileName, author, action = "updated") {
+    await execAsync(`git add -f ${fileName}; git commit --author="${author}"  -m '${action} ${fileName}'`, { cwd: folderPath })
   }
 
   async addStory(req, message) {

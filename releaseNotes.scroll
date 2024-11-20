@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.41.0 11/20/2024
+🎉 added New File API
+
 📦 0.40.0 11/20/2024
 🎉 cleanup route names
 

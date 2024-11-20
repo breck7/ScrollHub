@@ -1,0 +1,28 @@
+title New File API Console
+
+settings.scroll
+metaTags
+inlineCss gazette.css scrollHubStyle.css ./ide/codeMirror.css
+homeButton
+
+container
+# *New File API*
+<form id="#newFileForm" action="new" method="POST">
+ScrollHub can be your web app backend using the *New File API*.
+- Send `POST` requests to `/new`.
+- Your post should contain one field: `content`.
+- `content` requires a `folderName` and `filenameStrategy`.
+- Strategies: autoincrement, hash, random, timestamp, datetime.
+- A blank line indicates the start of the new file content.
+- The API will return failure or success (200).
+<textarea name="content" id="newFile" rows="20">
+ folderName newtest
+ filenameStrategy timestamp
+ subfolder applications
+ 
+ New file content goes here.
+ </textarea>
+button Publish
+</form>
+
+buildHtml
