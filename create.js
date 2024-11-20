@@ -70,7 +70,7 @@ class CreateFromZipper {
     formData.append("zipFile", file)
 
     try {
-      const response = await fetch("/createFromZip.htm", {
+      const response = await fetch("/createFolderFromZip.htm", {
         method: "POST",
         body: formData
       })

@@ -238,7 +238,7 @@ class EditorApp {
     const { folderName } = this
     this.fileName = fileName
     const filePath = `${folderName}/${fileName}`
-    const response = await fetch(`/read.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
+    const response = await fetch(`/readFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
 
     // Update editor mode before setting content
@@ -307,7 +307,7 @@ class EditorApp {
     formData.append("folderName", folderName)
     formData.append("content", content)
     try {
-      const response = await fetch("/write.htm", {
+      const response = await fetch("/writeFile.htm", {
         method: "POST",
         body: formData
       })
@@ -432,7 +432,7 @@ class EditorApp {
     formData.append("folderName", this.folderName)
 
     try {
-      const response = await fetch("/upload.htm", {
+      const response = await fetch("/uploadFile.htm", {
         method: "POST",
         body: formData
       })
@@ -491,7 +491,7 @@ class EditorApp {
     if (userInput !== this.folderName) return
 
     try {
-      const response = await fetch("/trash.htm", {
+      const response = await fetch("/trashFolder.htm", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
@@ -509,7 +509,7 @@ class EditorApp {
 
   async duplicate() {
     this.showSpinner("Copying folder...")
-    const response = await fetch("/clone.htm", {
+    const response = await fetch("/cloneFolder.htm", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
@@ -664,7 +664,7 @@ class EditorApp {
 
       this.showSpinner("Deleting...")
 
-      const response = await fetch(`/delete.htm?filePath=${encodeURIComponent(filePath)}`, {
+      const response = await fetch(`/deleteFile.htm?filePath=${encodeURIComponent(filePath)}`, {
         method: "POST"
       })
 

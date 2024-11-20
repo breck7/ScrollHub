@@ -1,3 +1,3 @@
-<form method="post" action="create.htm" id="importForm">
+<form method="post" action="createFolder.htm" id="importForm">
 <input type="text" name="url" placeholder="https://yoursite.com"><button>Convert to Scroll</button>
 </form>

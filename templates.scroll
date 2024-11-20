@@ -15,7 +15,7 @@ table folders.json
  where folder endsWith _template
   limit 0 100
    eval name "{folder}".split('_template')[0]
-    compose tag <form class="iframeHolder" method="post" action="clone.htm"><div>{name}</div><iframe sandbox="allow-scripts allow-same-origin allow-forms" allow="camera 'none'; microphone 'none'; geolocation 'none'; payment 'none'; battery 'none'; accelerometer 'none'; gyroscope 'none'" src="/{folder}/" frameborder="0"></iframe><div class="cloneButton" onclick="this.parentNode.submit()"></div><input type="hidden" name="folderName" value="{folder}" ></form>
+    compose tag <form class="iframeHolder" method="post" action="cloneFolder.htm"><div>{name}</div><iframe sandbox="allow-scripts allow-same-origin allow-forms" allow="camera 'none'; microphone 'none'; geolocation 'none'; payment 'none'; battery 'none'; accelerometer 'none'; gyroscope 'none'" src="/{folder}/" frameborder="0"></iframe><div class="cloneButton" onclick="this.parentNode.submit()"></div><input type="hidden" name="folderName" value="{folder}" ></form>
      printColumn tag
 css
  iframe {

@@ -601,7 +601,7 @@ ${prefix}${hash}<br>
     const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
 
-    app.post("/create.htm", checkWritePermissions, async (req, res) => {
+    app.post("/createFolder.htm", checkWritePermissions, async (req, res) => {
       try {
         const result = await this.createFolder(req.body.folderName)
         if (result.errorMessage) return this.handleCreateError(res, result)
@@ -614,7 +614,7 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.post("/clone.htm", checkWritePermissions, async (req, res) => {
+    app.post("/cloneFolder.htm", checkWritePermissions, async (req, res) => {
       try {
         const sourceFolderName = req.body.folderName || (req.body.particle ? new Particle(req.body.particle).get("folderName") : "")
         if (!sourceFolderName) return res.status(500).send("No folder name provided")
@@ -639,7 +639,7 @@ ${prefix}${hash}<br>
       res.send(JSON.stringify(files))
     })
 
-    app.get("/read.htm", async (req, res) => {
+    app.get("/readFile.htm", async (req, res) => {
       const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
       try {
         const fileExists = await exists(filePath)
@@ -654,10 +654,10 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.post("/write.htm", checkWritePermissions, (req, res) => this.writeAndCommitTextFile(req, res, req.body.filePath, req.body.content))
+    app.post("/writeFile.htm", checkWritePermissions, (req, res) => this.writeAndCommitTextFile(req, res, req.body.filePath, req.body.content))
 
     // Add a route for file uploads
-    app.post("/upload.htm", checkWritePermissions, async (req, res) => {
+    app.post("/uploadFile.htm", checkWritePermissions, async (req, res) => {
       if (!req.files || Object.keys(req.files).length === 0) return res.status(400).send("No files were uploaded.")
 
       const file = req.files.file
@@ -691,7 +691,7 @@ ${prefix}${hash}<br>
     })
 
     // In the initFileRoutes method, add this new route:
-    app.post("/createFromZip.htm", checkWritePermissions, async (req, res) => {
+    app.post("/createFolderFromZip.htm", checkWritePermissions, async (req, res) => {
       if (!req.files || !req.files.zipFile) return res.status(400).send("No zip file was uploaded.")
 
       const zipFile = req.files.zipFile
@@ -813,7 +813,7 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.post("/delete.htm", checkWritePermissions, async (req, res) => {
+    app.post("/deleteFile.htm", checkWritePermissions, async (req, res) => {
       const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
       const folderName = path.dirname(filePath).split(path.sep).pop()
 
@@ -838,7 +838,7 @@ ${prefix}${hash}<br>
       }
     })
 
-    app.post("/trash.htm", checkWritePermissions, async (req, res) => {
+    app.post("/trashFolder.htm", checkWritePermissions, async (req, res) => {
       const { trashFolder } = this
       const folderName = sanitizeFolderName(req.body.folderName)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")

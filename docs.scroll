@@ -49,11 +49,11 @@ class ScrollHub {
 ### Core Routes
 
 #### File Management
-- `/create.htm` - Create new folders
-- `/clone.htm` - Clone existing folders
-- `/write.htm` - Write/update files
-- `/delete.htm` - Delete files
-- `/upload.htm` - File upload endpoint
+- `/createFolder.htm` - Create new folders
+- `/cloneFolder.htm` - Clone existing folders
+- `/writeFile.htm` - Write/update files
+- `/deleteFile.htm` - Delete files
+- `/uploadFile.htm` - File upload endpoint
 - `/rename.htm` - Rename files
 - `/mv.htm` - Move/rename folders
 
@@ -72,8 +72,8 @@ class ScrollHub {
 
 ### Creating a New Folder
 ```javascript
-// POST to /create.htm
-const response = await fetch('/create.htm', {
+// POST to /createFolder.htm
+const response = await fetch('/createFolder.htm', {
   method: 'POST',
   body: new URLSearchParams({
     folderName: 'my-project'
@@ -83,8 +83,8 @@ const response = await fetch('/create.htm', {
 
 ### Writing a File
 ```javascript
-// POST to /write.htm
-const response = await fetch('/write.htm', {
+// POST to /writeFile.htm
+const response = await fetch('/writeFile.htm', {
   method: 'POST',
   body: new URLSearchParams({
     filePath: 'my-project/example.txt',
