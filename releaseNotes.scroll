@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.42.0 11/21/2024
+🎉 update Scroll to get new table date transforms
+
 📦 0.41.0 11/20/2024
 🎉 added New File API
 
