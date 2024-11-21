@@ -17228,7 +17228,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "95.0.0"
+Particle.getVersion = () => "95.0.1"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -20025,12 +20025,17 @@ class ParsersCodeMirrorMode {
     return style
   }
   _getAtomStyle(lineIndex, atomIndex) {
-    const program = this._getParsedProgram()
-    // todo: if the current atom is an error, don't show red?
-    if (!program.getAtomPaintAtPosition) console.log(program)
-    const paint = program.getAtomPaintAtPosition(lineIndex, atomIndex)
-    const style = paint ? textMateScopeToCodeMirrorStyle(paint.split(".")) : undefined
-    return style || "noPaintDefinedInParsers"
+    try {
+      const program = this._getParsedProgram()
+      // todo: if the current atom is an error, don't show red?
+      if (!program.getAtomPaintAtPosition) console.log(program)
+      const paint = program.getAtomPaintAtPosition(lineIndex, atomIndex)
+      const style = paint ? textMateScopeToCodeMirrorStyle(paint.split(".")) : undefined
+      return style || "noPaintDefinedInParsers"
+    } catch (err) {
+      console.error(err)
+      return "noPaintDefinedInParsers"
+    }
   }
   // todo: remove.
   startState() {
