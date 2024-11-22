@@ -4,6 +4,7 @@ const path = require("path")
 
 // Map of file extensions to their interpreters
 const interpreterMap = {
+  mjs: "node",
   php: "php",
   py: "python3",
   rb: "ruby",

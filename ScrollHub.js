@@ -1589,7 +1589,7 @@ scrollVersionLink`
     res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
   }
 
-  reservedExtensions = "scroll parsers txt html htm rb php perl py css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
+  reservedExtensions = "scroll parsers txt html htm rb php perl py mjs css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
 
   isValidFolderName(name) {
     if (name.length < 2) return false

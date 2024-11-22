@@ -101,6 +101,7 @@ class EditorApp {
       html: "htmlmixed",
       htm: "htmlmixed",
       js: "javascript",
+      mjs: "mjs",
       css: "css",
       py: "python",
       rb: "ruby",
