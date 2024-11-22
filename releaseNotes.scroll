@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.43.0 11/22/2024
+🎉 update Scroll to get better forms and notices parsers
+🎉 New File API now supports passing params in via query string
+
 📦 0.42.0 11/21/2024
 🎉 update Scroll to get new table date transforms
 

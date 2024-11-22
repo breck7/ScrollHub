@@ -716,16 +716,33 @@ ${prefix}${hash}<br>
     app.post("/writeFile.htm", checkWritePermissions, (req, res) => this.writeAndCommitTextFile(req, res, req.body.filePath, req.body.content))
 
     app.post("/new", checkWritePermissions, async (req, res) => {
-      const parts = req.body.content.replace(/\r/g, "").split("\n\n")
-      const topMatter = new Particle(parts.shift())
-      const content = parts.join("\n\n")
-      const folderName = topMatter.get("folderName") || this.getFolderName(req)
+      const stripped = req.body.content.replace(/\r/g, "")
+      let content = stripped
+      let filenameStrategy
+      let folderName
+      let subfolders
+      let redirect
+      if (req.query.folderName) {
+        // Query string
+        folderName = this.getFolderName(req)
+        filenameStrategy = req.query.filenameStrategy
+        subfolders = req.query.subfolders?.split("/") || []
+        redirect = req.query.redirect
+      } else {
+        // Top matter
+        const parts = stripped.split("\n\n")
+        const topMatter = new Particle(parts.shift())
+        content = parts.join("\n\n")
+        folderName = topMatter.get("folderName") || this.getFolderName(req)
+        filenameStrategy = topMatter.get("filenameStrategy")
+        redirect = topMatter.get("redirect")
+        subfolders = topMatter.get("subfolder")?.split("/") || []
+      }
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
-      const subfolders = topMatter.get("subfolder")?.split("/") || []
       const basePath = path.join(folderName, ...subfolders)
       try {
-        const filePath = await generateFileName(basePath, topMatter.get("filenameStrategy"), content)
-        this.writeAndCommitTextFile(req, res, filePath, content, folderName)
+        const filePath = await generateFileName(basePath, filenameStrategy, content)
+        this.writeAndCommitTextFile(req, res, filePath, content, folderName, redirect)
       } catch (err) {
         return res.status(400).send(err.message)
       }
@@ -1250,7 +1267,7 @@ ${prefix}${hash}<br>
     return prettierExtensions.some(ext => filePath.endsWith(ext)) || scrollExtensions.some(ext => filePath.endsWith(ext))
   }
 
-  async writeAndCommitTextFile(req, res, filePath, content, folderName) {
+  async writeAndCommitTextFile(req, res, filePath, content, folderName, redirect) {
     // todo: refactor into multiple methods and unit test heavily
     content = content.replace(/\r/g, "")
     const { rootFolder, folderCache } = this
@@ -1298,6 +1315,9 @@ ${prefix}${hash}<br>
     }
 
     // SUCCESS!!!
+
+    if (redirect) return res.redirect(redirect)
+
     res.setHeader("Content-Type", "text/plain")
     res.send(postFormat)
 
