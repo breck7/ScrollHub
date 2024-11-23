@@ -7,6 +7,7 @@ const interpreterMap = {
   mjs: "node",
   php: "php",
   py: "python3",
+  sh: "bash",
   rb: "ruby",
   pl: "perl"
 }

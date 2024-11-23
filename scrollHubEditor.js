@@ -109,6 +109,7 @@ class EditorApp {
       php: "php",
       perl: "perl",
       scroll: "custom",
+      sh: "shell",
       parsers: "custom"
     }
     return modeMap[extension] || null
