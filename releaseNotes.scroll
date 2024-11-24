@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.45.0 11/23/2024
+🎉 added `set` route
+🎉 upgraded Scroll
+🎉 fixed nested file editing
+
 📦 0.44.0 11/22/2024
 🎉 support mjs script running
 

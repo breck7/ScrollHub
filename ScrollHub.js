@@ -715,6 +715,40 @@ ${prefix}${hash}<br>
 
     app.post("/writeFile.htm", checkWritePermissions, (req, res) => this.writeAndCommitTextFile(req, res, req.body.filePath, req.body.content))
 
+    app.post("/set", checkWritePermissions, async (req, res) => {
+      const { rootFolder, folderCache } = this
+      const folderName = this.getFolderName(req)
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+      const { file, line } = req.query
+      if (!file) return res.status(400).send("No filename provided")
+
+      const filePath = path.join(rootFolder, folderName, file)
+
+      try {
+        // Check if file exists
+        const fileExists = await exists(filePath)
+        if (!fileExists) return res.status(404).send("File not found")
+
+        // Read the current content
+        const content = await fsp.readFile(filePath, "utf8")
+
+        // Parse into Particle
+        const particle = new Particle(content)
+
+        // Set the new content at the specified line
+        const parts = line.split(" ")
+        particle.set(parts[0], parts.slice(1).join(" "))
+
+        const relativePath = filePath.replace(rootFolder, "")
+
+        this.writeAndCommitTextFile(req, res, relativePath, particle.toString(), folderName)
+      } catch (error) {
+        console.error(`Error in /set route:`, error)
+        res.status(500).send(`An error occurred while setting particle content: ${error.toString().replace(/</g, "&lt;")}`)
+      }
+    })
+
     app.post("/new", checkWritePermissions, async (req, res) => {
       const stripped = req.body.content.replace(/\r/g, "")
       let content = stripped
@@ -1239,7 +1273,7 @@ ${prefix}${hash}<br>
         await fsp.writeFile(filePath, formatted, "utf8")
         return formatted
       } catch (err) {
-        console.log(`Error formatting ${filePath}. Continuing on. Error:`, err)
+        console.error(`Error formatting ${filePath}. Continuing on. Error:`, err)
         return content
       }
     }
@@ -1285,7 +1319,7 @@ ${prefix}${hash}<br>
     try {
       await fsp.mkdir(path.dirname(filePath), { recursive: true })
       await fsp.writeFile(filePath, content, "utf8")
-      this.addStory(req, `${action} ${folderName}/${fileName}`)
+      this.addStory(req, `${action} ${filePath}`)
     } catch (err) {
       return res.status(500).send("Failed to save file. Error: " + err.toString().replace(/</g, "&lt;"))
     }
@@ -1303,7 +1337,9 @@ ${prefix}${hash}<br>
       const clientIp = req.ip || req.connection.remoteAddress
       const hostname = req.hostname?.toLowerCase()
       const author = `${clientIp} <${clientIp}@${hostname}>`
-      await this.gitCommitFile(path.dirname(filePath), fileName, author, action)
+      const folderPath = path.join(rootFolder, folderName)
+      const relativePath = filePath.replace(folderPath, "").substr(1)
+      await this.gitCommitFile(folderPath, relativePath, author, action)
     } catch (err) {
       return res.status(500).send("Save ok but git step failed, building aborted. Error: " + err.toString().replace(/</g, "&lt;"))
     }
@@ -1325,8 +1361,8 @@ ${prefix}${hash}<br>
     this.updateFolderAndBuildList(folderName)
   }
 
-  async gitCommitFile(folderPath, fileName, author, action = "updated") {
-    await execAsync(`git add -f ${fileName}; git commit --author="${author}"  -m '${action} ${fileName}'`, { cwd: folderPath })
+  async gitCommitFile(folderPath, relativePath, author, action = "updated") {
+    await execAsync(`git add -f ${relativePath}; git commit --author="${author}"  -m '${action} ${relativePath}'`, { cwd: folderPath })
   }
 
   async addStory(req, message) {
