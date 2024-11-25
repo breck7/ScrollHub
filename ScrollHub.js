@@ -327,6 +327,15 @@ class ScrollHub {
     // Serve the folders directory from the root URL
     app.use("/", express.static(rootFolder))
 
+    // todo:?
+    // Only serve folders from root URL on the main hostname
+    // app.use((req, res, next) => {
+    //   if (req.hostname?.toLowerCase() === this.hostname) {
+    //     return express.static(rootFolder)(req, res, next)
+    //   }
+    //   next()
+    // })
+
     // Serve the root directory statically
     app.use(express.static(__dirname))
   }
