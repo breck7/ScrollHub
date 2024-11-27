@@ -15,7 +15,7 @@ modes.js
 <div>
  <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
  <div id="fileList"></div>
- <a class="createFileButton" onclick="app.createFileCommand()">+</a><br>
+ <div><a class="createFileButton" onclick="app.createFileCommand()">+</a><input id="fileFilter" placeholder="Search"/></div>
 </div>
 <div class="editorHolder">
  <textarea name="content" id="fileEditor" rows="30"></textarea>

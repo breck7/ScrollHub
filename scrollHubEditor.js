@@ -93,6 +93,13 @@ class EditorApp {
     this.previewIFrame = null
     this.initCodeMirror("custom")
     window.addEventListener("resize", () => this.codeMirrorInstance.setSize(this.width, 490))
+
+    // Add file filter input handler
+    this.fileFilter = document.getElementById("fileFilter")
+    this.fileFilter.addEventListener("input", () => {
+      this.updateFilteredFileList()
+      this.updateUrlWithFilter()
+    })
   }
 
   getEditorMode(fileName) {
@@ -202,6 +209,10 @@ class EditorApp {
     let fileName = urlParams.get("fileName") || ""
     if (fileName.startsWith("/")) this.setFileNameInUrl(fileName.replace(/^\/+/, "")) // strip leading slashes
 
+    // Set initial filter value from URL if present
+    const filterValue = urlParams.get("filter") || ""
+    this.fileFilter.value = filterValue
+
     if (!fileName) {
       let buffer = urlParams.get("buffer")
       if (buffer) {
@@ -218,6 +229,19 @@ class EditorApp {
     }
 
     return this
+  }
+
+  updateUrlWithFilter() {
+    const url = new URL(window.location)
+    const filterValue = this.fileFilter.value.trim()
+
+    if (filterValue) {
+      url.searchParams.set("filter", filterValue)
+    } else {
+      url.searchParams.delete("filter")
+    }
+
+    window.history.replaceState(null, "", url)
   }
 
   setFileNameInUrl(fileName) {
@@ -554,8 +578,15 @@ class EditorApp {
   renderFileList() {
     const { files, filenames, folderName } = this
     const currentFileName = this.fileName
-    const scrollFiles = filenames.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
-    const sorted = scrollFiles.concat(filenames.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+    const filterValue = this.fileFilter.value.toLowerCase()
+
+    // Filter files based on search input
+    const filteredFiles = filenames.filter(file => file.toLowerCase().includes(filterValue))
+
+    // Sort files: .scroll and .parsers first, then others
+    const scrollFiles = filteredFiles.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+    const sorted = scrollFiles.concat(filteredFiles.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+
     const fileLinks = sorted.map(file => {
       const stats = files[file]
       const selected = currentFileName === file ? "selectedFile" : ""
@@ -563,7 +594,12 @@ class EditorApp {
       const isTrackedByGit = stats.versioned ? "" : " untracked"
       return `<a class="${isScrollFile ? "" : "nonScrollFile"} ${selected} ${isTrackedByGit}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
     })
+
     this.fileListEl.innerHTML = fileLinks.join("<br>")
+  }
+
+  updateFilteredFileList() {
+    this.renderFileList()
   }
 
   bindFileListListeners() {
