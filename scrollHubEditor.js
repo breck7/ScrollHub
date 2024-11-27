@@ -229,7 +229,16 @@ class EditorApp {
 
   autoOpen() {
     const { filenames } = this
-    this.openFile(filenames.includes("index.scroll") ? "index.scroll" : filenames[0])
+    const lowerFilenames = new Set(filenames.map(f => f.toLowerCase()))
+    const defaultFiles = ["index.scroll", "readme.scroll", "readme.md", "index.html", "package.json"]
+    let file = filenames[0]
+    for (let f of defaultFiles) {
+      if (lowerFilenames.has(f)) {
+        file = filenames.find(n => n.toLowerCase() === f)
+        break
+      }
+    }
+    this.openFile(file)
   }
 
   async openFolder(folderName) {
