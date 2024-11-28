@@ -1190,11 +1190,11 @@ ${prefix}${hash}<br>
       )
 
       // Handle stdout data
-      // zip.stdout.on("data", data => {
-      //   output.push(data)
-      //   totalSize += data.length
-      //   console.log(`Zip progress for ${folderName}: ${totalSize} bytes`)
-      // })
+      zip.stdout.on("data", data => {
+        output.push(data)
+        totalSize += data.length
+        // console.log(`Zip progress for ${folderName}: ${totalSize} bytes`)
+      })
 
       // Handle potential stderr messages
       zip.stderr.on("data", data => {
