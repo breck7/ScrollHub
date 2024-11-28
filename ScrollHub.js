@@ -475,7 +475,7 @@ class ScrollHub {
     const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
     app.get("/revisions.htm/:folderName", async (req, res) => {
-      const folderName = sanitizeFolderName(req.params.folderName)
+      const folderName = req.params.folderName
       const folderPath = path.join(rootFolder, folderName)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
       try {
@@ -491,7 +491,7 @@ class ScrollHub {
       }
     })
     app.get("/diffs.htm/:folderName", async (req, res) => {
-      const folderName = sanitizeFolderName(req.params.folderName)
+      const folderName = req.params.folderName
       const folderPath = path.join(rootFolder, folderName)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
       const count = req.query.count || 10
@@ -602,7 +602,7 @@ ${prefix}${hash}<br>
     })
 
     app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
-      const folderName = sanitizeFolderName(req.params.folderName)
+      const folderName = req.params.folderName
       const targetHash = req.body.hash
       const folderPath = path.join(rootFolder, folderName)
 
@@ -700,7 +700,7 @@ ${prefix}${hash}<br>
     })
 
     app.get("/ls.json", async (req, res) => {
-      const folderName = sanitizeFolderName(req.query.folderName)
+      const folderName = req.query.folderName
       if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
       res.setHeader("Content-Type", "text/json")
       const files = await this.getFileList(folderName)
@@ -797,7 +797,7 @@ ${prefix}${hash}<br>
 
       const file = req.files.file
       const folderName = req.body.folderName
-      const folderPath = path.join(rootFolder, sanitizeFolderName(folderName))
+      const folderPath = path.join(rootFolder, folderName)
 
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
@@ -975,7 +975,7 @@ ${prefix}${hash}<br>
 
     app.post("/trashFolder.htm", checkWritePermissions, async (req, res) => {
       const { trashFolder } = this
-      const folderName = sanitizeFolderName(req.body.folderName)
+      const folderName = req.body.folderName
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const sourcePath = path.join(rootFolder, folderName)
@@ -1002,7 +1002,7 @@ ${prefix}${hash}<br>
     })
 
     app.post("/renameFile.htm", checkWritePermissions, async (req, res) => {
-      const folderName = sanitizeFolderName(req.body.folderName)
+      const folderName = req.body.folderName
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       const oldFileName = req.body.oldFileName
@@ -1030,8 +1030,8 @@ ${prefix}${hash}<br>
     })
 
     app.post("/mv.htm", checkWritePermissions, async (req, res) => {
-      const oldFolderName = sanitizeFolderName(req.body.oldFolderName)
-      const newFolderName = sanitizeFolderName(req.body.newFolderName)
+      const oldFolderName = req.body.oldFolderName
+      const newFolderName = req.body.newFolderName
 
       // Validate old folder exists
       if (!folderCache[oldFolderName]) return res.status(404).send("Source folder not found")
@@ -1142,7 +1142,7 @@ ${prefix}${hash}<br>
   initZipRoutes() {
     const { app, folderCache } = this
     app.get("/:folderName.zip", async (req, res) => {
-      const folderName = sanitizeFolderName(req.params.folderName)
+      const folderName = req.params.folderName
       const cacheEntry = folderCache[folderName]
       if (!cacheEntry) return res.status(404).send("Folder not found")
 
@@ -1169,16 +1169,58 @@ ${prefix}${hash}<br>
   async zipFolder(folderName) {
     const { rootFolder, folderCache } = this
     const folderPath = path.join(rootFolder, folderName)
+    console.log(`Starting zip for folder: '${folderName}'`)
+
     const zipBuffer = await new Promise((resolve, reject) => {
       const output = []
-      const zip = spawn("zip", ["-r", "-", "."], { cwd: folderPath })
+      let totalSize = 0
 
-      zip.stdout.on("data", data => output.push(data))
+      const zip = spawn(
+        "zip",
+        [
+          "-r", // Recursive
+          "-q", // Quiet mode (less verbose)
+          "-", // Output to stdout
+          "." // Current directory
+        ],
+        {
+          cwd: folderPath,
+          stdio: ["ignore", "pipe", "pipe"] // Properly configure stdio
+        }
+      )
+
+      // Handle stdout data
+      // zip.stdout.on("data", data => {
+      //   output.push(data)
+      //   totalSize += data.length
+      //   console.log(`Zip progress for ${folderName}: ${totalSize} bytes`)
+      // })
+
+      // Handle potential stderr messages
+      zip.stderr.on("data", data => {
+        console.warn(`Zip stderr for ${folderName}:`, data.toString())
+      })
+
+      // Handle errors on the process itself
+      zip.on("error", err => {
+        console.error(`Zip process error for ${folderName}:`, err)
+        reject(err)
+      })
+
+      // Handle completion
       zip.on("close", code => {
-        if (code === 0) resolve(Buffer.concat(output))
-        else reject(new Error("Error creating zip file"))
+        if (code === 0) {
+          console.log(`Successfully zipped ${folderName}: ${totalSize} bytes`)
+          resolve(Buffer.concat(output))
+        } else {
+          const error = new Error(`Zip process failed with code ${code}`)
+          console.error(`Failed to zip ${folderName}:`, error)
+          reject(error)
+        }
       })
     })
+
+    // Only cache if zip was successful
     folderCache[folderName].zip = zipBuffer
     return zipBuffer
   }
