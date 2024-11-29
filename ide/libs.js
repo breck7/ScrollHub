@@ -14628,6 +14628,866 @@ Utils.MAX_INT = Math.pow(2, 32) - 1
 window.Utils = Utils
 
 
+// https://github.com/browserify/path-browserify/blob/master/index.js
+
+function assertPath(path) {
+  if (typeof path !== "string") {
+    throw new TypeError("Path must be a string. Received " + JSON.stringify(path))
+  }
+}
+
+// Resolves . and .. elements in a path with directory names
+function normalizeStringPosix(path, allowAboveRoot) {
+  var res = ""
+  var lastSegmentLength = 0
+  var lastSlash = -1
+  var dots = 0
+  var code
+  for (var i = 0; i <= path.length; ++i) {
+    if (i < path.length) code = path.charCodeAt(i)
+    else if (code === 47 /*/*/) break
+    else code = 47 /*/*/
+    if (code === 47 /*/*/) {
+      if (lastSlash === i - 1 || dots === 1) {
+        // NOOP
+      } else if (lastSlash !== i - 1 && dots === 2) {
+        if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== 46 /*.*/ || res.charCodeAt(res.length - 2) !== 46 /*.*/) {
+          if (res.length > 2) {
+            var lastSlashIndex = res.lastIndexOf("/")
+            if (lastSlashIndex !== res.length - 1) {
+              if (lastSlashIndex === -1) {
+                res = ""
+                lastSegmentLength = 0
+              } else {
+                res = res.slice(0, lastSlashIndex)
+                lastSegmentLength = res.length - 1 - res.lastIndexOf("/")
+              }
+              lastSlash = i
+              dots = 0
+              continue
+            }
+          } else if (res.length === 2 || res.length === 1) {
+            res = ""
+            lastSegmentLength = 0
+            lastSlash = i
+            dots = 0
+            continue
+          }
+        }
+        if (allowAboveRoot) {
+          if (res.length > 0) res += "/.."
+          else res = ".."
+          lastSegmentLength = 2
+        }
+      } else {
+        if (res.length > 0) res += "/" + path.slice(lastSlash + 1, i)
+        else res = path.slice(lastSlash + 1, i)
+        lastSegmentLength = i - lastSlash - 1
+      }
+      lastSlash = i
+      dots = 0
+    } else if (code === 46 /*.*/ && dots !== -1) {
+      ++dots
+    } else {
+      dots = -1
+    }
+  }
+  return res
+}
+
+function _format(sep, pathObject) {
+  var dir = pathObject.dir || pathObject.root
+  var base = pathObject.base || (pathObject.name || "") + (pathObject.ext || "")
+  if (!dir) {
+    return base
+  }
+  if (dir === pathObject.root) {
+    return dir + base
+  }
+  return dir + sep + base
+}
+
+var posix = {
+  // path.resolve([from ...], to)
+  resolve: function resolve() {
+    var resolvedPath = ""
+    var resolvedAbsolute = false
+    var cwd
+
+    for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+      var path
+      if (i >= 0) path = arguments[i]
+      else {
+        if (cwd === undefined) cwd = process.cwd()
+        path = cwd
+      }
+
+      assertPath(path)
+
+      // Skip empty entries
+      if (path.length === 0) {
+        continue
+      }
+
+      resolvedPath = path + "/" + resolvedPath
+      resolvedAbsolute = path.charCodeAt(0) === 47 /*/*/
+    }
+
+    // At this point the path should be resolved to a full absolute path, but
+    // handle relative paths to be safe (might happen when process.cwd() fails)
+
+    // Normalize the path
+    resolvedPath = normalizeStringPosix(resolvedPath, !resolvedAbsolute)
+
+    if (resolvedAbsolute) {
+      if (resolvedPath.length > 0) return "/" + resolvedPath
+      else return "/"
+    } else if (resolvedPath.length > 0) {
+      return resolvedPath
+    } else {
+      return "."
+    }
+  },
+
+  normalize: function normalize(path) {
+    assertPath(path)
+
+    if (path.length === 0) return "."
+
+    var isAbsolute = path.charCodeAt(0) === 47 /*/*/
+    var trailingSeparator = path.charCodeAt(path.length - 1) === 47 /*/*/
+
+    // Normalize the path
+    path = normalizeStringPosix(path, !isAbsolute)
+
+    if (path.length === 0 && !isAbsolute) path = "."
+    if (path.length > 0 && trailingSeparator) path += "/"
+
+    if (isAbsolute) return "/" + path
+    return path
+  },
+
+  isAbsolute: function isAbsolute(path) {
+    assertPath(path)
+    return path.length > 0 && path.charCodeAt(0) === 47 /*/*/
+  },
+
+  join: function join() {
+    if (arguments.length === 0) return "."
+    var joined
+    for (var i = 0; i < arguments.length; ++i) {
+      var arg = arguments[i]
+      assertPath(arg)
+      if (arg.length > 0) {
+        if (joined === undefined) joined = arg
+        else joined += "/" + arg
+      }
+    }
+    if (joined === undefined) return "."
+    return posix.normalize(joined)
+  },
+
+  relative: function relative(from, to) {
+    assertPath(from)
+    assertPath(to)
+
+    if (from === to) return ""
+
+    from = posix.resolve(from)
+    to = posix.resolve(to)
+
+    if (from === to) return ""
+
+    // Trim any leading backslashes
+    var fromStart = 1
+    for (; fromStart < from.length; ++fromStart) {
+      if (from.charCodeAt(fromStart) !== 47 /*/*/) break
+    }
+    var fromEnd = from.length
+    var fromLen = fromEnd - fromStart
+
+    // Trim any leading backslashes
+    var toStart = 1
+    for (; toStart < to.length; ++toStart) {
+      if (to.charCodeAt(toStart) !== 47 /*/*/) break
+    }
+    var toEnd = to.length
+    var toLen = toEnd - toStart
+
+    // Compare paths to find the longest common path from root
+    var length = fromLen < toLen ? fromLen : toLen
+    var lastCommonSep = -1
+    var i = 0
+    for (; i <= length; ++i) {
+      if (i === length) {
+        if (toLen > length) {
+          if (to.charCodeAt(toStart + i) === 47 /*/*/) {
+            // We get here if `from` is the exact base path for `to`.
+            // For example: from='/foo/bar'; to='/foo/bar/baz'
+            return to.slice(toStart + i + 1)
+          } else if (i === 0) {
+            // We get here if `from` is the root
+            // For example: from='/'; to='/foo'
+            return to.slice(toStart + i)
+          }
+        } else if (fromLen > length) {
+          if (from.charCodeAt(fromStart + i) === 47 /*/*/) {
+            // We get here if `to` is the exact base path for `from`.
+            // For example: from='/foo/bar/baz'; to='/foo/bar'
+            lastCommonSep = i
+          } else if (i === 0) {
+            // We get here if `to` is the root.
+            // For example: from='/foo'; to='/'
+            lastCommonSep = 0
+          }
+        }
+        break
+      }
+      var fromCode = from.charCodeAt(fromStart + i)
+      var toCode = to.charCodeAt(toStart + i)
+      if (fromCode !== toCode) break
+      else if (fromCode === 47 /*/*/) lastCommonSep = i
+    }
+
+    var out = ""
+    // Generate the relative path based on the path difference between `to`
+    // and `from`
+    for (i = fromStart + lastCommonSep + 1; i <= fromEnd; ++i) {
+      if (i === fromEnd || from.charCodeAt(i) === 47 /*/*/) {
+        if (out.length === 0) out += ".."
+        else out += "/.."
+      }
+    }
+
+    // Lastly, append the rest of the destination (`to`) path that comes after
+    // the common path parts
+    if (out.length > 0) return out + to.slice(toStart + lastCommonSep)
+    else {
+      toStart += lastCommonSep
+      if (to.charCodeAt(toStart) === 47 /*/*/) ++toStart
+      return to.slice(toStart)
+    }
+  },
+
+  _makeLong: function _makeLong(path) {
+    return path
+  },
+
+  dirname: function dirname(path) {
+    assertPath(path)
+    if (path.length === 0) return "."
+    var code = path.charCodeAt(0)
+    var hasRoot = code === 47 /*/*/
+    var end = -1
+    var matchedSlash = true
+    for (var i = path.length - 1; i >= 1; --i) {
+      code = path.charCodeAt(i)
+      if (code === 47 /*/*/) {
+        if (!matchedSlash) {
+          end = i
+          break
+        }
+      } else {
+        // We saw the first non-path separator
+        matchedSlash = false
+      }
+    }
+
+    if (end === -1) return hasRoot ? "/" : "."
+    if (hasRoot && end === 1) return "//"
+    return path.slice(0, end)
+  },
+
+  basename: function basename(path, ext) {
+    if (ext !== undefined && typeof ext !== "string") throw new TypeError('"ext" argument must be a string')
+    assertPath(path)
+
+    var start = 0
+    var end = -1
+    var matchedSlash = true
+    var i
+
+    if (ext !== undefined && ext.length > 0 && ext.length <= path.length) {
+      if (ext.length === path.length && ext === path) return ""
+      var extIdx = ext.length - 1
+      var firstNonSlashEnd = -1
+      for (i = path.length - 1; i >= 0; --i) {
+        var code = path.charCodeAt(i)
+        if (code === 47 /*/*/) {
+          // If we reached a path separator that was not part of a set of path
+          // separators at the end of the string, stop now
+          if (!matchedSlash) {
+            start = i + 1
+            break
+          }
+        } else {
+          if (firstNonSlashEnd === -1) {
+            // We saw the first non-path separator, remember this index in case
+            // we need it if the extension ends up not matching
+            matchedSlash = false
+            firstNonSlashEnd = i + 1
+          }
+          if (extIdx >= 0) {
+            // Try to match the explicit extension
+            if (code === ext.charCodeAt(extIdx)) {
+              if (--extIdx === -1) {
+                // We matched the extension, so mark this as the end of our path
+                // component
+                end = i
+              }
+            } else {
+              // Extension does not match, so our result is the entire path
+              // component
+              extIdx = -1
+              end = firstNonSlashEnd
+            }
+          }
+        }
+      }
+
+      if (start === end) end = firstNonSlashEnd
+      else if (end === -1) end = path.length
+      return path.slice(start, end)
+    } else {
+      for (i = path.length - 1; i >= 0; --i) {
+        if (path.charCodeAt(i) === 47 /*/*/) {
+          // If we reached a path separator that was not part of a set of path
+          // separators at the end of the string, stop now
+          if (!matchedSlash) {
+            start = i + 1
+            break
+          }
+        } else if (end === -1) {
+          // We saw the first non-path separator, mark this as the end of our
+          // path component
+          matchedSlash = false
+          end = i + 1
+        }
+      }
+
+      if (end === -1) return ""
+      return path.slice(start, end)
+    }
+  },
+
+  extname: function extname(path) {
+    assertPath(path)
+    var startDot = -1
+    var startPart = 0
+    var end = -1
+    var matchedSlash = true
+    // Track the state of characters (if any) we see before our first dot and
+    // after any path separator we find
+    var preDotState = 0
+    for (var i = path.length - 1; i >= 0; --i) {
+      var code = path.charCodeAt(i)
+      if (code === 47 /*/*/) {
+        // If we reached a path separator that was not part of a set of path
+        // separators at the end of the string, stop now
+        if (!matchedSlash) {
+          startPart = i + 1
+          break
+        }
+        continue
+      }
+      if (end === -1) {
+        // We saw the first non-path separator, mark this as the end of our
+        // extension
+        matchedSlash = false
+        end = i + 1
+      }
+      if (code === 46 /*.*/) {
+        // If this is our first dot, mark it as the start of our extension
+        if (startDot === -1) startDot = i
+        else if (preDotState !== 1) preDotState = 1
+      } else if (startDot !== -1) {
+        // We saw a non-dot and non-path separator before our dot, so we should
+        // have a good chance at having a non-empty extension
+        preDotState = -1
+      }
+    }
+
+    if (
+      startDot === -1 ||
+      end === -1 ||
+      // We saw a non-dot character immediately before the dot
+      preDotState === 0 ||
+      // The (right-most) trimmed path component is exactly '..'
+      (preDotState === 1 && startDot === end - 1 && startDot === startPart + 1)
+    ) {
+      return ""
+    }
+    return path.slice(startDot, end)
+  },
+
+  format: function format(pathObject) {
+    if (pathObject === null || typeof pathObject !== "object") {
+      throw new TypeError('The "pathObject" argument must be of type Object. Received type ' + typeof pathObject)
+    }
+    return _format("/", pathObject)
+  },
+
+  parse: function parse(path) {
+    assertPath(path)
+
+    var ret = { root: "", dir: "", base: "", ext: "", name: "" }
+    if (path.length === 0) return ret
+    var code = path.charCodeAt(0)
+    var isAbsolute = code === 47 /*/*/
+    var start
+    if (isAbsolute) {
+      ret.root = "/"
+      start = 1
+    } else {
+      start = 0
+    }
+    var startDot = -1
+    var startPart = 0
+    var end = -1
+    var matchedSlash = true
+    var i = path.length - 1
+
+    // Track the state of characters (if any) we see before our first dot and
+    // after any path separator we find
+    var preDotState = 0
+
+    // Get non-dir info
+    for (; i >= start; --i) {
+      code = path.charCodeAt(i)
+      if (code === 47 /*/*/) {
+        // If we reached a path separator that was not part of a set of path
+        // separators at the end of the string, stop now
+        if (!matchedSlash) {
+          startPart = i + 1
+          break
+        }
+        continue
+      }
+      if (end === -1) {
+        // We saw the first non-path separator, mark this as the end of our
+        // extension
+        matchedSlash = false
+        end = i + 1
+      }
+      if (code === 46 /*.*/) {
+        // If this is our first dot, mark it as the start of our extension
+        if (startDot === -1) startDot = i
+        else if (preDotState !== 1) preDotState = 1
+      } else if (startDot !== -1) {
+        // We saw a non-dot and non-path separator before our dot, so we should
+        // have a good chance at having a non-empty extension
+        preDotState = -1
+      }
+    }
+
+    if (
+      startDot === -1 ||
+      end === -1 ||
+      // We saw a non-dot character immediately before the dot
+      preDotState === 0 ||
+      // The (right-most) trimmed path component is exactly '..'
+      (preDotState === 1 && startDot === end - 1 && startDot === startPart + 1)
+    ) {
+      if (end !== -1) {
+        if (startPart === 0 && isAbsolute) ret.base = ret.name = path.slice(1, end)
+        else ret.base = ret.name = path.slice(startPart, end)
+      }
+    } else {
+      if (startPart === 0 && isAbsolute) {
+        ret.name = path.slice(1, startDot)
+        ret.base = path.slice(1, end)
+      } else {
+        ret.name = path.slice(startPart, startDot)
+        ret.base = path.slice(startPart, end)
+      }
+      ret.ext = path.slice(startDot, end)
+    }
+
+    if (startPart > 0) ret.dir = path.slice(0, startPart - 1)
+    else if (isAbsolute) ret.dir = "/"
+
+    return ret
+  },
+
+  sep: "/",
+  delimiter: ":",
+  win32: null,
+  posix: null
+}
+
+posix.posix = posix
+
+// Check if the environment is Node.js, and export the module
+if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
+  module.exports = { posix }
+} else {
+  // Otherwise, assign the module to the global scope (browser environment)
+  window.posix = posix
+}
+
+
+const PARSERS_EXTENSION = ".parsers"
+const parserRegex = /^[a-zA-Z0-9_]+Parser$/gm
+// A regex to check if a multiline string has an import line.
+const importRegex = /^(import |[a-zA-Z\_\-\.0-9\/]+\.(scroll|parsers)$)/gm
+const importOnlyRegex = /^importOnly/
+class DiskWriter {
+  constructor() {
+    this.fileCache = {}
+  }
+  async _read(absolutePath) {
+    const { fileCache } = this
+    if (!fileCache[absolutePath]) {
+      const exists = await fs
+        .access(absolutePath)
+        .then(() => true)
+        .catch(() => false)
+      if (exists) {
+        const [content, stats] = await Promise.all([fs.readFile(absolutePath, "utf8").then(content => content.replace(/\r/g, "")), fs.stat(absolutePath)])
+        fileCache[absolutePath] = { absolutePath, exists: true, content, stats }
+      } else {
+        fileCache[absolutePath] = { absolutePath, exists: false, content: "", stats: { mtimeMs: 0, ctimeMs: 0 } }
+      }
+    }
+    return fileCache[absolutePath]
+  }
+  async exists(absolutePath) {
+    const file = await this._read(absolutePath)
+    return file.exists
+  }
+  async read(absolutePath) {
+    const file = await this._read(absolutePath)
+    return file.content
+  }
+  async list(folder) {
+    return Disk.getFiles(folder)
+  }
+  async write(fullPath, content) {
+    Disk.writeIfChanged(fullPath, content)
+  }
+  async getMTime(absolutePath) {
+    const file = await this._read(absolutePath)
+    return file.stats.mtimeMs
+  }
+  async getCTime(absolutePath) {
+    const file = await this._read(absolutePath)
+    return file.stats.ctimeMs
+  }
+  dirname(absolutePath) {
+    return path.dirname(absolutePath)
+  }
+  join(...segments) {
+    return path.join(...arguments)
+  }
+}
+class MemoryWriter {
+  constructor(inMemoryFiles) {
+    this.inMemoryFiles = inMemoryFiles
+  }
+  async read(absolutePath) {
+    const value = this.inMemoryFiles[absolutePath]
+    if (value === undefined) {
+      return ""
+    }
+    return value
+  }
+  async exists(absolutePath) {
+    return this.inMemoryFiles[absolutePath] !== undefined
+  }
+  async write(absolutePath, content) {
+    this.inMemoryFiles[absolutePath] = content
+  }
+  async list(absolutePath) {
+    return Object.keys(this.inMemoryFiles).filter(filePath => filePath.startsWith(absolutePath) && !filePath.replace(absolutePath, "").includes("/"))
+  }
+  async getMTime() {
+    return 1
+  }
+  async getCTime() {
+    return 1
+  }
+  dirname(path) {
+    return posix.dirname(path)
+  }
+  join(...segments) {
+    return posix.join(...arguments)
+  }
+}
+class FusionFile {
+  constructor(codeAtStart, absoluteFilePath = "", fileSystem = new Fusion({})) {
+    this.defaultParserCode = ""
+    this.fileSystem = fileSystem
+    this.filePath = absoluteFilePath
+    this.filename = posix.basename(absoluteFilePath)
+    this.folderPath = posix.dirname(absoluteFilePath) + "/"
+    this.codeAtStart = codeAtStart
+    this.timeIndex = 0
+    this.timestamp = 0
+    this.importOnly = false
+  }
+  async readCodeFromStorage() {
+    if (this.codeAtStart !== undefined) return this // Code provided
+    const { filePath } = this
+    if (!filePath) {
+      this.codeAtStart = ""
+      return this
+    }
+    this.codeAtStart = await this.fileSystem.read(filePath)
+  }
+  get isFused() {
+    return this.fusedCode !== undefined
+  }
+  async fuse() {
+    // PASS 1: READ FULL FILE
+    await this.readCodeFromStorage()
+    const { codeAtStart, fileSystem, filePath, defaultParserCode } = this
+    // PASS 2: READ AND REPLACE IMPORTs
+    let fusedCode = codeAtStart
+    if (filePath) {
+      this.timestamp = await fileSystem.getCTime(filePath)
+      const fusedFile = await fileSystem.fuseFile(filePath, defaultParserCode)
+      this.importOnly = fusedFile.isImportOnly
+      fusedCode = fusedFile.fused
+      if (fusedFile.footers.length) fusedCode += "\n" + fusedFile.footers.join("\n")
+      this.dependencies = fusedFile.importFilePaths
+      this.fusedFile = fusedFile
+    }
+    this.fusedCode = fusedCode
+    this.parseCode()
+    return this
+  }
+  parseCode() {}
+  get formatted() {
+    return this.codeAtStart
+  }
+  async formatAndSave() {
+    const { codeAtStart, formatted } = this
+    if (codeAtStart === formatted) return false
+    await this.fileSystem.write(this.filePath, formatted)
+    return true
+  }
+}
+let fusionIdNumber = 0
+class Fusion {
+  constructor(inMemoryFiles) {
+    this.productCache = {}
+    this._particleCache = {}
+    this._parserCache = {}
+    this._expandedImportCache = {}
+    this._parsersExpandersCache = {}
+    this.defaultFileClass = FusionFile
+    this.parsedFiles = {}
+    this.folderCache = {}
+    if (inMemoryFiles) this._storage = new MemoryWriter(inMemoryFiles)
+    else this._storage = new DiskWriter()
+    fusionIdNumber = fusionIdNumber + 1
+    this.fusionId = fusionIdNumber
+  }
+  async read(absolutePath) {
+    return await this._storage.read(absolutePath)
+  }
+  async exists(absolutePath) {
+    return await this._storage.exists(absolutePath)
+  }
+  async write(absolutePath, content) {
+    return await this._storage.write(absolutePath, content)
+  }
+  async list(absolutePath) {
+    return await this._storage.list(absolutePath)
+  }
+  dirname(absolutePath) {
+    return this._storage.dirname(absolutePath)
+  }
+  join(...segments) {
+    return this._storage.join(...segments)
+  }
+  async getMTime(absolutePath) {
+    return await this._storage.getMTime(absolutePath)
+  }
+  async getCTime(absolutePath) {
+    return await this._storage.getCTime(absolutePath)
+  }
+  async writeProduct(absolutePath, content) {
+    this.productCache[absolutePath] = content
+    return await this.write(absolutePath, content)
+  }
+  async _getFileAsParticles(absoluteFilePath) {
+    const { _particleCache } = this
+    if (_particleCache[absoluteFilePath] === undefined) {
+      const content = await this._storage.read(absoluteFilePath)
+      _particleCache[absoluteFilePath] = new Particle(content)
+    }
+    return _particleCache[absoluteFilePath]
+  }
+  async _fuseFile(absoluteFilePath) {
+    const { _expandedImportCache } = this
+    if (_expandedImportCache[absoluteFilePath]) return _expandedImportCache[absoluteFilePath]
+    const [code, exists] = await Promise.all([this.read(absoluteFilePath), this.exists(absoluteFilePath)])
+    const isImportOnly = importOnlyRegex.test(code)
+    // Perf hack
+    // If its a parsers file, it will have no content, just parsers (and maybe imports).
+    // The parsers will already have been processed. We can skip them
+    const stripParsers = absoluteFilePath.endsWith(PARSERS_EXTENSION)
+    const processedCode = stripParsers
+      ? code
+          .split("\n")
+          .filter(line => importRegex.test(line))
+          .join("\n")
+      : code
+    const filepathsWithParserDefinitions = []
+    if (await this._doesFileHaveParsersDefinitions(absoluteFilePath)) {
+      filepathsWithParserDefinitions.push(absoluteFilePath)
+    }
+    if (!importRegex.test(processedCode)) {
+      return {
+        fused: processedCode,
+        footers: [],
+        isImportOnly,
+        importFilePaths: [],
+        filepathsWithParserDefinitions,
+        exists
+      }
+    }
+    const particle = new Particle(processedCode)
+    const folder = this.dirname(absoluteFilePath)
+    // Fetch all imports in parallel
+    const importParticles = particle.filter(particle => particle.getLine().match(importRegex))
+    const importResults = importParticles.map(async importParticle => {
+      const relativeFilePath = importParticle.getLine().replace("import ", "")
+      const absoluteImportFilePath = this.join(folder, relativeFilePath)
+      // todo: race conditions
+      const [expandedFile, exists] = await Promise.all([this._fuseFile(absoluteImportFilePath), this.exists(absoluteImportFilePath)])
+      return {
+        expandedFile,
+        exists,
+        relativeFilePath,
+        absoluteImportFilePath,
+        importParticle
+      }
+    })
+    const imported = await Promise.all(importResults)
+    // Assemble all imports
+    let importFilePaths = []
+    let footers = []
+    imported.forEach(importResults => {
+      const { importParticle, absoluteImportFilePath, expandedFile, relativeFilePath, exists } = importResults
+      importFilePaths.push(absoluteImportFilePath)
+      importFilePaths = importFilePaths.concat(expandedFile.importFilePaths)
+      importParticle.setLine("imported " + relativeFilePath)
+      importParticle.set("exists", `${exists}`)
+      footers = footers.concat(expandedFile.footers)
+      if (importParticle.has("footer")) footers.push(expandedFile.fused)
+      else importParticle.insertLinesAfter(expandedFile.fused)
+    })
+    const existStates = await Promise.all(importFilePaths.map(file => this.exists(file)))
+    const allImportsExist = !existStates.some(exists => !exists)
+    _expandedImportCache[absoluteFilePath] = {
+      importFilePaths,
+      isImportOnly,
+      fused: particle.toString(),
+      footers,
+      exists: allImportsExist,
+      filepathsWithParserDefinitions: (
+        await Promise.all(
+          importFilePaths.map(async filename => ({
+            filename,
+            hasParser: await this._doesFileHaveParsersDefinitions(filename)
+          }))
+        )
+      )
+        .filter(result => result.hasParser)
+        .map(result => result.filename)
+        .concat(filepathsWithParserDefinitions)
+    }
+    return _expandedImportCache[absoluteFilePath]
+  }
+  async _doesFileHaveParsersDefinitions(absoluteFilePath) {
+    if (!absoluteFilePath) return false
+    const { _parsersExpandersCache } = this
+    if (_parsersExpandersCache[absoluteFilePath] === undefined) {
+      const content = await this._storage.read(absoluteFilePath)
+      _parsersExpandersCache[absoluteFilePath] = !!content.match(parserRegex)
+    }
+    return _parsersExpandersCache[absoluteFilePath]
+  }
+  async _getOneParsersParserFromFiles(filePaths, baseParsersCode) {
+    const fileContents = await Promise.all(filePaths.map(async filePath => await this._storage.read(filePath)))
+    return Fusion.combineParsers(filePaths, fileContents, baseParsersCode)
+  }
+  async getParser(filePaths, baseParsersCode = "") {
+    const { _parserCache } = this
+    const key = filePaths
+      .filter(fp => fp)
+      .sort()
+      .join("\n")
+    const hit = _parserCache[key]
+    if (hit) return hit
+    _parserCache[key] = await this._getOneParsersParserFromFiles(filePaths, baseParsersCode)
+    return _parserCache[key]
+  }
+  static combineParsers(filePaths, fileContents, baseParsersCode = "") {
+    const parserDefinitionRegex = /^[a-zA-Z0-9_]+Parser$/
+    const atomDefinitionRegex = /^[a-zA-Z0-9_]+Atom/
+    const mapped = fileContents.map((content, index) => {
+      const filePath = filePaths[index]
+      if (filePath.endsWith(PARSERS_EXTENSION)) return content
+      return new Particle(content)
+        .filter(particle => particle.getLine().match(parserDefinitionRegex) || particle.getLine().match(atomDefinitionRegex))
+        .map(particle => particle.asString)
+        .join("\n")
+    })
+    const asOneFile = mapped.join("\n").trim()
+    const sorted = new parsersParser(baseParsersCode + "\n" + asOneFile)._sortParticlesByInScopeOrder()._sortWithParentParsersUpTop()
+    const parsersCode = sorted.asString
+    return {
+      parsersParser: sorted,
+      parsersCode,
+      parser: new HandParsersProgram(parsersCode).compileAndReturnRootParser()
+    }
+  }
+  get parsers() {
+    return Object.values(this._parserCache).map(parser => parser.parsersParser)
+  }
+  async fuseFile(absoluteFilePath, defaultParserCode) {
+    const fusedFile = await this._fuseFile(absoluteFilePath)
+    if (!defaultParserCode) return fusedFile
+    if (fusedFile.filepathsWithParserDefinitions.length) {
+      const parser = await this.getParser(fusedFile.filepathsWithParserDefinitions, defaultParserCode)
+      fusedFile.parser = parser.parser
+    }
+    return fusedFile
+  }
+  async getLoadedFile(filePath) {
+    return await this._getLoadedFile(filePath, this.defaultFileClass)
+  }
+  async _getLoadedFile(absolutePath, parser) {
+    if (this.parsedFiles[absolutePath]) return this.parsedFiles[absolutePath]
+    const file = new parser(undefined, absolutePath, this)
+    await file.fuse()
+    this.parsedFiles[absolutePath] = file
+    return file
+  }
+  getCachedLoadedFilesInFolder(folderPath, requester) {
+    folderPath = Utils.ensureFolderEndsInSlash(folderPath)
+    const hit = this.folderCache[folderPath]
+    if (!hit) console.log(`Warning: '${folderPath}' not yet loaded in '${this.fusionId}'. Requested by '${requester.filePath}'`)
+    return hit || []
+  }
+  async getLoadedFilesInFolder(folderPath, extension) {
+    folderPath = Utils.ensureFolderEndsInSlash(folderPath)
+    if (this.folderCache[folderPath]) return this.folderCache[folderPath]
+    const allFiles = await this.list(folderPath)
+    const loadedFiles = await Promise.all(allFiles.filter(file => file.endsWith(extension)).map(filePath => this.getLoadedFile(filePath)))
+    const sorted = loadedFiles.sort((a, b) => b.timestamp - a.timestamp)
+    sorted.forEach((file, index) => (file.timeIndex = index))
+    this.folderCache[folderPath] = sorted
+    return this.folderCache[folderPath]
+  }
+}
+window.Fusion = Fusion
+window.FusionFile = FusionFile
+
+
 let _scrollsdkLatestTime = 0
 let _scrollsdkMinTimeIncrement = 0.000000000001
 class AbstractParticle {
@@ -17228,7 +18088,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "95.0.1"
+Particle.getVersion = () => "97.0.0"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)

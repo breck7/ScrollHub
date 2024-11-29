@@ -374,7 +374,9 @@ class ScrollHub {
     if (folder) {
       const reqFile = path.join(outputPath, "requests.scroll")
       await fsp.writeFile(reqFile, requestsFile(folder), "utf8")
-      await new ScrollFile(undefined, reqFile, new ScrollFileSystem()).scrollProgram.buildAll()
+      const file = new ScrollFile(undefined, reqFile, new ScrollFileSystem())
+      await file.fuse()
+      await file.scrollProgram.buildAll()
     } else await this.buildScrollHubPages()
     this.isSummarizing[folder] = false
   }
@@ -1320,7 +1322,8 @@ ${prefix}${hash}<br>
     if (filePath.endsWith(".scroll") || filePath.endsWith(".parsers")) {
       try {
         const scrollFs = new ScrollFileSystem()
-        const formatted = new ScrollFile(undefined, filePath, scrollFs).formatted
+        const file = await new ScrollFile(undefined, filePath, scrollFs).fuse()
+        const formatted = file.formatted
         await fsp.writeFile(filePath, formatted, "utf8")
         return formatted
       } catch (err) {
@@ -1593,6 +1596,7 @@ ${prefix}${hash}<br>
 
   async buildFile(filePath) {
     const file = new ScrollFile(undefined, filePath, new ScrollFileSystem())
+    await file.fuse()
     await file.scrollProgram.buildAll()
   }
 

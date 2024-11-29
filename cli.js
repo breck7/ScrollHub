@@ -9,7 +9,7 @@ const child_process = require("child_process")
 // Particles Includes
 const { Disk } = require("scrollsdk/products/Disk.node.js")
 const { Particle } = require("scrollsdk/products/Particle.js")
-const { ScrollCli, ScrollFile, ScrollFileSystem, SimpleCLI } = require("scroll-cli")
+const { SimpleCLI } = require("scroll-cli")
 const { ScrollHub } = require("./ScrollHub.js")
 const packageJson = require("./package.json")
 
