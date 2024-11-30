@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.49.0 11/30/2024
+🎉 updated Scroll and ScrollSDK for Fusion
+
 📦 0.48.0 11/29/2024
 🎉 Fusion http import support
 🎉 updated Scroll and ScrollSDK

@@ -15126,464 +15126,6 @@ if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
 }
 
 
-const PARSERS_EXTENSION = ".parsers"
-const SCROLL_EXTENSION = ".scroll"
-// Add URL regex pattern
-const urlRegex = /^https?:\/\/[^ ]+$/i
-const parserRegex = /^[a-zA-Z0-9_]+Parser$/gm
-const importRegex = /^(import |[a-zA-Z\_\-\.0-9\/]+\.(scroll|parsers)$|https?:\/\/.+\.(scroll|parsers)$)/gm
-const importOnlyRegex = /^importOnly/
-const isUrl = path => urlRegex.test(path)
-// URL content cache
-const urlCache = {}
-async function fetchWithCache(url) {
-  const now = Date.now()
-  const cached = urlCache[url]
-  if (cached) return cached
-  try {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-    const content = await response.text()
-    urlCache[url] = {
-      content,
-      timestamp: now,
-      exists: true
-    }
-  } catch (error) {
-    console.error(`Error fetching ${url}:`, error)
-    urlCache[url] = {
-      content: "",
-      timestamp: now,
-      exists: false
-    }
-  }
-  return urlCache[url]
-}
-class DiskWriter {
-  constructor() {
-    this.fileCache = {}
-  }
-  async _read(absolutePath) {
-    const { fileCache } = this
-    if (isUrl(absolutePath)) {
-      const result = await fetchWithCache(absolutePath)
-      return {
-        absolutePath,
-        exists: result.exists,
-        content: result.content,
-        stats: { mtimeMs: Date.now(), ctimeMs: Date.now() }
-      }
-    }
-    if (!fileCache[absolutePath]) {
-      const exists = await fs
-        .access(absolutePath)
-        .then(() => true)
-        .catch(() => false)
-      if (exists) {
-        const [content, stats] = await Promise.all([fs.readFile(absolutePath, "utf8").then(content => content.replace(/\r/g, "")), fs.stat(absolutePath)])
-        fileCache[absolutePath] = { absolutePath, exists: true, content, stats }
-      } else {
-        fileCache[absolutePath] = { absolutePath, exists: false, content: "", stats: { mtimeMs: 0, ctimeMs: 0 } }
-      }
-    }
-    return fileCache[absolutePath]
-  }
-  async exists(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const result = await fetchWithCache(absolutePath)
-      return result.exists
-    }
-    const file = await this._read(absolutePath)
-    return file.exists
-  }
-  async read(absolutePath) {
-    const file = await this._read(absolutePath)
-    return file.content
-  }
-  async list(folder) {
-    if (isUrl(folder)) {
-      return [] // URLs don't support directory listing
-    }
-    return Disk.getFiles(folder)
-  }
-  async write(fullPath, content) {
-    if (isUrl(fullPath)) {
-      throw new Error("Cannot write to URL")
-    }
-    Disk.writeIfChanged(fullPath, content)
-  }
-  async getMTime(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const cached = urlCache[absolutePath]
-      return cached ? cached.timestamp : Date.now()
-    }
-    const file = await this._read(absolutePath)
-    return file.stats.mtimeMs
-  }
-  async getCTime(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const cached = urlCache[absolutePath]
-      return cached ? cached.timestamp : Date.now()
-    }
-    const file = await this._read(absolutePath)
-    return file.stats.ctimeMs
-  }
-  dirname(absolutePath) {
-    if (isUrl(absolutePath)) {
-      return absolutePath.substring(0, absolutePath.lastIndexOf("/"))
-    }
-    return path.dirname(absolutePath)
-  }
-  join(...segments) {
-    const firstSegment = segments[0]
-    if (isUrl(firstSegment)) {
-      // For URLs, we need to handle joining differently
-      const baseUrl = firstSegment.endsWith("/") ? firstSegment : firstSegment + "/"
-      return new URL(segments.slice(1).join("/"), baseUrl).toString()
-    }
-    return path.join(...segments)
-  }
-}
-// Update MemoryWriter to support URLs
-class MemoryWriter {
-  constructor(inMemoryFiles) {
-    this.inMemoryFiles = inMemoryFiles
-  }
-  async read(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const result = await fetchWithCache(absolutePath)
-      return result.content
-    }
-    const value = this.inMemoryFiles[absolutePath]
-    if (value === undefined) {
-      return ""
-    }
-    return value
-  }
-  async exists(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const result = await fetchWithCache(absolutePath)
-      return result.exists
-    }
-    return this.inMemoryFiles[absolutePath] !== undefined
-  }
-  async write(absolutePath, content) {
-    if (isUrl(absolutePath)) {
-      throw new Error("Cannot write to URL")
-    }
-    this.inMemoryFiles[absolutePath] = content
-  }
-  async list(absolutePath) {
-    if (isUrl(absolutePath)) {
-      return []
-    }
-    return Object.keys(this.inMemoryFiles).filter(filePath => filePath.startsWith(absolutePath) && !filePath.replace(absolutePath, "").includes("/"))
-  }
-  async getMTime(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const cached = urlCache[absolutePath]
-      return cached ? cached.timestamp : Date.now()
-    }
-    return 1
-  }
-  async getCTime(absolutePath) {
-    if (isUrl(absolutePath)) {
-      const cached = urlCache[absolutePath]
-      return cached ? cached.timestamp : Date.now()
-    }
-    return 1
-  }
-  dirname(path) {
-    if (isUrl(path)) {
-      return path.substring(0, path.lastIndexOf("/"))
-    }
-    return posix.dirname(path)
-  }
-  join(...segments) {
-    const firstSegment = segments[0]
-    if (isUrl(firstSegment)) {
-      const baseUrl = firstSegment.endsWith("/") ? firstSegment : firstSegment + "/"
-      return new URL(segments.slice(1).join("/"), baseUrl).toString()
-    }
-    return posix.join(...segments)
-  }
-}
-class FusionFile {
-  constructor(codeAtStart, absoluteFilePath = "", fileSystem = new Fusion({})) {
-    this.defaultParserCode = ""
-    this.fileSystem = fileSystem
-    this.filePath = absoluteFilePath
-    this.filename = posix.basename(absoluteFilePath)
-    this.folderPath = posix.dirname(absoluteFilePath) + "/"
-    this.codeAtStart = codeAtStart
-    this.timeIndex = 0
-    this.timestamp = 0
-    this.importOnly = false
-  }
-  async readCodeFromStorage() {
-    if (this.codeAtStart !== undefined) return this // Code provided
-    const { filePath } = this
-    if (!filePath) {
-      this.codeAtStart = ""
-      return this
-    }
-    this.codeAtStart = await this.fileSystem.read(filePath)
-  }
-  get isFused() {
-    return this.fusedCode !== undefined
-  }
-  async fuse() {
-    // PASS 1: READ FULL FILE
-    await this.readCodeFromStorage()
-    const { codeAtStart, fileSystem, filePath, defaultParserCode } = this
-    // PASS 2: READ AND REPLACE IMPORTs
-    let fusedCode = codeAtStart
-    if (filePath) {
-      this.timestamp = await fileSystem.getCTime(filePath)
-      const fusedFile = await fileSystem.fuseFile(filePath, defaultParserCode)
-      this.importOnly = fusedFile.isImportOnly
-      fusedCode = fusedFile.fused
-      if (fusedFile.footers.length) fusedCode += "\n" + fusedFile.footers.join("\n")
-      this.dependencies = fusedFile.importFilePaths
-      this.fusedFile = fusedFile
-    }
-    this.fusedCode = fusedCode
-    this.parseCode()
-    return this
-  }
-  parseCode() {}
-  get formatted() {
-    return this.codeAtStart
-  }
-  async formatAndSave() {
-    const { codeAtStart, formatted } = this
-    if (codeAtStart === formatted) return false
-    await this.fileSystem.write(this.filePath, formatted)
-    return true
-  }
-}
-let fusionIdNumber = 0
-class Fusion {
-  constructor(inMemoryFiles) {
-    this.productCache = {}
-    this._particleCache = {}
-    this._parserCache = {}
-    this._expandedImportCache = {}
-    this._parsersExpandersCache = {}
-    this.defaultFileClass = FusionFile
-    this.parsedFiles = {}
-    this.folderCache = {}
-    if (inMemoryFiles) this._storage = new MemoryWriter(inMemoryFiles)
-    else this._storage = new DiskWriter()
-    fusionIdNumber = fusionIdNumber + 1
-    this.fusionId = fusionIdNumber
-  }
-  async read(absolutePath) {
-    return await this._storage.read(absolutePath)
-  }
-  async exists(absolutePath) {
-    return await this._storage.exists(absolutePath)
-  }
-  async write(absolutePath, content) {
-    return await this._storage.write(absolutePath, content)
-  }
-  async list(absolutePath) {
-    return await this._storage.list(absolutePath)
-  }
-  dirname(absolutePath) {
-    return this._storage.dirname(absolutePath)
-  }
-  join(...segments) {
-    return this._storage.join(...segments)
-  }
-  async getMTime(absolutePath) {
-    return await this._storage.getMTime(absolutePath)
-  }
-  async getCTime(absolutePath) {
-    return await this._storage.getCTime(absolutePath)
-  }
-  async writeProduct(absolutePath, content) {
-    this.productCache[absolutePath] = content
-    return await this.write(absolutePath, content)
-  }
-  async _getFileAsParticles(absoluteFilePathOrUrl) {
-    const { _particleCache } = this
-    if (_particleCache[absoluteFilePathOrUrl] === undefined) {
-      const content = await this._storage.read(absoluteFilePathOrUrl)
-      _particleCache[absoluteFilePathOrUrl] = new Particle(content)
-    }
-    return _particleCache[absoluteFilePathOrUrl]
-  }
-  async _fuseFile(absoluteFilePathOrUrl) {
-    const { _expandedImportCache } = this
-    if (_expandedImportCache[absoluteFilePathOrUrl]) return _expandedImportCache[absoluteFilePathOrUrl]
-    const [code, exists] = await Promise.all([this.read(absoluteFilePathOrUrl), this.exists(absoluteFilePathOrUrl)])
-    const isImportOnly = importOnlyRegex.test(code)
-    // Perf hack
-    // If its a parsers file, it will have no content, just parsers (and maybe imports).
-    // The parsers will already have been processed. We can skip them
-    const stripParsers = absoluteFilePathOrUrl.endsWith(PARSERS_EXTENSION)
-    const processedCode = stripParsers
-      ? code
-          .split("\n")
-          .filter(line => importRegex.test(line))
-          .join("\n")
-      : code
-    const filepathsWithParserDefinitions = []
-    if (await this._doesFileHaveParsersDefinitions(absoluteFilePathOrUrl)) {
-      filepathsWithParserDefinitions.push(absoluteFilePathOrUrl)
-    }
-    if (!importRegex.test(processedCode)) {
-      return {
-        fused: processedCode,
-        footers: [],
-        isImportOnly,
-        importFilePaths: [],
-        filepathsWithParserDefinitions,
-        exists
-      }
-    }
-    const particle = new Particle(processedCode)
-    const folder = this.dirname(absoluteFilePathOrUrl)
-    // Fetch all imports in parallel
-    const importParticles = particle.filter(particle => particle.getLine().match(importRegex))
-    const importResults = importParticles.map(async importParticle => {
-      const rawPath = importParticle.getLine().replace("import ", "")
-      let absoluteImportFilePath = this.join(folder, rawPath)
-      if (isUrl(rawPath)) absoluteImportFilePath = rawPath
-      else if (isUrl(folder)) absoluteImportFilePath = folder + "/" + rawPath
-      // todo: race conditions
-      const [expandedFile, exists] = await Promise.all([this._fuseFile(absoluteImportFilePath), this.exists(absoluteImportFilePath)])
-      return {
-        expandedFile,
-        exists,
-        absoluteImportFilePath,
-        importParticle
-      }
-    })
-    const imported = await Promise.all(importResults)
-    // Assemble all imports
-    let importFilePaths = []
-    let footers = []
-    imported.forEach(importResults => {
-      const { importParticle, absoluteImportFilePath, expandedFile, exists } = importResults
-      importFilePaths.push(absoluteImportFilePath)
-      importFilePaths = importFilePaths.concat(expandedFile.importFilePaths)
-      importParticle.setLine("imported " + absoluteImportFilePath)
-      importParticle.set("exists", `${exists}`)
-      footers = footers.concat(expandedFile.footers)
-      if (importParticle.has("footer")) footers.push(expandedFile.fused)
-      else importParticle.insertLinesAfter(expandedFile.fused)
-    })
-    const existStates = await Promise.all(importFilePaths.map(file => this.exists(file)))
-    const allImportsExist = !existStates.some(exists => !exists)
-    _expandedImportCache[absoluteFilePathOrUrl] = {
-      importFilePaths,
-      isImportOnly,
-      fused: particle.toString(),
-      footers,
-      exists: allImportsExist,
-      filepathsWithParserDefinitions: (
-        await Promise.all(
-          importFilePaths.map(async filename => ({
-            filename,
-            hasParser: await this._doesFileHaveParsersDefinitions(filename)
-          }))
-        )
-      )
-        .filter(result => result.hasParser)
-        .map(result => result.filename)
-        .concat(filepathsWithParserDefinitions)
-    }
-    return _expandedImportCache[absoluteFilePathOrUrl]
-  }
-  async _doesFileHaveParsersDefinitions(absoluteFilePathOrUrl) {
-    if (!absoluteFilePathOrUrl) return false
-    const { _parsersExpandersCache } = this
-    if (_parsersExpandersCache[absoluteFilePathOrUrl] === undefined) {
-      const content = await this._storage.read(absoluteFilePathOrUrl)
-      _parsersExpandersCache[absoluteFilePathOrUrl] = !!content.match(parserRegex)
-    }
-    return _parsersExpandersCache[absoluteFilePathOrUrl]
-  }
-  async _getOneParsersParserFromFiles(filePaths, baseParsersCode) {
-    const fileContents = await Promise.all(filePaths.map(async filePath => await this._storage.read(filePath)))
-    return Fusion.combineParsers(filePaths, fileContents, baseParsersCode)
-  }
-  async getParser(filePaths, baseParsersCode = "") {
-    const { _parserCache } = this
-    const key = filePaths
-      .filter(fp => fp)
-      .sort()
-      .join("\n")
-    const hit = _parserCache[key]
-    if (hit) return hit
-    _parserCache[key] = await this._getOneParsersParserFromFiles(filePaths, baseParsersCode)
-    return _parserCache[key]
-  }
-  static combineParsers(filePaths, fileContents, baseParsersCode = "") {
-    const parserDefinitionRegex = /^[a-zA-Z0-9_]+Parser$/
-    const atomDefinitionRegex = /^[a-zA-Z0-9_]+Atom/
-    const mapped = fileContents.map((content, index) => {
-      const filePath = filePaths[index]
-      if (filePath.endsWith(PARSERS_EXTENSION)) return content
-      return new Particle(content)
-        .filter(particle => particle.getLine().match(parserDefinitionRegex) || particle.getLine().match(atomDefinitionRegex))
-        .map(particle => particle.asString)
-        .join("\n")
-    })
-    const asOneFile = mapped.join("\n").trim()
-    const sorted = new parsersParser(baseParsersCode + "\n" + asOneFile)._sortParticlesByInScopeOrder()._sortWithParentParsersUpTop()
-    const parsersCode = sorted.asString
-    return {
-      parsersParser: sorted,
-      parsersCode,
-      parser: new HandParsersProgram(parsersCode).compileAndReturnRootParser()
-    }
-  }
-  get parsers() {
-    return Object.values(this._parserCache).map(parser => parser.parsersParser)
-  }
-  async fuseFile(absoluteFilePathOrUrl, defaultParserCode) {
-    const fusedFile = await this._fuseFile(absoluteFilePathOrUrl)
-    if (!defaultParserCode) return fusedFile
-    if (fusedFile.filepathsWithParserDefinitions.length) {
-      const parser = await this.getParser(fusedFile.filepathsWithParserDefinitions, defaultParserCode)
-      fusedFile.parser = parser.parser
-    }
-    return fusedFile
-  }
-  async getLoadedFile(filePath) {
-    return await this._getLoadedFile(filePath, this.defaultFileClass)
-  }
-  async _getLoadedFile(absolutePath, parser) {
-    if (this.parsedFiles[absolutePath]) return this.parsedFiles[absolutePath]
-    const file = new parser(undefined, absolutePath, this)
-    await file.fuse()
-    this.parsedFiles[absolutePath] = file
-    return file
-  }
-  getCachedLoadedFilesInFolder(folderPath, requester) {
-    folderPath = Utils.ensureFolderEndsInSlash(folderPath)
-    const hit = this.folderCache[folderPath]
-    if (!hit) console.log(`Warning: '${folderPath}' not yet loaded in '${this.fusionId}'. Requested by '${requester.filePath}'`)
-    return hit || []
-  }
-  async getLoadedFilesInFolder(folderPath, extension) {
-    folderPath = Utils.ensureFolderEndsInSlash(folderPath)
-    if (this.folderCache[folderPath]) return this.folderCache[folderPath]
-    const allFiles = await this.list(folderPath)
-    const loadedFiles = await Promise.all(allFiles.filter(file => file.endsWith(extension)).map(filePath => this.getLoadedFile(filePath)))
-    const sorted = loadedFiles.sort((a, b) => b.timestamp - a.timestamp)
-    sorted.forEach((file, index) => (file.timeIndex = index))
-    this.folderCache[folderPath] = sorted
-    return this.folderCache[folderPath]
-  }
-}
-window.Fusion = Fusion
-window.FusionFile = FusionFile
-
-
 let _scrollsdkLatestTime = 0
 let _scrollsdkMinTimeIncrement = 0.000000000001
 class AbstractParticle {
@@ -18184,7 +17726,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "98.0.0"
+Particle.getVersion = () => "99.0.0"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -20662,6 +20204,1094 @@ window.UnknownParserError = UnknownParserError
 window.UnknownParsersProgram = UnknownParsersProgram
 
 
+{
+  class parsersParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllErrorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), { "//": slashCommentParser }), [
+        { regex: /^$/, parser: blankLineParser },
+        { regex: /^[a-zA-Z0-9_]+Atom$/, parser: atomTypeDefinitionParser },
+        { regex: /^[a-zA-Z0-9_]+Parser$/, parser: parserDefinitionParser }
+      ])
+    }
+    static cachedHandParsersProgramRoot =
+      new HandParsersProgram(`// todo Add imports parsers, along with source maps, so we can correctly support parsers split across multiple files, and better enable parsers from compositions of reusable bits?
+// todo Do error checking for if you have a firstatomAtomType, atoms, and/or catchAllAtomType with same name.
+// todo Add enumOption root level type?
+// todo compile atoms. add javascript property. move getRunTimeEnumOptions to atoms.
+
+// Atom Parsers
+abstractConstantAtom
+ paint entity.name.tag
+
+javascriptSafeAlphaNumericIdentifierAtom
+ regex [a-zA-Z0-9_]+
+ reservedAtoms enum extends function static if while export return class for default require var let const new
+
+anyAtom
+
+baseParsersAtom
+ description There are a few classes of special parsers. BlobParsers don't have their subparticles parsed. Error particles always report an error.
+ // todo Remove?
+ enum blobParser errorParser
+ paint variable.parameter
+
+enumAtom
+ paint constant.language
+
+booleanAtom
+ enum true false
+ extends enumAtom
+
+atomParserAtom
+ enum prefix postfix omnifix
+ paint constant.numeric
+
+atomPropertyNameAtom
+ paint variable.parameter
+
+atomTypeIdAtom
+ examples integerAtom keywordAtom someCustomAtom
+ extends javascriptSafeAlphaNumericIdentifierAtom
+ enumFromAtomTypes atomTypeIdAtom
+ paint storage
+
+constantIdentifierAtom
+ examples someId myVar
+ // todo Extend javascriptSafeAlphaNumericIdentifier
+ regex [a-zA-Z]\\w+
+ paint constant.other
+ description A atom that can be assigned to the parser in the target language.
+
+constructorFilePathAtom
+
+enumOptionAtom
+ // todo Add an enumOption top level type, so we can add data to an enum option such as a description.
+ paint string
+
+atomExampleAtom
+ description Holds an example for a atom with a wide range of options.
+ paint string
+
+extraAtom
+ paint invalid
+
+fileExtensionAtom
+ examples js txt doc exe
+ regex [a-zA-Z0-9]+
+ paint string
+
+numberAtom
+ paint constant.numeric
+
+floatAtom
+ extends numberAtom
+ regex \\-?[0-9]*\\.?[0-9]*
+ paint constant.numeric.float
+
+integerAtom
+ regex \\-?[0-9]+
+ extends numberAtom
+ paint constant.numeric.integer
+
+cueAtom
+ description A atom that indicates a certain parser to use.
+ paint keyword
+
+javascriptCodeAtom
+
+lowercaseAtom
+ regex [a-z]+
+
+parserIdAtom
+ examples commentParser addParser
+ description This doubles as the class name in Javascript. If this begins with \`abstract\`, then the parser will be considered an abstract parser, which cannot be used by itself but provides common functionality to parsers that extend it.
+ paint variable.parameter
+ extends javascriptSafeAlphaNumericIdentifierAtom
+ enumFromAtomTypes parserIdAtom
+
+cueAtom
+ paint constant.language
+
+regexAtom
+ paint string.regexp
+
+reservedAtomAtom
+ description A atom that a atom cannot contain.
+ paint string
+
+paintTypeAtom
+ enum comment comment.block comment.block.documentation comment.line constant constant.character.escape constant.language constant.numeric constant.numeric.complex constant.numeric.complex.imaginary constant.numeric.complex.real constant.numeric.float constant.numeric.float.binary constant.numeric.float.decimal constant.numeric.float.hexadecimal constant.numeric.float.octal constant.numeric.float.other constant.numeric.integer constant.numeric.integer.binary constant.numeric.integer.decimal constant.numeric.integer.hexadecimal constant.numeric.integer.octal constant.numeric.integer.other constant.other constant.other.placeholder entity entity.name entity.name.class entity.name.class.forward-decl entity.name.constant entity.name.enum entity.name.function entity.name.function.constructor entity.name.function.destructor entity.name.impl entity.name.interface entity.name.label entity.name.namespace entity.name.section entity.name.struct entity.name.tag entity.name.trait entity.name.type entity.name.union entity.other.attribute-name entity.other.inherited-class invalid invalid.deprecated invalid.illegal keyword keyword.control keyword.control.conditional keyword.control.import keyword.declaration keyword.operator keyword.operator.arithmetic keyword.operator.assignment keyword.operator.bitwise keyword.operator.logical keyword.operator.atom keyword.other markup markup.bold markup.deleted markup.heading markup.inserted markup.italic markup.list.numbered markup.list.unnumbered markup.other markup.quote markup.raw.block markup.raw.inline markup.underline markup.underline.link meta meta.annotation meta.annotation.identifier meta.annotation.parameters meta.block meta.braces meta.brackets meta.class meta.enum meta.function meta.function-call meta.function.parameters meta.function.return-type meta.generic meta.group meta.impl meta.interface meta.interpolation meta.namespace meta.paragraph meta.parens meta.path meta.preprocessor meta.string meta.struct meta.tag meta.toc-list meta.trait meta.type meta.union punctuation punctuation.accessor punctuation.definition.annotation punctuation.definition.comment punctuation.definition.generic.begin punctuation.definition.generic.end punctuation.definition.keyword punctuation.definition.string.begin punctuation.definition.string.end punctuation.definition.variable punctuation.section.block.begin punctuation.section.block.end punctuation.section.braces.begin punctuation.section.braces.end punctuation.section.brackets.begin punctuation.section.brackets.end punctuation.section.group.begin punctuation.section.group.end punctuation.section.interpolation.begin punctuation.section.interpolation.end punctuation.section.parens.begin punctuation.section.parens.end punctuation.separator punctuation.separator.continuation punctuation.terminator source source.language-suffix.embedded storage storage.modifier storage.type storage.type keyword.declaration.type storage.type.class keyword.declaration.class storage.type.enum keyword.declaration.enum storage.type.function keyword.declaration.function storage.type.impl keyword.declaration.impl storage.type.interface keyword.declaration.interface storage.type.struct keyword.declaration.struct storage.type.trait keyword.declaration.trait storage.type.union keyword.declaration.union string string.quoted.double string.quoted.other string.quoted.single string.quoted.triple string.regexp string.unquoted support support.class support.constant support.function support.module support.type text text.html text.xml variable variable.annotation variable.function variable.language variable.other variable.other.constant variable.other.member variable.other.readwrite variable.parameter
+ paint string
+
+scriptUrlAtom
+
+semanticVersionAtom
+ examples 1.0.0 2.2.1
+ regex [0-9]+\\.[0-9]+\\.[0-9]+
+ paint constant.numeric
+
+// Date atom types
+dateAtom
+ paint string
+
+stringAtom
+ paint string
+
+atomAtom
+ paint string
+ description A non-empty single atom string.
+ regex .+
+
+exampleAnyAtom
+ examples lorem ipsem
+ // todo Eventually we want to be able to parse correctly the examples.
+ paint comment
+ extends stringAtom
+
+blankAtom
+
+commentAtom
+ paint comment
+
+codeAtom
+ paint comment
+
+// Line Parsers
+parsersParser
+ root
+ description A programming language for making languages.
+ // Parsers is a language for creating new languages on top of Particles. By creating a parsers file you get a parser, a type checker, syntax highlighting, autocomplete, a compiler, and virtual machine for executing your new language. Parsers uses both postfix and prefix language features.
+ catchAllParser catchAllErrorParser
+ example A parsers that parses anything:
+  latinParser
+   root
+   catchAllParser anyParser
+  anyParser
+   baseParser blobParser
+ inScope slashCommentParser blankLineParser atomTypeDefinitionParser parserDefinitionParser
+
+blankLineParser
+ description Blank lines are OK in Parsers.
+ atoms blankAtom
+ pattern ^$
+ tags doNotSynthesize
+
+abstractCompilerRuleParser
+ catchAllAtomType anyAtom
+ atoms cueAtom
+
+closeSubparticlesParser
+ extends abstractCompilerRuleParser
+ description When compiling a parent particle to a string, this string is appended to the compiled and joined subparticles. Default is blank.
+ cueFromId
+
+indentCharacterParser
+ extends abstractCompilerRuleParser
+ description You can change the indent character for compiled subparticles. Default is a space.
+ cueFromId
+
+catchAllAtomDelimiterParser
+ description If a particle has a catchAllAtom, this is the string delimiter that will be used to join those atoms. Default is comma.
+ extends abstractCompilerRuleParser
+ cueFromId
+
+openSubparticlesParser
+ extends abstractCompilerRuleParser
+ description When compiling a parent particle to a string, this string is prepended to the compiled and joined subparticles. Default is blank.
+ cueFromId
+
+stringTemplateParser
+ extends abstractCompilerRuleParser
+ description This template string is used to compile this line, and accepts strings of the format: const var = {someAtomId}
+ cueFromId
+
+joinSubparticlesWithParser
+ description When compiling a parent particle to a string, subparticles are compiled to strings and joined by this character. Default is a newline.
+ extends abstractCompilerRuleParser
+ cueFromId
+
+abstractConstantParser
+ description A constant.
+ atoms cueAtom
+ cueFromId
+ // todo: make tags inherit
+ tags actPhase
+
+parsersBooleanParser
+ cue boolean
+ atoms cueAtom constantIdentifierAtom
+ catchAllAtomType booleanAtom
+ extends abstractConstantParser
+ tags actPhase
+
+parsersFloatParser
+ cue float
+ atoms cueAtom constantIdentifierAtom
+ catchAllAtomType floatAtom
+ extends abstractConstantParser
+ tags actPhase
+
+parsersIntParser
+ cue int
+ atoms cueAtom constantIdentifierAtom
+ catchAllAtomType integerAtom
+ tags actPhase
+ extends abstractConstantParser
+
+parsersStringParser
+ cue string
+ atoms cueAtom constantIdentifierAtom
+ catchAllAtomType stringAtom
+ catchAllParser catchAllMultilineStringConstantParser
+ extends abstractConstantParser
+ tags actPhase
+
+abstractParserRuleParser
+ single
+ atoms cueAtom
+
+abstractNonTerminalParserRuleParser
+ extends abstractParserRuleParser
+
+parsersBaseParserParser
+ atoms cueAtom baseParsersAtom
+ description Set for blobs or errors. 
+ // In rare cases with untyped content you can use a blobParser, for now, to skip parsing for performance gains. The base errorParser will report errors when parsed. Use that if you don't want to implement your own error parser.
+ extends abstractParserRuleParser
+ cue baseParser
+ tags analyzePhase
+
+catchAllAtomTypeParser
+ atoms cueAtom atomTypeIdAtom
+ description Use for lists.
+ // Aka 'listAtomType'. Use this when the value in a key/value pair is a list. If there are extra atoms in the particle's line, parse these atoms as this type. Often used with \`listDelimiterParser\`.
+ extends abstractParserRuleParser
+ cueFromId
+ tags analyzePhase
+
+atomParserParser
+ atoms cueAtom atomParserAtom
+ description Set parsing strategy.
+ // prefix/postfix/omnifix parsing strategy. If missing, defaults to prefix.
+ extends abstractParserRuleParser
+ cueFromId
+ tags experimental analyzePhase
+
+catchAllParserParser
+ description Attach this to unmatched lines.
+ // If a parser is not found in the inScope list, instantiate this type of particle instead.
+ atoms cueAtom parserIdAtom
+ extends abstractParserRuleParser
+ cueFromId
+ tags acquirePhase
+
+parsersAtomsParser
+ catchAllAtomType atomTypeIdAtom
+ description Set required atomTypes.
+ extends abstractParserRuleParser
+ cue atoms
+ tags analyzePhase
+
+parsersCompilerParser
+ // todo Remove this and its subparticles?
+ description Deprecated. For simple compilers.
+ inScope stringTemplateParser catchAllAtomDelimiterParser openSubparticlesParser closeSubparticlesParser indentCharacterParser joinSubparticlesWithParser
+ extends abstractParserRuleParser
+ cue compiler
+ tags deprecate
+ boolean suggestInAutocomplete false
+
+parserDescriptionParser
+ description Parser description.
+ catchAllAtomType stringAtom
+ extends abstractParserRuleParser
+ cue description
+ tags assemblePhase
+
+atomTypeDescriptionParser
+ description Atom Type description.
+ catchAllAtomType stringAtom
+ cue description
+ tags assemblePhase
+
+parsersExampleParser
+ // todo Should this just be a "string" constant on particles?
+ description Set example for docs and tests.
+ catchAllAtomType exampleAnyAtom
+ catchAllParser catchAllExampleLineParser
+ extends abstractParserRuleParser
+ cue example
+ tags assemblePhase
+
+extendsParserParser
+ cue extends
+ tags assemblePhase
+ description Extend another parser.
+ // todo: add a catchall that is used for mixins
+ atoms cueAtom parserIdAtom
+ extends abstractParserRuleParser
+
+parsersPopularityParser
+ // todo Remove this parser. Switch to conditional frequencies.
+ description Parser popularity.
+ atoms cueAtom floatAtom
+ extends abstractParserRuleParser
+ cue popularity
+ tags assemblePhase
+
+inScopeParser
+ description Parsers in scope.
+ catchAllAtomType parserIdAtom
+ extends abstractParserRuleParser
+ cueFromId
+ tags acquirePhase
+
+parsersJavascriptParser
+ // todo Urgently need to get submode syntax highlighting running! (And eventually LSP)
+ description Javascript code for Parser Actions.
+ catchAllParser catchAllJavascriptCodeLineParser
+ extends abstractParserRuleParser
+ tags actPhase
+ javascript
+  format() {
+   if (this.isNodeJs()) {
+    const template = \`class FOO{ \${this.subparticlesToString()}}\`
+    this.setSubparticles(
+     require("prettier")
+      .format(template, { semi: false, useTabs: true, parser: "babel", printWidth: 240 })
+      .replace(/class FOO \\{\\s+/, "")
+      .replace(/\\s+\\}\\s+$/, "")
+      .replace(/\\n\\t/g, "\\n") // drop one level of indent
+      .replace(/\\t/g, " ") // we used tabs instead of spaces to be able to dedent without breaking literals.
+    )
+   }
+   return this
+  }
+ cue javascript
+
+abstractParseRuleParser
+ // Each particle should have a pattern that it matches on unless it's a catch all particle.
+ extends abstractParserRuleParser
+ cueFromId
+
+parsersCueParser
+ atoms cueAtom stringAtom
+ description Attach by matching first atom.
+ extends abstractParseRuleParser
+ tags acquirePhase
+ cue cue
+
+cueFromIdParser
+ atoms cueAtom
+ description Derive cue from parserId.
+ // for example 'fooParser' would have cue of 'foo'.
+ extends abstractParseRuleParser
+ tags acquirePhase
+
+parsersPatternParser
+ catchAllAtomType regexAtom
+ description Attach via regex.
+ extends abstractParseRuleParser
+ tags acquirePhase
+ cue pattern
+
+parsersRequiredParser
+ description Assert is present at least once.
+ extends abstractParserRuleParser
+ cue required
+ tags analyzePhase
+
+abstractValidationRuleParser
+ extends abstractParserRuleParser
+ cueFromId
+ catchAllAtomType booleanAtom
+
+parsersSingleParser
+ description Assert used once.
+ // Can be overridden by a child class by setting to false.
+ extends abstractValidationRuleParser
+ tags analyzePhase
+ cue single
+
+uniqueLineParser
+ description Assert unique lines. For pattern parsers.
+ // Can be overridden by a child class by setting to false.
+ extends abstractValidationRuleParser
+ tags analyzePhase
+
+uniqueCueParser
+ description Assert unique first atoms. For pattern parsers.
+ // For catch all parsers or pattern particles, use this to indicate the 
+ extends abstractValidationRuleParser
+ tags analyzePhase
+
+listDelimiterParser
+ description Split content by this delimiter.
+ extends abstractParserRuleParser
+ cueFromId
+ catchAllAtomType stringAtom
+ tags analyzePhase
+
+
+contentKeyParser
+ description Deprecated. For to/from JSON.
+ // Advanced keyword to help with isomorphic JSON serialization/deserialization. If present will serialize the particle to an object and set a property with this key and the value set to the particle's content.
+ extends abstractParserRuleParser
+ cueFromId
+ catchAllAtomType stringAtom
+ tags deprecate
+ boolean suggestInAutocomplete false
+subparticlesKeyParser
+ // todo: deprecate?
+ description Deprecated. For to/from JSON.
+ // Advanced keyword to help with serialization/deserialization of blobs. If present will serialize the particle to an object and set a property with this key and the value set to the particle's subparticles.
+ extends abstractParserRuleParser
+ cueFromId
+ catchAllAtomType stringAtom
+ tags deprecate
+ boolean suggestInAutocomplete false
+
+parsersTagsParser
+ catchAllAtomType stringAtom
+ extends abstractParserRuleParser
+ description Custom metadata.
+ cue tags
+ tags assemblePhase
+
+catchAllErrorParser
+ baseParser errorParser
+
+catchAllExampleLineParser
+ catchAllAtomType exampleAnyAtom
+ catchAllParser catchAllExampleLineParser
+ atoms exampleAnyAtom
+
+catchAllJavascriptCodeLineParser
+ catchAllAtomType javascriptCodeAtom
+ catchAllParser catchAllJavascriptCodeLineParser
+
+catchAllMultilineStringConstantParser
+ description String constants can span multiple lines.
+ catchAllAtomType stringAtom
+ catchAllParser catchAllMultilineStringConstantParser
+ atoms stringAtom
+
+
+atomTypeDefinitionParser
+ // todo Generate a class for each atom type?
+ // todo Allow abstract atom types?
+ // todo Change pattern to postfix.
+ pattern ^[a-zA-Z0-9_]+Atom$
+ inScope parsersPaintParser parsersRegexParser reservedAtomsParser enumFromAtomTypesParser atomTypeDescriptionParser parsersEnumParser slashCommentParser extendsAtomTypeParser parsersExamplesParser atomMinParser atomMaxParser
+ atoms atomTypeIdAtom
+ tags assemblePhase
+ javascript
+  buildHtml() {return ""}
+
+// Enums
+enumFromAtomTypesParser
+ description Runtime enum options.
+ catchAllAtomType atomTypeIdAtom
+ atoms atomPropertyNameAtom
+ cueFromId
+ tags analyzePhase
+
+parsersEnumParser
+ description Set enum options.
+ cue enum
+ catchAllAtomType enumOptionAtom
+ atoms atomPropertyNameAtom
+ tags analyzePhase
+
+parsersExamplesParser
+ description Examples for documentation and tests.
+ // If the domain of possible atom values is large, such as a string type, it can help certain methods—such as program synthesis—to provide a few examples.
+ cue examples
+ catchAllAtomType atomExampleAtom
+ atoms atomPropertyNameAtom
+ tags assemblePhase
+
+atomMinParser
+ description Specify a min if numeric.
+ cue min
+ atoms atomPropertyNameAtom numberAtom
+ tags analyzePhase
+
+atomMaxParser
+ description Specify a max if numeric.
+ cue max
+ atoms atomPropertyNameAtom numberAtom
+ tags analyzePhase
+
+parsersPaintParser
+ atoms cueAtom paintTypeAtom
+ description Instructor editor how to color these.
+ single
+ cue paint
+ tags analyzePhase
+
+rootFlagParser
+ cue root
+ description Set root parser.
+ // Mark a parser as root if it is the root of your language. The parserId will be the name of your language. The parserId will also serve as the default file extension, if you don't specify another. If more than 1 parser is marked as "root", the last one wins.
+ atoms cueAtom
+ tags assemblePhase
+
+parserDefinitionParser
+ // todo Add multiple dispatch?
+ pattern ^[a-zA-Z0-9_]+Parser$
+ description Parser types are a core unit of your language. They translate to 1 class per parser. Examples of parser would be "header", "person", "if", "+", "define", etc.
+ catchAllParser catchAllErrorParser
+ inScope rootFlagParser abstractParserRuleParser abstractConstantParser slashCommentParser parserDefinitionParser
+ atoms parserIdAtom
+ tags assemblePhase
+ javascript
+  buildHtml() { return ""}
+
+parsersRegexParser
+ catchAllAtomType regexAtom
+ description Atoms must match this.
+ single
+ atoms atomPropertyNameAtom
+ cue regex
+ tags analyzePhase
+
+reservedAtomsParser
+ single
+ description Atoms can't be any of these.
+ catchAllAtomType reservedAtomAtom
+ atoms atomPropertyNameAtom
+ cueFromId
+ tags analyzePhase
+
+commentLineParser
+ catchAllAtomType commentAtom
+
+slashCommentParser
+ description A comment.
+ catchAllAtomType commentAtom
+ cue //
+ catchAllParser commentLineParser
+ tags assemblePhase
+
+extendsAtomTypeParser
+ cue extends
+ description Extend another atomType.
+ // todo Add mixin support in addition to extends?
+ atoms cueAtom atomTypeIdAtom
+ tags assemblePhase
+ single`)
+    get handParsersProgram() {
+      return this.constructor.cachedHandParsersProgramRoot
+    }
+    static rootParser = parsersParser
+  }
+
+  class blankLineParser extends ParserBackedParticle {
+    get blankAtom() {
+      return this.getAtom(0)
+    }
+  }
+
+  class abstractCompilerRuleParser extends ParserBackedParticle {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get anyAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class closeSubparticlesParser extends abstractCompilerRuleParser {}
+
+  class indentCharacterParser extends abstractCompilerRuleParser {}
+
+  class catchAllAtomDelimiterParser extends abstractCompilerRuleParser {}
+
+  class openSubparticlesParser extends abstractCompilerRuleParser {}
+
+  class stringTemplateParser extends abstractCompilerRuleParser {}
+
+  class joinSubparticlesWithParser extends abstractCompilerRuleParser {}
+
+  class abstractConstantParser extends ParserBackedParticle {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+  }
+
+  class parsersBooleanParser extends abstractConstantParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get constantIdentifierAtom() {
+      return this.getAtom(1)
+    }
+    get booleanAtom() {
+      return this.getAtomsFrom(2)
+    }
+  }
+
+  class parsersFloatParser extends abstractConstantParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get constantIdentifierAtom() {
+      return this.getAtom(1)
+    }
+    get floatAtom() {
+      return this.getAtomsFrom(2).map(val => parseFloat(val))
+    }
+  }
+
+  class parsersIntParser extends abstractConstantParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get constantIdentifierAtom() {
+      return this.getAtom(1)
+    }
+    get integerAtom() {
+      return this.getAtomsFrom(2).map(val => parseInt(val))
+    }
+  }
+
+  class parsersStringParser extends abstractConstantParser {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllMultilineStringConstantParser, undefined, undefined)
+    }
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get constantIdentifierAtom() {
+      return this.getAtom(1)
+    }
+    get stringAtom() {
+      return this.getAtomsFrom(2)
+    }
+  }
+
+  class abstractParserRuleParser extends ParserBackedParticle {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+  }
+
+  class abstractNonTerminalParserRuleParser extends abstractParserRuleParser {}
+
+  class parsersBaseParserParser extends abstractParserRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get baseParsersAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class catchAllAtomTypeParser extends abstractParserRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get atomTypeIdAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class atomParserParser extends abstractParserRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get atomParserAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class catchAllParserParser extends abstractParserRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get parserIdAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class parsersAtomsParser extends abstractParserRuleParser {
+    get atomTypeIdAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class parsersCompilerParser extends abstractParserRuleParser {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(
+        undefined,
+        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+          closeSubparticles: closeSubparticlesParser,
+          indentCharacter: indentCharacterParser,
+          catchAllAtomDelimiter: catchAllAtomDelimiterParser,
+          openSubparticles: openSubparticlesParser,
+          stringTemplate: stringTemplateParser,
+          joinSubparticlesWith: joinSubparticlesWithParser
+        }),
+        undefined
+      )
+    }
+    get suggestInAutocomplete() {
+      return false
+    }
+  }
+
+  class parserDescriptionParser extends abstractParserRuleParser {
+    get stringAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class atomTypeDescriptionParser extends ParserBackedParticle {
+    get stringAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class parsersExampleParser extends abstractParserRuleParser {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllExampleLineParser, undefined, undefined)
+    }
+    get exampleAnyAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class extendsParserParser extends abstractParserRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get parserIdAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class parsersPopularityParser extends abstractParserRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get floatAtom() {
+      return parseFloat(this.getAtom(1))
+    }
+  }
+
+  class inScopeParser extends abstractParserRuleParser {
+    get parserIdAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class parsersJavascriptParser extends abstractParserRuleParser {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllJavascriptCodeLineParser, undefined, undefined)
+    }
+    format() {
+      if (this.isNodeJs()) {
+        const template = `class FOO{ ${this.subparticlesToString()}}`
+        this.setSubparticles(
+          require("prettier")
+            .format(template, { semi: false, useTabs: true, parser: "babel", printWidth: 240 })
+            .replace(/class FOO \{\s+/, "")
+            .replace(/\s+\}\s+$/, "")
+            .replace(/\n\t/g, "\n") // drop one level of indent
+            .replace(/\t/g, " ") // we used tabs instead of spaces to be able to dedent without breaking literals.
+        )
+      }
+      return this
+    }
+  }
+
+  class abstractParseRuleParser extends abstractParserRuleParser {}
+
+  class parsersCueParser extends abstractParseRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get stringAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class cueFromIdParser extends abstractParseRuleParser {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+  }
+
+  class parsersPatternParser extends abstractParseRuleParser {
+    get regexAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class parsersRequiredParser extends abstractParserRuleParser {}
+
+  class abstractValidationRuleParser extends abstractParserRuleParser {
+    get booleanAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class parsersSingleParser extends abstractValidationRuleParser {}
+
+  class uniqueLineParser extends abstractValidationRuleParser {}
+
+  class uniqueCueParser extends abstractValidationRuleParser {}
+
+  class listDelimiterParser extends abstractParserRuleParser {
+    get stringAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class contentKeyParser extends abstractParserRuleParser {
+    get stringAtom() {
+      return this.getAtomsFrom(0)
+    }
+    get suggestInAutocomplete() {
+      return false
+    }
+  }
+
+  class subparticlesKeyParser extends abstractParserRuleParser {
+    get stringAtom() {
+      return this.getAtomsFrom(0)
+    }
+    get suggestInAutocomplete() {
+      return false
+    }
+  }
+
+  class parsersTagsParser extends abstractParserRuleParser {
+    get stringAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class catchAllErrorParser extends ParserBackedParticle {
+    getErrors() {
+      return this._getErrorParserErrors()
+    }
+  }
+
+  class catchAllExampleLineParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllExampleLineParser, undefined, undefined)
+    }
+    get exampleAnyAtom() {
+      return this.getAtom(0)
+    }
+    get exampleAnyAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class catchAllJavascriptCodeLineParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllJavascriptCodeLineParser, undefined, undefined)
+    }
+    get javascriptCodeAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class catchAllMultilineStringConstantParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(catchAllMultilineStringConstantParser, undefined, undefined)
+    }
+    get stringAtom() {
+      return this.getAtom(0)
+    }
+    get stringAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class atomTypeDefinitionParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(
+        undefined,
+        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+          description: atomTypeDescriptionParser,
+          enumFromAtomTypes: enumFromAtomTypesParser,
+          enum: parsersEnumParser,
+          examples: parsersExamplesParser,
+          min: atomMinParser,
+          max: atomMaxParser,
+          paint: parsersPaintParser,
+          regex: parsersRegexParser,
+          reservedAtoms: reservedAtomsParser,
+          "//": slashCommentParser,
+          extends: extendsAtomTypeParser
+        }),
+        undefined
+      )
+    }
+    get atomTypeIdAtom() {
+      return this.getAtom(0)
+    }
+    buildHtml() {
+      return ""
+    }
+  }
+
+  class enumFromAtomTypesParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get atomTypeIdAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class parsersEnumParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get enumOptionAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class parsersExamplesParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get atomExampleAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class atomMinParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get numberAtom() {
+      return parseFloat(this.getAtom(1))
+    }
+  }
+
+  class atomMaxParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get numberAtom() {
+      return parseFloat(this.getAtom(1))
+    }
+  }
+
+  class parsersPaintParser extends ParserBackedParticle {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get paintTypeAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  class rootFlagParser extends ParserBackedParticle {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+  }
+
+  class parserDefinitionParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(
+        catchAllErrorParser,
+        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+          boolean: parsersBooleanParser,
+          float: parsersFloatParser,
+          int: parsersIntParser,
+          string: parsersStringParser,
+          baseParser: parsersBaseParserParser,
+          catchAllAtomType: catchAllAtomTypeParser,
+          atomParser: atomParserParser,
+          catchAllParser: catchAllParserParser,
+          atoms: parsersAtomsParser,
+          compiler: parsersCompilerParser,
+          description: parserDescriptionParser,
+          example: parsersExampleParser,
+          extends: extendsParserParser,
+          popularity: parsersPopularityParser,
+          inScope: inScopeParser,
+          javascript: parsersJavascriptParser,
+          cue: parsersCueParser,
+          cueFromId: cueFromIdParser,
+          pattern: parsersPatternParser,
+          required: parsersRequiredParser,
+          single: parsersSingleParser,
+          uniqueLine: uniqueLineParser,
+          uniqueCue: uniqueCueParser,
+          listDelimiter: listDelimiterParser,
+          contentKey: contentKeyParser,
+          subparticlesKey: subparticlesKeyParser,
+          tags: parsersTagsParser,
+          root: rootFlagParser,
+          "//": slashCommentParser
+        }),
+        [{ regex: /^[a-zA-Z0-9_]+Parser$/, parser: parserDefinitionParser }]
+      )
+    }
+    get parserIdAtom() {
+      return this.getAtom(0)
+    }
+    buildHtml() {
+      return ""
+    }
+  }
+
+  class parsersRegexParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get regexAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class reservedAtomsParser extends ParserBackedParticle {
+    get atomPropertyNameAtom() {
+      return this.getAtom(0)
+    }
+    get reservedAtomAtom() {
+      return this.getAtomsFrom(1)
+    }
+  }
+
+  class commentLineParser extends ParserBackedParticle {
+    get commentAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class slashCommentParser extends ParserBackedParticle {
+    createParserCombinator() {
+      return new Particle.ParserCombinator(commentLineParser, undefined, undefined)
+    }
+    get commentAtom() {
+      return this.getAtomsFrom(0)
+    }
+  }
+
+  class extendsAtomTypeParser extends ParserBackedParticle {
+    get cueAtom() {
+      return this.getAtom(0)
+    }
+    get atomTypeIdAtom() {
+      return this.getAtom(1)
+    }
+  }
+
+  window.parsersParser = parsersParser
+}
+
+
 "use strict"
 // Adapted from https://github.com/NeekSandhu/codemirror-textmate/blob/master/src/tmToCm.ts
 var CmToken
@@ -21004,6 +21634,480 @@ class ParsersCodeMirrorMode {
   }
 }
 window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
+
+
+const PARSERS_EXTENSION = ".parsers"
+const SCROLL_EXTENSION = ".scroll"
+// Add URL regex pattern
+const urlRegex = /^https?:\/\/[^ ]+$/i
+const parserRegex = /^[a-zA-Z0-9_]+Parser$/gm
+const importRegex = /^(import |[a-zA-Z\_\-\.0-9\/]+\.(scroll|parsers)$|https?:\/\/.+\.(scroll|parsers)$)/gm
+const importOnlyRegex = /^importOnly/
+const isUrl = path => urlRegex.test(path)
+// URL content cache
+const urlCache = {}
+async function fetchWithCache(url) {
+  const now = Date.now()
+  const cached = urlCache[url]
+  if (cached) return cached
+  try {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    const content = await response.text()
+    urlCache[url] = {
+      content,
+      timestamp: now,
+      exists: true
+    }
+  } catch (error) {
+    console.error(`Error fetching ${url}:`, error)
+    urlCache[url] = {
+      content: "",
+      timestamp: now,
+      exists: false
+    }
+  }
+  return urlCache[url]
+}
+class DiskWriter {
+  constructor() {
+    this.fileCache = {}
+  }
+  async _read(absolutePath) {
+    const { fileCache } = this
+    if (isUrl(absolutePath)) {
+      const result = await fetchWithCache(absolutePath)
+      return {
+        absolutePath,
+        exists: result.exists,
+        content: result.content,
+        stats: { mtimeMs: Date.now(), ctimeMs: Date.now() }
+      }
+    }
+    if (!fileCache[absolutePath]) {
+      const exists = await fs
+        .access(absolutePath)
+        .then(() => true)
+        .catch(() => false)
+      if (exists) {
+        const [content, stats] = await Promise.all([fs.readFile(absolutePath, "utf8").then(content => content.replace(/\r/g, "")), fs.stat(absolutePath)])
+        fileCache[absolutePath] = { absolutePath, exists: true, content, stats }
+      } else {
+        fileCache[absolutePath] = { absolutePath, exists: false, content: "", stats: { mtimeMs: 0, ctimeMs: 0 } }
+      }
+    }
+    return fileCache[absolutePath]
+  }
+  async exists(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const result = await fetchWithCache(absolutePath)
+      return result.exists
+    }
+    const file = await this._read(absolutePath)
+    return file.exists
+  }
+  async read(absolutePath) {
+    const file = await this._read(absolutePath)
+    return file.content
+  }
+  async list(folder) {
+    if (isUrl(folder)) {
+      return [] // URLs don't support directory listing
+    }
+    return Disk.getFiles(folder)
+  }
+  async write(fullPath, content) {
+    if (isUrl(fullPath)) {
+      throw new Error("Cannot write to URL")
+    }
+    Disk.writeIfChanged(fullPath, content)
+  }
+  async getMTime(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const cached = urlCache[absolutePath]
+      return cached ? cached.timestamp : Date.now()
+    }
+    const file = await this._read(absolutePath)
+    return file.stats.mtimeMs
+  }
+  async getCTime(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const cached = urlCache[absolutePath]
+      return cached ? cached.timestamp : Date.now()
+    }
+    const file = await this._read(absolutePath)
+    return file.stats.ctimeMs
+  }
+  dirname(absolutePath) {
+    if (isUrl(absolutePath)) {
+      return absolutePath.substring(0, absolutePath.lastIndexOf("/"))
+    }
+    return path.dirname(absolutePath)
+  }
+  join(...segments) {
+    const firstSegment = segments[0]
+    if (isUrl(firstSegment)) {
+      // For URLs, we need to handle joining differently
+      const baseUrl = firstSegment.endsWith("/") ? firstSegment : firstSegment + "/"
+      return new URL(segments.slice(1).join("/"), baseUrl).toString()
+    }
+    return path.join(...segments)
+  }
+}
+// Update MemoryWriter to support URLs
+class MemoryWriter {
+  constructor(inMemoryFiles) {
+    this.inMemoryFiles = inMemoryFiles
+  }
+  async read(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const result = await fetchWithCache(absolutePath)
+      return result.content
+    }
+    const value = this.inMemoryFiles[absolutePath]
+    if (value === undefined) {
+      return ""
+    }
+    return value
+  }
+  async exists(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const result = await fetchWithCache(absolutePath)
+      return result.exists
+    }
+    return this.inMemoryFiles[absolutePath] !== undefined
+  }
+  async write(absolutePath, content) {
+    if (isUrl(absolutePath)) {
+      throw new Error("Cannot write to URL")
+    }
+    this.inMemoryFiles[absolutePath] = content
+  }
+  async list(absolutePath) {
+    if (isUrl(absolutePath)) {
+      return []
+    }
+    return Object.keys(this.inMemoryFiles).filter(filePath => filePath.startsWith(absolutePath) && !filePath.replace(absolutePath, "").includes("/"))
+  }
+  async getMTime(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const cached = urlCache[absolutePath]
+      return cached ? cached.timestamp : Date.now()
+    }
+    return 1
+  }
+  async getCTime(absolutePath) {
+    if (isUrl(absolutePath)) {
+      const cached = urlCache[absolutePath]
+      return cached ? cached.timestamp : Date.now()
+    }
+    return 1
+  }
+  dirname(path) {
+    if (isUrl(path)) {
+      return path.substring(0, path.lastIndexOf("/"))
+    }
+    return posix.dirname(path)
+  }
+  join(...segments) {
+    const firstSegment = segments[0]
+    if (isUrl(firstSegment)) {
+      const baseUrl = firstSegment.endsWith("/") ? firstSegment : firstSegment + "/"
+      return new URL(segments.slice(1).join("/"), baseUrl).toString()
+    }
+    return posix.join(...segments)
+  }
+}
+class EmptyScrollParser extends Particle {
+  evalMacros(fusionFile) {
+    return fusionFile.fusedCode
+  }
+  setFile(fusionFile) {
+    this.file = fusionFile
+  }
+}
+class FusionFile {
+  constructor(codeAtStart, absoluteFilePath = "", fileSystem = new Fusion({})) {
+    this.defaultParserCode = ""
+    this.defaultParser = EmptyScrollParser
+    this.fileSystem = fileSystem
+    this.filePath = absoluteFilePath
+    this.filename = posix.basename(absoluteFilePath)
+    this.folderPath = posix.dirname(absoluteFilePath) + "/"
+    this.codeAtStart = codeAtStart
+    this.timeIndex = 0
+    this.timestamp = 0
+    this.importOnly = false
+  }
+  async readCodeFromStorage() {
+    if (this.codeAtStart !== undefined) return this // Code provided
+    const { filePath } = this
+    if (!filePath) {
+      this.codeAtStart = ""
+      return this
+    }
+    this.codeAtStart = await this.fileSystem.read(filePath)
+  }
+  get isFused() {
+    return this.fusedCode !== undefined
+  }
+  async fuse() {
+    // PASS 1: READ FULL FILE
+    await this.readCodeFromStorage()
+    const { codeAtStart, fileSystem, filePath, defaultParserCode, defaultParser } = this
+    // PASS 2: READ AND REPLACE IMPORTs
+    let fusedCode = codeAtStart
+    let fusedFile
+    if (filePath) {
+      this.timestamp = await fileSystem.getCTime(filePath)
+      fusedFile = await fileSystem.fuseFile(filePath, defaultParserCode)
+      this.importOnly = fusedFile.isImportOnly
+      fusedCode = fusedFile.fused
+      if (fusedFile.footers.length) fusedCode += "\n" + fusedFile.footers.join("\n")
+      this.dependencies = fusedFile.importFilePaths
+      this.fusedFile = fusedFile
+    }
+    this.fusedCode = fusedCode
+    const tempProgram = new defaultParser()
+    // PASS 3: READ AND REPLACE MACROS. PARSE AND REMOVE MACROS DEFINITIONS THEN REPLACE REFERENCES.
+    const codeAfterMacroPass = tempProgram.evalMacros(this)
+    this.codeAfterMacroPass = codeAfterMacroPass
+    this.parser = (fusedFile === null || fusedFile === void 0 ? void 0 : fusedFile.parser) || defaultParser
+    // PASS 4: PARSER WITH CUSTOM PARSER OR STANDARD SCROLL PARSER
+    this.scrollProgram = new this.parser(codeAfterMacroPass)
+    this.scrollProgram.setFile(this)
+    return this
+  }
+  get formatted() {
+    return this.codeAtStart
+  }
+  async formatAndSave() {
+    const { codeAtStart, formatted } = this
+    if (codeAtStart === formatted) return false
+    await this.fileSystem.write(this.filePath, formatted)
+    return true
+  }
+}
+let fusionIdNumber = 0
+class Fusion {
+  constructor(inMemoryFiles) {
+    this.productCache = {}
+    this._particleCache = {}
+    this._parserCache = {}
+    this._expandedImportCache = {}
+    this._parsersExpandersCache = {}
+    this.defaultFileClass = FusionFile
+    this.parsedFiles = {}
+    this.folderCache = {}
+    if (inMemoryFiles) this._storage = new MemoryWriter(inMemoryFiles)
+    else this._storage = new DiskWriter()
+    fusionIdNumber = fusionIdNumber + 1
+    this.fusionId = fusionIdNumber
+  }
+  async read(absolutePath) {
+    return await this._storage.read(absolutePath)
+  }
+  async exists(absolutePath) {
+    return await this._storage.exists(absolutePath)
+  }
+  async write(absolutePath, content) {
+    return await this._storage.write(absolutePath, content)
+  }
+  async list(absolutePath) {
+    return await this._storage.list(absolutePath)
+  }
+  dirname(absolutePath) {
+    return this._storage.dirname(absolutePath)
+  }
+  join(...segments) {
+    return this._storage.join(...segments)
+  }
+  async getMTime(absolutePath) {
+    return await this._storage.getMTime(absolutePath)
+  }
+  async getCTime(absolutePath) {
+    return await this._storage.getCTime(absolutePath)
+  }
+  async writeProduct(absolutePath, content) {
+    this.productCache[absolutePath] = content
+    return await this.write(absolutePath, content)
+  }
+  async _getFileAsParticles(absoluteFilePathOrUrl) {
+    const { _particleCache } = this
+    if (_particleCache[absoluteFilePathOrUrl] === undefined) {
+      const content = await this._storage.read(absoluteFilePathOrUrl)
+      _particleCache[absoluteFilePathOrUrl] = new Particle(content)
+    }
+    return _particleCache[absoluteFilePathOrUrl]
+  }
+  async _fuseFile(absoluteFilePathOrUrl) {
+    const { _expandedImportCache } = this
+    if (_expandedImportCache[absoluteFilePathOrUrl]) return _expandedImportCache[absoluteFilePathOrUrl]
+    const [code, exists] = await Promise.all([this.read(absoluteFilePathOrUrl), this.exists(absoluteFilePathOrUrl)])
+    const isImportOnly = importOnlyRegex.test(code)
+    // Perf hack
+    // If its a parsers file, it will have no content, just parsers (and maybe imports).
+    // The parsers will already have been processed. We can skip them
+    const stripParsers = absoluteFilePathOrUrl.endsWith(PARSERS_EXTENSION)
+    const processedCode = stripParsers
+      ? code
+          .split("\n")
+          .filter(line => importRegex.test(line))
+          .join("\n")
+      : code
+    const filepathsWithParserDefinitions = []
+    if (await this._doesFileHaveParsersDefinitions(absoluteFilePathOrUrl)) {
+      filepathsWithParserDefinitions.push(absoluteFilePathOrUrl)
+    }
+    if (!importRegex.test(processedCode)) {
+      return {
+        fused: processedCode,
+        footers: [],
+        isImportOnly,
+        importFilePaths: [],
+        filepathsWithParserDefinitions,
+        exists
+      }
+    }
+    const particle = new Particle(processedCode)
+    const folder = this.dirname(absoluteFilePathOrUrl)
+    // Fetch all imports in parallel
+    const importParticles = particle.filter(particle => particle.getLine().match(importRegex))
+    const importResults = importParticles.map(async importParticle => {
+      const rawPath = importParticle.getLine().replace("import ", "")
+      let absoluteImportFilePath = this.join(folder, rawPath)
+      if (isUrl(rawPath)) absoluteImportFilePath = rawPath
+      else if (isUrl(folder)) absoluteImportFilePath = folder + "/" + rawPath
+      // todo: race conditions
+      const [expandedFile, exists] = await Promise.all([this._fuseFile(absoluteImportFilePath), this.exists(absoluteImportFilePath)])
+      return {
+        expandedFile,
+        exists,
+        absoluteImportFilePath,
+        importParticle
+      }
+    })
+    const imported = await Promise.all(importResults)
+    // Assemble all imports
+    let importFilePaths = []
+    let footers = []
+    imported.forEach(importResults => {
+      const { importParticle, absoluteImportFilePath, expandedFile, exists } = importResults
+      importFilePaths.push(absoluteImportFilePath)
+      importFilePaths = importFilePaths.concat(expandedFile.importFilePaths)
+      importParticle.setLine("imported " + absoluteImportFilePath)
+      importParticle.set("exists", `${exists}`)
+      footers = footers.concat(expandedFile.footers)
+      if (importParticle.has("footer")) footers.push(expandedFile.fused)
+      else importParticle.insertLinesAfter(expandedFile.fused)
+    })
+    const existStates = await Promise.all(importFilePaths.map(file => this.exists(file)))
+    const allImportsExist = !existStates.some(exists => !exists)
+    _expandedImportCache[absoluteFilePathOrUrl] = {
+      importFilePaths,
+      isImportOnly,
+      fused: particle.toString(),
+      footers,
+      exists: allImportsExist,
+      filepathsWithParserDefinitions: (
+        await Promise.all(
+          importFilePaths.map(async filename => ({
+            filename,
+            hasParser: await this._doesFileHaveParsersDefinitions(filename)
+          }))
+        )
+      )
+        .filter(result => result.hasParser)
+        .map(result => result.filename)
+        .concat(filepathsWithParserDefinitions)
+    }
+    return _expandedImportCache[absoluteFilePathOrUrl]
+  }
+  async _doesFileHaveParsersDefinitions(absoluteFilePathOrUrl) {
+    if (!absoluteFilePathOrUrl) return false
+    const { _parsersExpandersCache } = this
+    if (_parsersExpandersCache[absoluteFilePathOrUrl] === undefined) {
+      const content = await this._storage.read(absoluteFilePathOrUrl)
+      _parsersExpandersCache[absoluteFilePathOrUrl] = !!content.match(parserRegex)
+    }
+    return _parsersExpandersCache[absoluteFilePathOrUrl]
+  }
+  async _getOneParsersParserFromFiles(filePaths, baseParsersCode) {
+    const fileContents = await Promise.all(filePaths.map(async filePath => await this._storage.read(filePath)))
+    return Fusion.combineParsers(filePaths, fileContents, baseParsersCode)
+  }
+  async getParser(filePaths, baseParsersCode = "") {
+    const { _parserCache } = this
+    const key = filePaths
+      .filter(fp => fp)
+      .sort()
+      .join("\n")
+    const hit = _parserCache[key]
+    if (hit) return hit
+    _parserCache[key] = await this._getOneParsersParserFromFiles(filePaths, baseParsersCode)
+    return _parserCache[key]
+  }
+  static combineParsers(filePaths, fileContents, baseParsersCode = "") {
+    const parserDefinitionRegex = /^[a-zA-Z0-9_]+Parser$/
+    const atomDefinitionRegex = /^[a-zA-Z0-9_]+Atom/
+    const mapped = fileContents.map((content, index) => {
+      const filePath = filePaths[index]
+      if (filePath.endsWith(PARSERS_EXTENSION)) return content
+      return new Particle(content)
+        .filter(particle => particle.getLine().match(parserDefinitionRegex) || particle.getLine().match(atomDefinitionRegex))
+        .map(particle => particle.asString)
+        .join("\n")
+    })
+    const asOneFile = mapped.join("\n").trim()
+    const sorted = new parsersParser(baseParsersCode + "\n" + asOneFile)._sortParticlesByInScopeOrder()._sortWithParentParsersUpTop()
+    const parsersCode = sorted.asString
+    return {
+      parsersParser: sorted,
+      parsersCode,
+      parser: new HandParsersProgram(parsersCode).compileAndReturnRootParser()
+    }
+  }
+  get parsers() {
+    return Object.values(this._parserCache).map(parser => parser.parsersParser)
+  }
+  async fuseFile(absoluteFilePathOrUrl, defaultParserCode) {
+    const fusedFile = await this._fuseFile(absoluteFilePathOrUrl)
+    if (!defaultParserCode) return fusedFile
+    if (fusedFile.filepathsWithParserDefinitions.length) {
+      const parser = await this.getParser(fusedFile.filepathsWithParserDefinitions, defaultParserCode)
+      fusedFile.parser = parser.parser
+    }
+    return fusedFile
+  }
+  async getLoadedFile(filePath) {
+    return await this._getLoadedFile(filePath, this.defaultFileClass)
+  }
+  async _getLoadedFile(absolutePath, parser) {
+    if (this.parsedFiles[absolutePath]) return this.parsedFiles[absolutePath]
+    const file = new parser(undefined, absolutePath, this)
+    await file.fuse()
+    this.parsedFiles[absolutePath] = file
+    return file
+  }
+  getCachedLoadedFilesInFolder(folderPath, requester) {
+    folderPath = Utils.ensureFolderEndsInSlash(folderPath)
+    const hit = this.folderCache[folderPath]
+    if (!hit) console.log(`Warning: '${folderPath}' not yet loaded in '${this.fusionId}'. Requested by '${requester.filePath}'`)
+    return hit || []
+  }
+  async getLoadedFilesInFolder(folderPath, extension) {
+    folderPath = Utils.ensureFolderEndsInSlash(folderPath)
+    if (this.folderCache[folderPath]) return this.folderCache[folderPath]
+    const allFiles = await this.list(folderPath)
+    const loadedFiles = await Promise.all(allFiles.filter(file => file.endsWith(extension)).map(filePath => this.getLoadedFile(filePath)))
+    const sorted = loadedFiles.sort((a, b) => b.timestamp - a.timestamp)
+    sorted.forEach((file, index) => (file.timeIndex = index))
+    this.folderCache[folderPath] = sorted
+    return this.folderCache[folderPath]
+  }
+}
+window.Fusion = Fusion
+window.FusionFile = FusionFile
 
 
 {
