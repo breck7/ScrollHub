@@ -16,7 +16,7 @@
     "minimist": "^1.2.8",
     "prettier": "^3.3.3",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^159.0.0",
+    "scroll-cli": "^159.1.0",
     "scrollsdk": "^98.0.0"
   },
   "bin": {
