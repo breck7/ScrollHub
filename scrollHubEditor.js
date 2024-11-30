@@ -8,62 +8,71 @@ const getBaseUrlForFolder = (folderName, hostname, protocol) => {
   return protocol + "//" + folderName
 }
 
-class ParserEditor {
+class FusionEditor {
   // parent needs a getter "bufferValue"
   constructor(defaultParserCode, parent) {
     this.defaultParserCode = defaultParserCode
     this.defaultScrollParser = new HandParsersProgram(defaultParserCode).compileAndReturnRootParser()
     this.parent = parent
+    this.customParser = this.defaultScrollParser
   }
-  _clearCustomParser() {
-    this._customParserCode = undefined
-    this._cachedCustomParser = undefined
+  fakeFs = {}
+  fs = new Fusion(this.fakeFs)
+  version = 1
+  async getFusedFile() {
+    const { bufferValue } = this
+    this.version++
+    const filename = "/" + this.version
+    this.fakeFs[filename] = bufferValue
+    const file = new FusionFile(bufferValue, filename, this.fs)
+    await file.fuse()
+    this.fusedFile = file
+    return file
   }
-
-  _customParserCode
-  get possiblyExtendedScrollParser() {
-    const { customParserCode } = this
-    if (customParserCode) {
-      if (customParserCode === this._customParserCode) return this._cachedCustomParser
-      try {
-        this._cachedCustomParser = new HandParsersProgram(this.defaultParserCode + "\n" + customParserCode).compileAndReturnRootParser()
-        this._customParserCode = customParserCode
-        return this._cachedCustomParser
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    this._clearCustomParser()
-    return this.defaultScrollParser
+  async getFusedCode() {
+    const fusedFile = await this.getFusedFile()
+    const code = fusedFile.fusedCode
+    return code
   }
-  get customParserCode() {
-    const { scrollCode } = this
-    if (!scrollCode) return ""
+  _currentParserCode = undefined
+  async refreshCustomParser() {
+    const fusedCode = await this.getFusedCode()
+    if (!fusedCode) return (this.customParser = this.defaultScrollParser)
     const parserDefinitionRegex = /^[a-zA-Z0-9_]+Parser$/m
     const atomDefinitionRegex = /^[a-zA-Z0-9_]+Atom/
-    if (!parserDefinitionRegex.test(scrollCode)) return "" // skip next if not needed.
-    return new Particle(scrollCode)
-      .filter(particle => particle.getLine().match(parserDefinitionRegex) || particle.getLine().match(atomDefinitionRegex))
-      .map(particle => particle.asString)
-      .join("\n")
-      .trim()
+    if (!parserDefinitionRegex.test(fusedCode)) return (this.customParser = this.defaultScrollParser)
+
+    try {
+      const customParserCode = new Particle(fusedCode)
+        .filter(particle => particle.getLine().match(parserDefinitionRegex) || particle.getLine().match(atomDefinitionRegex))
+        .map(particle => particle.asString)
+        .join("\n")
+        .trim()
+      this.customParser = new HandParsersProgram(this.defaultParserCode + "\n" + customParserCode).compileAndReturnRootParser()
+    } catch (err) {
+      console.error(err)
+    }
+    return this.defaultScrollParser
   }
-  get scrollCode() {
+  get bufferValue() {
     return this.parent.bufferValue
   }
   get parser() {
-    return this.possiblyExtendedScrollParser
+    return this.customParser
   }
   get errors() {
-    const { parser, scrollCode } = this
-    const errs = new parser(scrollCode).getAllErrors()
+    const { parser, bufferValue } = this
+    const errs = new parser(bufferValue).getAllErrors()
     return new Particle(errs.map(err => err.toObject())).toFormattedTable(200)
   }
   async buildMainProgram(macrosOn = true) {
-    const { parser, defaultScrollParser, scrollCode } = this
-    const afterMacros = macrosOn ? new defaultScrollParser().evalMacros(scrollCode) : scrollCode
+    await this.refreshCustomParser()
+    const fusedFile = await this.getFusedFile()
+    const fusedCode = fusedFile.fusedCode
+    const { parser, defaultScrollParser } = this
+    const afterMacros = macrosOn ? new defaultScrollParser().evalMacros(fusedCode) : fusedCode
     this._mainProgram = new parser(afterMacros)
-    await this._mainProgram.build()
+    await this._mainProgram.load()
     return this._mainProgram
   }
   get mainProgram() {
@@ -88,7 +97,7 @@ class ParserEditor {
 // todo: before unload warn about unsaved changes
 class EditorApp {
   constructor() {
-    this.parserEditor = new ParserEditor(AppConstants.parsers, this)
+    this.fusionEditor = new FusionEditor(AppConstants.parsers, this)
     this.folderName = ""
     this.previewIFrame = null
     this.initCodeMirror("custom")
@@ -123,7 +132,7 @@ class EditorApp {
   }
 
   get parser() {
-    return this.parserEditor.possiblyExtendedScrollParser
+    return this.fusionEditor.customParser
   }
 
   initCodeMirror(mode) {
@@ -389,6 +398,10 @@ class EditorApp {
       },
       "ctrl+n": () => {
         that.createFileCommand()
+      },
+      "ctrl+p": async () => {
+        await that.fusionEditor.buildMainProgram()
+        console.log("Parser refreshed")
       }
     }
 
