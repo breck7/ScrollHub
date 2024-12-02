@@ -30,6 +30,7 @@ const scrollFs = new ScrollFileSystem()
 
 // This
 const { Dashboard } = require("./dashboard.js")
+const { CronRunner } = require("./CronRunner.js")
 
 const exists = async filePath => {
   const fileExists = await fsp
@@ -239,6 +240,7 @@ class ScrollHub {
 
     this.servers.push(this.startHttpServer())
     this.init404Routes()
+    this.cronRunner = new CronRunner(this).start()
     return this
   }
 
@@ -642,6 +644,10 @@ ${prefix}${hash}<br>
       newName = isSubdomain ? `clone${rand}.` + folderName : folderName + rand
     }
     return newName
+  }
+
+  async exists(filePath) {
+    return await exists(filePath)
   }
 
   async getFileList(folderName) {
