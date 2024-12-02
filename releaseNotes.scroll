@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.51.0 12/02/2024
+🏥 git fix
+
 📦 0.50.0 12/02/2024
 🎉 cron support: `cron.scroll` files are now run automatically every minute.
 
