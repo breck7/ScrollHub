@@ -1014,14 +1014,14 @@ ${prefix}${hash}<br>
     })
 
     app.post("/deleteFile.htm", checkWritePermissions, async (req, res) => {
-      const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
-      const folderName = path.dirname(filePath).split(path.sep).pop()
+      const folderName = this.getFolderName(req)
+      const filePath = path.join(rootFolder, folderName, decodeURIComponent(req.query.filePath))
 
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
       try {
         const fileExists = await exists(filePath)
-        if (!fileExists) return res.status(404).send("File not found")
+        if (!fileExists) return res.status(404).send(`File '${filePath}' not found`)
 
         const fileName = path.basename(filePath)
         const folderPath = path.dirname(filePath)

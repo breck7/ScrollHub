@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.52.0 12/02/2024
+🏥 nested delete file fix
+
 📦 0.51.0 12/02/2024
 🏥 git fix
 

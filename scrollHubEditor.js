@@ -703,12 +703,8 @@ class EditorApp {
       const userInput = prompt(`To delete this file, please type the file name: ${fileName}`)
 
       if (!userInput || userInput !== fileName) return
-
-      const filePath = `${folderName}/${fileName}`
-
       this.showSpinner("Deleting...")
-
-      const response = await fetch(`/deleteFile.htm?filePath=${encodeURIComponent(filePath)}`, {
+      const response = await fetch(`/deleteFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(fileName)}`, {
         method: "POST"
       })
 
