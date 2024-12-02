@@ -231,6 +231,7 @@ class ScrollHub {
     this.initZipRoutes()
     this.initCommandRoutes()
     this.initSSERoute()
+    this.initCloneRoute()
     this.initScriptRunner()
 
     this.enableStaticFileServing()
@@ -242,6 +243,62 @@ class ScrollHub {
     this.init404Routes()
     this.cronRunner = new CronRunner(this).start()
     return this
+  }
+
+  initCloneRoute() {
+    const { folderCache, app } = this
+    app.get("/clone", (req, res) => {
+      const folderName = this.getFolderName(req)
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+ <title>Clone ${folderName}</title>
+ <style>
+   body { margin: 0; }
+   iframe { width: 100%; height: 100vh; border: none; }
+   .clone-btn { 
+     position: fixed; 
+     top: 50%; 
+     left: 50%;
+     transform: translate(-50%, -50%);
+     z-index: 100; 
+     padding: 30px 60px;
+     background: #0066cc; 
+     color: white;
+     border: none; 
+     border-radius: 8px;
+     cursor: pointer;
+     font-size: 24px;
+     font-weight: bold;
+     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+     transition: all 0.2s;
+   }
+   .clone-btn:hover { 
+     background: #0052a3;
+     transform: translate(-50%, -50%) scale(1.05);
+   }
+ </style>
+</head>
+<body>
+ <button class="clone-btn" onclick="cloneSite()">Clone this site</button>
+ <iframe src="/${folderName}"></iframe>
+ <script>
+ function cloneSite() {
+   fetch('/cloneFolder.htm', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+     body: 'folderName=${folderName}&redirect=false'
+   })
+   .then(res => res.text())
+   .then(name => window.location.href = '/edit.html?folderName=' + name);
+ }
+ </script>
+</body>
+</html>`
+      res.send(html)
+    })
   }
 
   initScriptRunner() {
