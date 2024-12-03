@@ -1291,13 +1291,18 @@ ${prefix}${hash}<br>
   }
 
   async isScrollFolder(folderName) {
+    // We define a Scroll folder as one with at least 1 git commit.
     if (folderName.startsWith(".")) return false
     const folderPath = path.join(this.rootFolder, folderName)
     try {
       // Check if folder contains a .git directory
       const gitPath = path.join(folderPath, ".git")
       const stats = await fsp.stat(gitPath)
-      if (stats.isDirectory()) return true
+      if (!stats.isDirectory()) return false
+
+      // Check if there's at least one commit
+      const { stdout } = await execAsync("git rev-list --count HEAD", { cwd: folderPath })
+      return parseInt(stdout.trim(), 10) > 0
     } catch (err) {}
     return false
   }
@@ -1308,6 +1313,7 @@ ${prefix}${hash}<br>
     for (const folder of folders) {
       if (await this.isScrollFolder(folder)) scrollFolders.push(folder)
     }
+    console.log(`Loading ${scrollFolders.length} folders.`)
     await Promise.all(scrollFolders.map(this.updateFolder.bind(this)))
     await this.buildListFile()
     console.log(`Folder cache warmed. Time: ${(Date.now() - this.startTime) / 1000}s`)
@@ -1559,6 +1565,7 @@ ${prefix}${hash}<br>
         files.map(async file => {
           const filePath = path.join(fullPath, file)
           try {
+            if (!(await exists(filePath))) return
             const fileStats = await fsp.stat(filePath)
             fileSize += fileStats.size
           } catch (err) {
