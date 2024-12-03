@@ -75,7 +75,7 @@ thinColumns 1
 🎉 hub can now serve any/all folders on a machine. will serve whatever cwd is.
 🎉 moved all hub data storage (logs, certs, etc) under new `.hub` folder in `folders` dir.
 🎉 whatever cwd is when you launch hub, that will be the folders dir now.
-⚠️ BREAKING: you may need 
+⚠️ BREAKING: by default ScrollHub server now serves `~` folder, not `~/folders`. You can update your pm2 job to launch ScrollHub from `~/folders` or move folders from `~/folders` to `~`
 
 📦 0.35.0 11/14/2024
 🎉 updated Scroll
