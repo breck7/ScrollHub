@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.53.1 12/04/2024
+🏥 turn off auto-rehighlighting til we figure it out
+
 📦 0.53.0 12/04/2024
 🎉 upgrade ScrollSDK and Scroll
 🎉 turn Fusion refreshParsers on
