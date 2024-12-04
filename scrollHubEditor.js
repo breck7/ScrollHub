@@ -8,8 +8,21 @@ const getBaseUrlForFolder = (folderName, hostname, protocol) => {
   return protocol + "//" + folderName
 }
 
+class UrlWriter extends MemoryWriter {
+  async read(fileName) {
+    if (this.inMemoryFiles[fileName]) return this.inMemoryFiles[fileName]
+    if (!isUrl(fileName)) fileName = this.getBaseUrl() + fileName
+    return await super.read(fileName)
+  }
+  async exists(fileName) {
+    if (this.inMemoryFiles[fileName]) return true
+    if (!isUrl(fileName)) fileName = this.getBaseUrl() + fileName
+    return await super.exists(fileName)
+  }
+}
+
 class FusionEditor {
-  // parent needs a getter "bufferValue"
+  // parent needs a getter "bufferValue" and "rootUrl" and "fileName"
   constructor(defaultParserCode, parent) {
     this.parent = parent
     const parser = new HandParsersProgram(defaultParserCode).compileAndReturnRootParser()
@@ -21,14 +34,15 @@ class FusionEditor {
       defaultParser = parser
     }
     this.ScrollFile = ScrollFile
+    this.fakeFs = {}
+    this.fs = new Fusion(this.fakeFs)
+    const urlWriter = new UrlWriter(this.fakeFs)
+    urlWriter.getBaseUrl = () => parent.rootUrl || ""
+    this.fs._storage = urlWriter
   }
-  fakeFs = {}
-  fs = new Fusion(this.fakeFs)
-  version = 1
   async getFusedFile() {
     const { bufferValue, ScrollFile } = this
-    this.version++
-    const filename = "/" + this.version
+    const filename = "/" + this.parent.fileName
     this.fakeFs[filename] = bufferValue
     const file = new ScrollFile(bufferValue, filename, this.fs)
     await file.fuse()
@@ -80,7 +94,6 @@ class FusionEditor {
 // todo: before unload warn about unsaved changes
 class EditorApp {
   constructor() {
-    this.fusionEditor = new FusionEditor(AppConstants.parsers, this)
     this.folderName = ""
     this.previewIFrame = null
     this.initCodeMirror("custom")
@@ -92,6 +105,7 @@ class EditorApp {
       this.updateFilteredFileList()
       this.updateUrlWithFilter()
     })
+    this.fusionEditor = new FusionEditor(AppConstants.parsers, this)
   }
 
   getEditorMode(fileName) {
@@ -142,6 +156,22 @@ class EditorApp {
     this.codeMirrorInstance.setSize(this.width, 490)
   }
 
+  rehighlight() {
+    if (this._parser === this.parser) return
+    console.log("rehighlighting")
+    this._parser = this.parser
+
+    const editor = this.codeMirrorInstance
+    const originalContent = editor.getValue()
+    const cursorPosition = editor.getCursor()
+    editor.setValue("//\n" + originalContent)
+    // Restore the original content
+    setTimeout(() => {
+      editor.setValue(originalContent)
+      editor.setCursor(cursorPosition) // Restore the cursor position
+    }, 0) // Use a timeout to ensure rendering happens
+  }
+
   mode = "custom"
   updateEditorMode(fileName) {
     const mode = this.getEditorMode(fileName)
@@ -150,14 +180,6 @@ class EditorApp {
     this.initCodeMirror(mode)
     this.codeMirrorInstance.setValue(currentContent)
     this.mode = mode
-  }
-
-  _scrollProgram
-  get scrollProgram() {
-    const { parser } = this
-    this._scrollProgram = new parser(this.bufferValue)
-    this._scrollProgram.setFile({ filename: this.fileName })
-    return this._scrollProgram
   }
 
   get bufferValue() {
@@ -274,6 +296,7 @@ class EditorApp {
 
     this.setFileContent(content)
     this.setFileNameInUrl(fileName)
+    await this.refreshParser()
     this.updatePreviewIFrame()
     this.updateVisitLink()
 
@@ -291,13 +314,20 @@ class EditorApp {
   get permalink() {
     const dir = this.rootUrl.replace(/\/$/, "") + "/"
     const { fileName } = this
-    return dir + (fileName.endsWith(".scroll") ? this.scrollProgram.permalink : fileName)
+    if (!fileName.endsWith(".scroll")) return dir + fileName
+    const { outputFileNames } = this.fusionEditor.mainProgram
+    const primaryOutputFile = outputFileNames.find(name => name.endsWith(".html")) || outputFileNames[0]
+    if (!primaryOutputFile) return ""
+    const path = fileName.split("/")
+    if (path.length === 1) return dir + primaryOutputFile
+    path.pop()
+    return dir + path.join("/") + "/" + primaryOutputFile
   }
 
   updateVisitLink() {
     const { permalink } = this
     const text = permalink.replace(/\/index.html$/, "")
-    document.getElementById("folderNameLink").innerHTML = text
+    document.getElementById("folderNameLink").innerHTML = text || "&nbsp;"
     document.getElementById("folderNameLink").href = permalink
   }
 
@@ -372,6 +402,12 @@ class EditorApp {
     await this.buildFolderCommand()
   }
 
+  async refreshParser() {
+    await this.fusionEditor.buildMainProgram()
+    console.log("Parser refreshed")
+    this.rehighlight()
+  }
+
   bindKeyboardShortcuts() {
     const that = this
 
@@ -383,8 +419,7 @@ class EditorApp {
         that.createFileCommand()
       },
       "ctrl+p": async () => {
-        await that.fusionEditor.buildMainProgram()
-        console.log("Parser refreshed")
+        that.refreshParser()
       }
     }
 
