@@ -924,26 +924,17 @@ ${prefix}${hash}<br>
         // Initialize git repository
         if (!fs.existsSync(path.join(folderPath, ".git"))) await execAsync(`git init; git add .; git commit -m "Initial import from zip file"`, { cwd: folderPath })
 
-        // Build the folder
-        await this.buildFolder(folderName)
-
         // Add to story and update caches
         this.addStory(req, `created ${folderName} from zip file`)
         this.updateFolderAndBuildList(folderName)
+
+        // Build the folder
+        await this.buildFolder(folderName)
 
         // Redirect to editor
         res.send(folderName)
       } catch (error) {
         console.error(`Error creating folder from zip:`, error)
-
-        // Clean up on error
-        try {
-          await fsp.rm(folderPath, { recursive: true, force: true })
-          await fsp.rm(tempPath, { recursive: true, force: true })
-        } catch (cleanupError) {
-          console.error("Error during cleanup:", cleanupError)
-        }
-
         res.status(500).send(`An error occurred while creating folder from zip: ${error.toString().replace(/</g, "&lt;")}`)
       } finally {
         // Clean up temp directory
