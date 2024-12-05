@@ -309,7 +309,7 @@ class EditorApp {
     if (!fileName.endsWith(".scroll")) return dir + fileName
     const { outputFileNames } = this.fusionEditor.mainProgram
     const primaryOutputFile = outputFileNames.find(name => name.endsWith(".html")) || outputFileNames[0]
-    if (!primaryOutputFile) return ""
+    if (!primaryOutputFile) return dir + fileName
     const path = fileName.split("/")
     if (path.length === 1) return dir + primaryOutputFile
     path.pop()
@@ -317,9 +317,9 @@ class EditorApp {
   }
 
   updateVisitLink() {
-    const { permalink } = this
+    const { permalink, fileName } = this
     const text = permalink.replace(/\/index.html$/, "")
-    document.getElementById("folderNameLink").innerHTML = text || "&nbsp;"
+    document.getElementById("folderNameLink").innerHTML = text
     document.getElementById("folderNameLink").href = permalink
   }
 
