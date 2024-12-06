@@ -2,7 +2,7 @@ title New File API Console
 
 settings.scroll
 metaTags
-inlineCss gazette.css scrollHubStyle.css ./ide/codeMirror.css
+inlineCss .gazette.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
 
 css .scrollNoticesParser{width:100%;}

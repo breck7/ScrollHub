@@ -587,7 +587,15 @@ class EditorApp {
     try {
       const response = await fetch(`/ls.json?folderName=${folderName}`)
       if (!response.ok) throw new Error(await response.text())
-      this.files = await response.json()
+      const allFiles = await response.json()
+
+      const filtered = {}
+      Object.keys(allFiles).forEach(key => {
+        const value = allFiles[key]
+        if (value.tracked || !key.startsWith(".")) filtered[key] = value
+      })
+
+      this.files = filtered
       this.renderFileList()
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)

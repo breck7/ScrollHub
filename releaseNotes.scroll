@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.54.0 12/06/2024
+🎉 hide external dependencies!
+🎉 hide .log.txt file
+🎉 upgrade Scroll
+
 📦 0.53.1 12/04/2024
 🏥 turn off auto-rehighlighting til we figure it out
 

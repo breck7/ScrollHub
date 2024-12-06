@@ -200,7 +200,7 @@ class ScrollHub {
     this.hubFolder = hubFolder
     this.trashFolder = path.join(hubFolder, "trash")
     this.certsFolder = path.join(hubFolder, "certs")
-    this.globalLogFile = path.join(hubFolder, "log.txt")
+    this.globalLogFile = path.join(hubFolder, ".log.txt")
     this.storyLogFile = path.join(hubFolder, "writes.txt")
     this.folderCache = {}
     this.sseClients = new Set()
@@ -380,11 +380,11 @@ class ScrollHub {
       if (!hostname || !folderCache[hostname]) return next()
 
       const folderPath = path.join(rootFolder, hostname)
-      express.static(folderPath)(req, res, next)
+      express.static(folderPath, { dotfiles: "allow" })(req, res, next)
     })
 
     // Serve the folders directory from the root URL
-    app.use("/", express.static(rootFolder))
+    app.use("/", express.static(rootFolder, { dotfiles: "allow" }))
 
     // todo:?
     // Only serve folders from root URL on the main hostname
@@ -396,7 +396,7 @@ class ScrollHub {
     // })
 
     // Serve the root directory statically
-    app.use(express.static(__dirname))
+    app.use(express.static(__dirname, { dotfiles: "allow" }))
   }
 
   init404Routes() {
@@ -490,7 +490,7 @@ class ScrollHub {
   getFolderLogFile(folderName) {
     const { rootFolder } = this
     const folderPath = path.join(rootFolder, folderName)
-    return path.join(folderPath, "log.txt")
+    return path.join(folderPath, ".log.txt")
   }
 
   initGitRoutes() {
@@ -765,7 +765,7 @@ ${prefix}${hash}<br>
     })
 
     app.get("/ls.json", async (req, res) => {
-      const folderName = req.query.folderName
+      const folderName = this.getFolderName(req)
       if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
       res.setHeader("Content-Type", "text/json")
       const files = await this.getFileList(folderName)
