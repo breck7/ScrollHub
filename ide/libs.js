@@ -16227,7 +16227,7 @@ class Particle extends AbstractParticle {
     })
     return Object.keys(obj)
   }
-  getAncestorParticlesByInheritanceViaExtendsKeyword(key) {
+  getAncestorParticlesByInheritanceViaExtendsCue(key) {
     const ancestorParticles = this._getAncestorParticles(
       (particle, id) => particle._getParticlesByColumn(0, id),
       particle => particle.get(key),
@@ -17726,7 +17726,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "99.2.0"
+Particle.getVersion = () => "100.0.1"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -17835,7 +17835,7 @@ var ParsersConstantsMisc
 var PreludeAtomTypeIds
 ;(function (PreludeAtomTypeIds) {
   PreludeAtomTypeIds["anyAtom"] = "anyAtom"
-  PreludeAtomTypeIds["keywordAtom"] = "keywordAtom"
+  PreludeAtomTypeIds["cueAtom"] = "cueAtom"
   PreludeAtomTypeIds["extraAtomAtom"] = "extraAtomAtom"
   PreludeAtomTypeIds["floatAtom"] = "floatAtom"
   PreludeAtomTypeIds["numberAtom"] = "numberAtom"
@@ -18017,17 +18017,17 @@ class ParserBackedParticle extends Particle {
     return BlobParser
   }
   _getAutocompleteResultsForCue(partialAtom) {
-    const keywordMap = this.definition.cueMapWithDefinitions
-    let keywords = Object.keys(keywordMap)
-    if (partialAtom) keywords = keywords.filter(keyword => keyword.includes(partialAtom))
-    return keywords
-      .map(keyword => {
-        const def = keywordMap[keyword]
+    const cueMap = this.definition.cueMapWithDefinitions
+    let cues = Object.keys(cueMap)
+    if (partialAtom) cues = cues.filter(cue => cue.includes(partialAtom))
+    return cues
+      .map(cue => {
+        const def = cueMap[cue]
         if (def.suggestInAutocomplete === false) return false
         const description = def.description
         return {
-          text: keyword,
-          displayText: keyword + (description ? " " + description : "")
+          text: cue,
+          displayText: cue + (description ? " " + description : "")
         }
       })
       .filter(i => i)
@@ -18681,7 +18681,7 @@ class ParsersAnyAtom extends AbstractParsersBackedAtom {
     return this.getAtom()
   }
 }
-class ParsersKeywordAtom extends ParsersAnyAtom {
+class ParsersCueAtom extends ParsersAnyAtom {
   _synthesizeAtom() {
     return this._parserDefinitionParser.cueIfAny
   }
@@ -18689,7 +18689,7 @@ class ParsersKeywordAtom extends ParsersAnyAtom {
     return 1
   }
 }
-ParsersKeywordAtom.defaultPaint = "keyword"
+ParsersCueAtom.defaultPaint = "keyword"
 class ParsersExtraAtomAtomTypeAtom extends AbstractParsersBackedAtom {
   _isValid() {
     return false
@@ -19255,6 +19255,10 @@ class ParsersParserConstantString extends AbstractParserConstantParser {
 class ParsersParserConstantFloat extends AbstractParserConstantParser {}
 class ParsersParserConstantBoolean extends AbstractParserConstantParser {}
 class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
+  constructor() {
+    super(...arguments)
+    this._isLooping = false
+  }
   createParserCombinator() {
     // todo: some of these should just be on nonRootParticles
     const types = [
@@ -19615,9 +19619,19 @@ ${captures}
     return this._cache_ancestorParserIdsArray
   }
   get programParserDefinitionCache() {
-    if (!this._cache_parserDefinitionParsers) this._cache_parserDefinitionParsers = this.isRoot || this.hasParserDefinitions ? this.makeProgramParserDefinitionCache() : this.parent.programParserDefinitionCache
+    var _a
+    if (!this._cache_parserDefinitionParsers) {
+      if (this._isLooping) throw new Error(`Loop detected in ${this.id}`)
+      this._isLooping = true
+      this._cache_parserDefinitionParsers =
+        this.isRoot() || this.hasParserDefinitions
+          ? this.makeProgramParserDefinitionCache()
+          : ((_a = this.parent.programParserDefinitionCache[this.get(ParsersConstants.extends)]) === null || _a === void 0 ? void 0 : _a.programParserDefinitionCache) || this.parent.programParserDefinitionCache
+      this._isLooping = false
+    }
     return this._cache_parserDefinitionParsers
   }
+  get extendedDef() {}
   get hasParserDefinitions() {
     return !!this.getSubparticlesByParser(parserDefinitionParser).length
   }
@@ -19640,7 +19654,7 @@ ${captures}
   }
   _toStumpString() {
     const cue = this.cueIfAny
-    const atomArray = this.atomParser.getAtomArray().filter((item, index) => index) // for now this only works for keyword langs
+    const atomArray = this.atomParser.getAtomArray().filter((item, index) => index) // for now this only works for cue langs
     if (!atomArray.length)
       // todo: remove this! just doing it for now until we refactor getAtomArray to handle catchAlls better.
       return ""
@@ -20089,7 +20103,7 @@ HandParsersProgram._languages = {}
 HandParsersProgram._parsers = {}
 const PreludeKinds = {}
 PreludeKinds[PreludeAtomTypeIds.anyAtom] = ParsersAnyAtom
-PreludeKinds[PreludeAtomTypeIds.keywordAtom] = ParsersKeywordAtom
+PreludeKinds[PreludeAtomTypeIds.cueAtom] = ParsersCueAtom
 PreludeKinds[PreludeAtomTypeIds.floatAtom] = ParsersFloatAtom
 PreludeKinds[PreludeAtomTypeIds.numberAtom] = ParsersFloatAtom
 PreludeKinds[PreludeAtomTypeIds.bitAtom] = ParsersBitAtom
@@ -20110,7 +20124,7 @@ class UnknownParsersProgram extends Particle {
       .setAtomsFrom(1, Array.from(new Set(rootParticleNames)))
     return rootParticle
   }
-  _renameIntegerKeywords(clone) {
+  _renameIntegerCues(clone) {
     // todo: why are we doing this?
     for (let particle of clone.getTopDownArrayIterator()) {
       const cueIsAnInteger = !!particle.cue.match(/^\d+$/)
@@ -20118,17 +20132,17 @@ class UnknownParsersProgram extends Particle {
       if (cueIsAnInteger && parentCue) particle.setCue(HandParsersProgram.makeParserId(parentCue + UnknownParsersProgram._subparticleSuffix))
     }
   }
-  _getKeywordMaps(clone) {
-    const keywordsToChildKeywords = {}
-    const keywordsToParticleInstances = {}
+  _getCueMaps(clone) {
+    const cuesToChildCues = {}
+    const cuesToParticleInstances = {}
     for (let particle of clone.getTopDownArrayIterator()) {
       const cue = particle.cue
-      if (!keywordsToChildKeywords[cue]) keywordsToChildKeywords[cue] = {}
-      if (!keywordsToParticleInstances[cue]) keywordsToParticleInstances[cue] = []
-      keywordsToParticleInstances[cue].push(particle)
-      particle.forEach(subparticle => (keywordsToChildKeywords[cue][subparticle.cue] = true))
+      if (!cuesToChildCues[cue]) cuesToChildCues[cue] = {}
+      if (!cuesToParticleInstances[cue]) cuesToParticleInstances[cue] = []
+      cuesToParticleInstances[cue].push(particle)
+      particle.forEach(subparticle => (cuesToChildCues[cue][subparticle.cue] = true))
     }
-    return { keywordsToChildKeywords: keywordsToChildKeywords, keywordsToParticleInstances: keywordsToParticleInstances }
+    return { cuesToChildCues, cuesToParticleInstances }
   }
   _inferParserDef(cue, globalAtomTypeMap, subparticleCues, instances) {
     const edgeSymbol = this.edgeSymbol
@@ -20166,7 +20180,7 @@ class UnknownParsersProgram extends Particle {
     if (needsCueProperty) particleDefParticle.set(ParsersConstants.cue, cue)
     if (catchAllAtomType) particleDefParticle.set(ParsersConstants.catchAllAtomType, catchAllAtomType)
     const atomLine = atomTypeIds.slice()
-    atomLine.unshift(PreludeAtomTypeIds.keywordAtom)
+    atomLine.unshift(PreludeAtomTypeIds.cueAtom)
     if (atomLine.length > 0) particleDefParticle.set(ParsersConstants.atoms, atomLine.join(edgeSymbol))
     //if (!catchAllAtomType && atomTypeIds.length === 1) particleDefParticle.set(ParsersConstants.atoms, atomTypeIds[0])
     // Todo: add conditional frequencies
@@ -20184,15 +20198,15 @@ class UnknownParsersProgram extends Particle {
   //      .setAtomsFrom(1, Array.from(new Set(rootParticleNames)))
   //    return rootParticle
   //  }
-  inferParsersFileForAKeywordLanguage(parsersName) {
+  inferParsersFileForACueLanguage(parsersName) {
     const clone = this.clone()
-    this._renameIntegerKeywords(clone)
-    const { keywordsToChildKeywords, keywordsToParticleInstances } = this._getKeywordMaps(clone)
+    this._renameIntegerCues(clone)
+    const { cuesToChildCues, cuesToParticleInstances } = this._getCueMaps(clone)
     const globalAtomTypeMap = new Map()
-    globalAtomTypeMap.set(PreludeAtomTypeIds.keywordAtom, undefined)
-    const parserDefs = Object.keys(keywordsToChildKeywords)
+    globalAtomTypeMap.set(PreludeAtomTypeIds.cueAtom, undefined)
+    const parserDefs = Object.keys(cuesToChildCues)
       .filter(identity => identity)
-      .map(cue => this._inferParserDef(cue, globalAtomTypeMap, Object.keys(keywordsToChildKeywords[cue]), keywordsToParticleInstances[cue]))
+      .map(cue => this._inferParserDef(cue, globalAtomTypeMap, Object.keys(cuesToChildCues[cue]), cuesToParticleInstances[cue]))
     const atomTypeDefs = []
     globalAtomTypeMap.forEach((def, id) => atomTypeDefs.push(def ? def : id))
     const particleBreakSymbol = this.particleBreakSymbol
@@ -20295,7 +20309,7 @@ atomPropertyNameAtom
  paint variable.parameter
 
 atomTypeIdAtom
- examples integerAtom keywordAtom someCustomAtom
+ examples integerAtom cueAtom someCustomAtom
  extends javascriptSafeAlphaNumericIdentifierAtom
  enumFromAtomTypes atomTypeIdAtom
  paint storage
@@ -22301,7 +22315,7 @@ window.FusionFile = FusionFile
     }
     static cachedHandParsersProgramRoot = new HandParsersProgram(`// Atom parsers
 anyAtom
-keywordAtom
+cueAtom
 emptyAtom
 extraAtom
  paint invalid
@@ -22311,18 +22325,18 @@ attributeValueAtom
  paint constant.language
 componentTagNameAtom
  paint variable.function
- extends keywordAtom
+ extends cueAtom
 htmlTagNameAtom
  paint variable.function
- extends keywordAtom
+ extends cueAtom
  enum a abbr address area article aside b base bdi bdo blockquote body br button canvas caption code col colgroup datalist dd del details dfn dialog div dl dt em embed fieldset figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd keygen label legend li link main map mark menu menuitem meta meter nav noscript object ol optgroup option output p param pre progress q rb rp rt rtc ruby s samp script section select small source span strong styleTag sub summary sup table tbody td template textarea tfoot th thead time titleTag tr track u ul var video wbr
 htmlAttributeNameAtom
  paint entity.name.type
- extends keywordAtom
+ extends cueAtom
  enum accept accept-charset accesskey action align alt async autocomplete autofocus autoplay bgcolor border charset checked class color cols colspan content contenteditable controls coords datetime default defer dir dirname disabled download draggable dropzone enctype for formaction headers height hidden high href hreflang http-equiv id ismap kind lang list loop low max maxlength media method min multiple muted name novalidate onabort onafterprint onbeforeprint onbeforeunload onblur oncanplay oncanplaythrough onchange onclick oncontextmenu oncopy oncuechange oncut ondblclick ondrag ondragend ondragenter ondragleave ondragover ondragstart ondrop ondurationchange onemptied onended onerror onfocus onhashchange oninput oninvalid onkeydown onkeypress onkeyup onload onloadeddata onloadedmetadata onloadstart onmousedown onmousemove onmouseout onmouseover onmouseup onmousewheel onoffline ononline onpagehide onpageshow onpaste onpause onplay onplaying onpopstate onprogress onratechange onreset onresize onscroll onsearch onseeked onseeking onselect onstalled onstorage onsubmit onsuspend ontimeupdate ontoggle onunload onvolumechange onwaiting onwheel open optimum pattern placeholder poster preload property readonly rel required reversed rows rowspan sandbox scope selected shape size sizes spellcheck src srcdoc srclang srcset start step style tabindex target title translate type usemap value width wrap
 bernKeywordAtom
  enum bern
- extends keywordAtom
+ extends cueAtom
 
 // Line parsers
 stumpParser
@@ -23145,9 +23159,9 @@ bernParser
     }
     static cachedHandParsersProgramRoot = new HandParsersProgram(`// Atom Parsers
 anyAtom
-keywordAtom
+cueAtom
 commentKeywordAtom
- extends keywordAtom
+ extends cueAtom
  paint comment
  enum comment
 extraAtom
@@ -23161,10 +23175,9 @@ selectorAtom
 vendorPrefixCueAtom
  description Properties like -moz-column-fill
  paint variable.function
- extends keywordAtom
-cueAtom
+ extends cueAtom
+propertyNameAtom
  paint variable.function
- extends keywordAtom
  // todo Where are these coming from? Can we add a url link
  enum align-content align-items align-self all animation animation-delay animation-direction animation-duration animation-fill-mode animation-iteration-count animation-name animation-play-state animation-timing-function backface-visibility background background-attachment background-blend-mode background-clip background-color background-image background-origin background-position background-repeat background-size border border-bottom border-bottom-color border-bottom-left-radius border-bottom-right-radius border-bottom-style border-bottom-width border-collapse border-color border-image border-image-outset border-image-repeat border-image-slice border-image-source border-image-width border-left border-left-color border-left-style border-left-width border-radius border-right border-right-color border-right-style border-right-width border-spacing border-style border-top border-top-color border-top-left-radius border-top-right-radius border-top-style border-top-width border-width bottom box-shadow box-sizing break-inside caption-side clear clip color column-count column-fill column-gap column-rule column-rule-color column-rule-style column-rule-width column-span column-width columns content counter-increment counter-reset cursor direction display empty-atoms fill filter flex flex-basis flex-direction flex-flow flex-grow flex-shrink flex-wrap float font @font-face font-family font-size font-size-adjust font-stretch font-style font-variant font-weight  hanging-punctuation height hyphens justify-content @keyframes left letter-spacing line-height list-style list-style-image list-style-position list-style-type margin margin-bottom margin-left margin-right margin-top max-height max-width @media min-height min-width nav-down nav-index nav-left nav-right nav-up opacity order outline outline-color outline-offset outline-style outline-width overflow overflow-x overflow-y padding padding-bottom padding-left padding-right padding-top page-break-after page-break-before page-break-inside perspective perspective-origin position quotes resize right tab-size table-layout text-align text-align-last text-decoration text-decoration-color text-decoration-line text-decoration-style text-indent text-justify text-overflow text-shadow text-transform top transform transform-origin transform-style transition transition-delay transition-duration transition-property transition-timing-function unicode-bidi vertical-align visibility white-space width atom-break atom-spacing atom-wrap z-index overscroll-behavior-x user-select -ms-touch-action -webkit-user-select -webkit-touch-callout -moz-user-select touch-action -ms-user-select -khtml-user-select gap grid-auto-flow grid-column grid-column-end grid-column-gap grid-column-start grid-gap grid-row grid-row-end grid-row-gap grid-row-start grid-template-columns grid-template-rows justify-items justify-self
 errorAtom
@@ -23205,7 +23218,7 @@ propertyParser
   compile(spaces) {
    return \`\${spaces}\${this.cue}: \${this.content};\`
   }
- atoms cueAtom
+ atoms propertyNameAtom
 variableParser
  extends propertyParser
  pattern --
@@ -23255,7 +23268,7 @@ selectorParser
     createParserCombinator() {
       return new Particle.ParserCombinator(errorParser, undefined, undefined)
     }
-    get cueAtom() {
+    get propertyNameAtom() {
       return this.getAtom(0)
     }
     get cssValueAtom() {
