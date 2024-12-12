@@ -290,7 +290,6 @@ class EditorApp {
     this.setFileNameInUrl(fileName)
     await this.refreshParser()
     this.updatePreviewIFrame()
-    this.updateVisitLink()
 
     if (!this.files) await this.fetchAndDisplayFileList()
     else this.renderFileList()
@@ -316,13 +315,6 @@ class EditorApp {
     return dir + path.join("/") + "/" + primaryOutputFile
   }
 
-  updateVisitLink() {
-    const { permalink, fileName } = this
-    const text = permalink.replace(/\/index.html$/, "")
-    document.getElementById("folderNameLink").innerHTML = text
-    document.getElementById("folderNameLink").href = permalink
-  }
-
   showSpinner(message, style) {
     document.querySelector("#spinner").innerHTML = `<span${style}>${message}</span>`
     document.querySelector("#spinner").style.display = "block"
@@ -344,6 +336,7 @@ class EditorApp {
       this.fileName = this.sanitizeFileName(fileName)
     }
     await this.writeFile("Publishing...", this.bufferValue, this.fileName)
+    await this.refreshParser()
     this.updatePreviewIFrame()
   }
 
@@ -521,6 +514,13 @@ class EditorApp {
 
     this.updateVisitLink()
     document.title = `Editing ${folderName}`
+  }
+
+  updateVisitLink() {
+    const { permalink, fileName } = this
+    const text = permalink.replace(/\/index.html$/, "")
+    document.getElementById("folderNameLink").innerHTML = text
+    document.getElementById("folderNameLink").href = permalink
   }
 
   updateFooterLinks() {
