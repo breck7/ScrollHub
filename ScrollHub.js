@@ -714,7 +714,8 @@ ${prefix}${hash}<br>
 
     // Get all unique directories containing tracked files
     const directoriesSet = new Set()
-    const trackedFiles = Array.from(cachedEntry.tracked)
+    const tracked = new Set(cachedEntry.files)
+    const trackedFiles = cachedEntry.files
     trackedFiles.forEach(file => directoriesSet.add(path.join(folderPath, path.dirname(file))))
 
     const files = {}
@@ -723,7 +724,7 @@ ${prefix}${hash}<br>
       fileNames.forEach(file => {
         const relativePath = path.join(dir, file).replace(folderPath, "").substr(1)
         files[relativePath] = {
-          versioned: cachedEntry.tracked.has(relativePath)
+          versioned: tracked.has(relativePath)
         }
       })
     }
@@ -1286,6 +1287,7 @@ ${prefix}${hash}<br>
     if (folderName.startsWith(".")) return false
     const folderPath = path.join(this.rootFolder, folderName)
     try {
+      if (await exists(this.getStatsPath(folderName))) return true
       // Check if folder contains a .git directory
       const gitPath = path.join(folderPath, ".git")
       const stats = await fsp.stat(gitPath)
@@ -1298,6 +1300,10 @@ ${prefix}${hash}<br>
     return false
   }
 
+  getStatsPath(folderName) {
+    return path.join(this.rootFolder, folderName, ".stats.json")
+  }
+
   async warmFolderCache() {
     const folders = await fsp.readdir(this.rootFolder)
     const scrollFolders = []
@@ -1305,9 +1311,19 @@ ${prefix}${hash}<br>
       if (await this.isScrollFolder(folder)) scrollFolders.push(folder)
     }
     console.log(`Loading ${scrollFolders.length} folders.`)
-    await Promise.all(scrollFolders.map(this.updateFolder.bind(this)))
+    await Promise.all(scrollFolders.map(this.getFolderStats.bind(this)))
     await this.buildListFile()
     console.log(`Folder cache warmed. Time: ${(Date.now() - this.startTime) / 1000}s`)
+  }
+
+  async getFolderStats(folderName) {
+    const statsPath = this.getStatsPath(folderName)
+    if (await exists(statsPath)) {
+      const entry = await fsp.readFile(statsPath, "utf8")
+      this.folderCache[folderName] = JSON.parse(entry)
+      return
+    }
+    this.updateFolder(folderName)
   }
 
   initVandalProtection() {
@@ -1630,8 +1646,8 @@ ${prefix}${hash}<br>
         })
       })
 
-      this.folderCache[folder] = {
-        tracked: new Set(files),
+      const entry = {
+        files,
         stats: {
           folder,
           folderLink: getBaseUrlForFolder(folder, this.hostname, "https:", this.isLocalHost),
@@ -1644,6 +1660,8 @@ ${prefix}${hash}<br>
         },
         zip: undefined
       }
+      this.folderCache[folder] = entry
+      await fsp.writeFile(this.getStatsPath(folder), JSON.stringify(entry, null, 2), "utf8")
     } catch (err) {
       console.error(`Error getting git information for folder: ${folder}`, err)
       return null
