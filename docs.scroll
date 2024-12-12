@@ -64,7 +64,7 @@ class ScrollHub {
 - `/revert.htm/:folderName` - Restore previous versions
 
 #### Real-time Features
-- `/requests.htm` - SSE endpoint for real-time updates
+- `/.requests.htm` - SSE endpoint for real-time updates
 - Broadcasts file changes to connected clients
 - Supports folder-specific subscriptions
 
@@ -95,7 +95,7 @@ const response = await fetch('/writeFile.htm', {
 
 ### Subscribing to Real-time Updates
 ```javascript
-const evtSource = new EventSource('/requests.htm?folderName=my-project');
+const evtSource = new EventSource('/.requests.htm?folderName=my-project');
 evtSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
   console.log('Update received:', data.log);

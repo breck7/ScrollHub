@@ -127,7 +127,7 @@ button Refresh
  post
   // Anything
 
-requests.csv
+.requests.csv
  <br><br><span style="width: 200px; display:inline-block; color: blue;">Readers</span><span style="color:green;">Writers</span><br><br>
  sparkline
   y Readers
@@ -308,7 +308,7 @@ class ScrollHub {
 
   initSSERoute() {
     const { app, globalLogFile } = this
-    app.get("/requests.htm", (req, res) => {
+    app.get("/.requests.htm", (req, res) => {
       const folderName = req.query?.folderName
       req.headers["accept-encoding"] = "identity"
       res.writeHead(200, {
