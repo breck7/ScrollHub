@@ -429,9 +429,9 @@ class ScrollHub {
     const dashboard = new Dashboard(logFile)
     await dashboard.processLogFile()
     const content = folder ? dashboard.csv : dashboard.csvTotal
-    await fsp.writeFile(path.join(outputPath, "requests.csv"), content, "utf8")
+    await fsp.writeFile(path.join(outputPath, ".requests.csv"), content, "utf8")
     if (folder) {
-      const reqFile = path.join(outputPath, "requests.scroll")
+      const reqFile = path.join(outputPath, ".requests.scroll")
       await fsp.writeFile(reqFile, requestsFile(folder), "utf8")
       const file = new ScrollFile(undefined, reqFile, new ScrollFileSystem())
       await file.fuse()
@@ -451,7 +451,7 @@ class ScrollHub {
       if (folderName) {
         await this.buildRequestsSummary(folderName)
         if (req.body.particle) return res.send("Done.")
-        return res.redirect(folderName + "/requests.html")
+        return res.redirect(folderName + "/.requests.html")
       }
       await this.buildRequestsSummary()
       res.send(`Done.`)
@@ -1729,7 +1729,7 @@ container 1000px
 
 center
 Traffic Data | ScrollHub Version ${packageJson.version}
- requests.html Traffic Data
+ .requests.html Traffic Data
 Download folders as JSON | CSV | TSV
  link folders.json JSON
  link folders.csv CSV

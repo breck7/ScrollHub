@@ -5,4 +5,4 @@
 *.css
 *.js
 *.csv
-requests.scroll
+.*
