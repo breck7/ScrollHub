@@ -140,7 +140,7 @@ class ScriptRunner {
             }
           } else {
             console.error(`Script execution error in ${filePath} (${code}):`, errorOutput)
-            res.status(500).send("Script execution failed")
+            res.status(500).send(`Script execution failed: ${errorOutput}`)
           }
         })
 
