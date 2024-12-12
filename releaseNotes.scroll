@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.55.0 12/12/2024
+🎉 faster startup via caching folder contents to .stats.json
+🎉 refresh parsers on save
+🏥 various bug fixes
+
 📦 0.54.0 12/06/2024
 🎉 hide external dependencies!
 🎉 hide .log.txt file
