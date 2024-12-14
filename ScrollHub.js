@@ -731,21 +731,28 @@ ${prefix}${hash}<br>
     return files
   }
 
+  async handleCreateFolder(newFolderName, req, res) {
+    try {
+      const result = await this.createFolder(newFolderName)
+      if (result.errorMessage) return this.handleCreateError(res, result)
+      const { folderName } = result
+      this.addStory(req, `created ${folderName}`)
+      res.redirect(`/edit.html?folderName=${folderName}`)
+    } catch (error) {
+      console.error(error)
+      res.status(500).send("Sorry, an error occurred while creating the folder:", error)
+    }
+  }
+
   initFileRoutes() {
     const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
 
-    app.post("/createFolder.htm", checkWritePermissions, async (req, res) => {
-      try {
-        const result = await this.createFolder(req.body.folderName)
-        if (result.errorMessage) return this.handleCreateError(res, result)
-        const { folderName } = result
-        this.addStory(req, `created ${folderName}`)
-        res.redirect(`/edit.html?folderName=${folderName}`)
-      } catch (error) {
-        console.error(error)
-        res.status(500).send("Sorry, an error occurred while creating the folder:", error)
-      }
+    app.post("/createFolder.htm", checkWritePermissions, async (req, res) => this.handleCreateFolder(req.body.folderName, req, res))
+
+    app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
+      // Generate a folder name
+      this.handleCreateFolder(undefined, req, res)
     })
 
     app.post("/cloneFolder.htm", checkWritePermissions, async (req, res) => {
