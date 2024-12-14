@@ -453,21 +453,73 @@ class EditorApp {
     event.stopPropagation()
     event.currentTarget.classList.remove("drag-over")
     const files = event.dataTransfer.files
-    if (!files.length) return
+    if (files.length) {
+      this.showSpinner(`Uploading ${files.length} files...`)
+      await this.uploadFiles(files)
+      this.hideSpinner()
+      return
+    }
+    const html = event.dataTransfer.getData("text/html")
+    if (html) {
+      // Create a temporary DOM element to parse the HTML
+      const div = document.createElement("div")
+      div.innerHTML = html
 
-    await this.uploadFiles(files)
+      // Find the image element
+      const img = div.querySelector("img")
+      if (img) {
+        const url = img.src
+        const filename = this.getFilenameFromUrl(url)
+        await this.handleImageUrl(url, filename)
+      }
+    }
+  }
+
+  getFilenameFromUrl(url) {
+    try {
+      const urlObj = new URL(url)
+      const pathname = urlObj.pathname
+      // Get the last segment of the path and decode it
+      let filename = decodeURIComponent(pathname.split("/").pop())
+      // If no extension, try to get it from the Content-Type
+      if (!filename.includes(".")) {
+        return null // Let the Content-Type determine it later
+      }
+      return filename
+    } catch {
+      return null
+    }
+  }
+
+  async handleImageUrl(url, preferredFilename) {
+    try {
+      const response = await fetch(url)
+      const contentType = response.headers.get("Content-Type")
+      const blob = await response.blob()
+
+      // If we don't have a filename or it doesn't have an extension,
+      // create one from the Content-Type
+      let filename = preferredFilename
+      if (!filename) {
+        const ext = contentType.split("/")[1]
+        filename = `image.${ext}`
+      }
+
+      const file = new File([blob], filename, { type: contentType })
+      await this.uploadFiles([file])
+    } catch (error) {
+      console.error("Error handling image URL:", error)
+    }
   }
 
   // New method to handle multiple file uploads
   async uploadFiles(files) {
-    this.showSpinner("Uploading...")
     const uploadPromises = Array.from(files).map(file => this.uploadFile(file))
 
     Promise.all(uploadPromises)
       .then(() => {
         console.log("All files uploaded successfully")
         this.fetchAndDisplayFileList()
-        this.hideSpinner()
         this.buildFolderCommand()
       })
       .catch(error => {

@@ -894,7 +894,7 @@ ${prefix}${hash}<br>
         this.updateFolderAndBuildList(folderName)
       } catch (err) {
         console.error(err)
-        res.status(500).send("An error occurred while uploading or processing the file.")
+        res.status(500).send("An error occurred while uploading or processing the file: " + err.message)
       }
     })
 
