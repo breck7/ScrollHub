@@ -575,10 +575,36 @@ class EditorApp {
     document.getElementById("folderNameLink").href = permalink
   }
 
+  get cloneUrl() {
+    return this.rootUrl + ".git"
+  }
+
   updateFooterLinks() {
     const { folderName } = this
     document.getElementById("gitClone").innerHTML =
-      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">live traffic</a> · <a class="folderActionLink" href="/diffs.htm/${folderName}?count=10">revisions</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">rename</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">traffic</a> · <a class="folderActionLink" href="/diffs.htm/${folderName}?count=10">revisions</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a><div class="cloneCommand">git clone ${this.cloneUrl}</div>`
+    document.addEventListener("click", function (event) {
+      // Check if clicked element has the class 'cloneCommand'
+      if (event.target.classList.contains("cloneCommand")) {
+        // Get the text content
+        const text = event.target.innerText
+
+        // Create a temporary textarea element
+        const textarea = document.createElement("textarea")
+        textarea.value = text
+        document.body.appendChild(textarea)
+
+        // Select and copy the text
+        textarea.select()
+        document.execCommand("copy")
+
+        // Clean up by removing the textarea
+        document.body.removeChild(textarea)
+
+        // Optional: Add some feedback
+        console.log("Text copied:", text)
+      }
+    })
   }
 
   async renameFolder() {

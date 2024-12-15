@@ -209,3 +209,16 @@ textarea {
   border: 0;
   outline: none;
 }
+
+.cloneCommand {
+  margin-top: 23px;
+  opacity: 0.3;
+  cursor: pointer;
+}
+
+.cloneCommand:hover {
+  opacity: 0.6;
+}
+.cloneCommand:active {
+  opacity: 1;
+}
