@@ -8,6 +8,16 @@ const getBaseUrlForFolder = (folderName, hostname, protocol) => {
   return protocol + "//" + folderName
 }
 
+const getCloneUrlForFolder = (folderName, hostname, protocol) => {
+  if (hostname === "localhost") return "http://localhost/" + folderName + ".git"
+
+  if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName + ".git"
+
+  // now it might be a custom domain, serve it as if it is
+  // of course, sometimes it would not be
+  return protocol + "//" + folderName + "/" + folderName + ".git"
+}
+
 class UrlWriter extends MemoryWriter {
   async read(fileName) {
     if (this.inMemoryFiles[fileName]) return this.inMemoryFiles[fileName]
@@ -576,7 +586,7 @@ class EditorApp {
   }
 
   get cloneUrl() {
-    return this.rootUrl + ".git"
+    return getCloneUrlForFolder(this.folderName, window.location.hostname, window.location.protocol)
   }
 
   updateFooterLinks() {
