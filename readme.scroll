@@ -38,6 +38,21 @@ It is recommended to prevent force pushes on your server with `git config --syst
 
 ****
 
+
+# Development Environmet Steps
+ Add '''
+git config --global alias.acp '!git add . && git commit -m "local Update" && git push'
+'''
+
+and use git acp to push to remote
+
+Make sure server side .gitignore includes all log and often changed files, to avoid local push conflicts.
+
+## run this to set up auto server restart on push
+'''
+cd hooks && touch post-update && chmod +x post-update && echo -e '#!/bin/sh\ncd /root || exit\npm2 restart server.js\ngit update-server-info' > post-update
+'''
+
 ScrollHub is public domain.
 
 footer.scroll
