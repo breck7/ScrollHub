@@ -751,8 +751,11 @@ ${prefix}${hash}<br>
     app.post("/createFolder.htm", checkWritePermissions, async (req, res) => this.handleCreateFolder(req.body.folderName, req, res))
 
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
-      // Generate a folder name
-      this.handleCreateFolder(undefined, req, res)
+      // Post prompt to an LLM
+      // Have LLM return folderName (probably a subdomain) and initial files
+      // Write those files to disk; set folder name
+      const folderName = await "todo"
+      this.handleCreateFolder(folderName, req, res)
     })
 
     app.post("/cloneFolder.htm", checkWritePermissions, async (req, res) => {
