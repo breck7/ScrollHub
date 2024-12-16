@@ -186,9 +186,13 @@ class EditorApp {
   }
 
   mode = "custom"
+  currentParser = null
   updateEditorMode(fileName) {
     const mode = this.getEditorMode(fileName)
-    if (mode === this.mode) return
+    const modeChanged = mode !== this.mode
+    if (!modeChanged && mode !== "custom") return
+    if (this.currentParser === this.parser) return
+    this.currentParser = this.parser
     const currentContent = this.codeMirrorInstance.getValue()
     this.initCodeMirror(mode)
     this.codeMirrorInstance.setValue(currentContent)
@@ -294,12 +298,10 @@ class EditorApp {
     const response = await fetch(`/readFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
     const content = await response.text()
 
-    // Update editor mode before setting content
-    this.updateEditorMode(fileName)
-
     this.setFileContent(content)
     this.setFileNameInUrl(fileName)
     await this.refreshParser()
+    this.updateEditorMode(fileName)
     this.updatePreviewIFrame()
 
     if (!this.files) await this.fetchAndDisplayFileList()
