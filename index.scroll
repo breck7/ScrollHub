@@ -2,7 +2,7 @@ title ScrollHub: publish faster
 
 settings.scroll
 metaTags
-inlineCss .gazette.css scrollHubStyle.css
+inlineCss .gazette.css .scroll.css scrollHubStyle.css
 
 css .thin {font-weight: 100;}
 

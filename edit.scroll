@@ -2,7 +2,7 @@ title Edit Folder
 
 settings.scroll
 metaTags
-inlineCss .gazette.css scrollHubStyle.css ./ide/codeMirror.css
+inlineCss .gazette.css .scroll.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
 
 ./ide/libs.js

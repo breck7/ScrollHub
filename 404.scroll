@@ -2,6 +2,7 @@ buildHtml
 title Page not found
 
 /.gazette.css
+/.scroll.css
 settings.scroll
 
 homeButton /
