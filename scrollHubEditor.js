@@ -201,19 +201,9 @@ class EditorApp {
 
   get width() {
     const bodyWidth = document.body.clientWidth
-    let computedWidth
-
-    if (bodyWidth < 1000) {
-      // Calculate width as body width minus 250
-      computedWidth = bodyWidth - 270
-    } else {
-      // Set width to 784 when body width is 1000 or more
-      computedWidth = 784
-    }
-
-    // Ensure the width does not exceed 784 and is not less than 100
-    computedWidth = Math.max(100, Math.min(784, computedWidth))
-    return computedWidth
+    const maxWidth = 784
+    let computedWidth = bodyWidth - 270
+    return Math.max(100, Math.min(maxWidth, computedWidth))
   }
 
   showError(message) {
