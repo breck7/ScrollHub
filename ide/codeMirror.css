@@ -519,3 +519,99 @@ li.CodeMirror-hint-active {
   background: #08f;
   color: white;
 }
+
+/* BASICS */
+.CodeMirror {
+  /* Modern font stack optimized for code */
+  font-family: "JetBrains Mono", "Fira Code", "IBM Plex Mono", "Source Code Pro", Consolas, monospace;
+  color: #2a2a2a;
+}
+
+/* Enhancing the general UI elements */
+.CodeMirror-gutters {
+  border-right: 1px solid #e1e4e8;
+  background-color: #f6f8fa;
+}
+
+.CodeMirror-linenumber {
+  color: #6e7781;
+}
+
+/* Selection colors */
+.CodeMirror-selected {
+  background: #e3e8f3;
+}
+
+.CodeMirror-focused .CodeMirror-selected {
+  background: #d0d8eb;
+}
+
+/* Cursor styling */
+.CodeMirror-cursor {
+  border-left: 2px solid #4a89dc;
+}
+
+/* Syntax highlighting colors */
+.cm-s-default .cm-keyword {
+  color: #9333ea; /* Purple for keywords */
+}
+
+.cm-s-default .cm-atom {
+  color: #0891b2; /* Cyan for atoms */
+}
+
+.cm-s-default .cm-number {
+  color: #0d9488; /* Teal for numbers */
+}
+
+.cm-s-default .cm-def {
+  color: #2563eb; /* Blue for definitions */
+}
+
+.cm-s-default .cm-variable {
+  color: #334155; /* Slate for variables */
+}
+
+.cm-s-default .cm-variable-2 {
+  color: #3b82f6; /* Lighter blue for special variables */
+}
+
+.cm-s-default .cm-variable-3,
+.cm-s-default .cm-type {
+  color: #0d9488; /* Teal for types */
+}
+
+.cm-s-default .cm-comment {
+  color: #64748b; /* Slate for comments */
+  font-style: italic;
+}
+
+.cm-s-default .cm-string {
+  color: #333;
+}
+
+.cm-s-default .cm-string-2 {
+  color: #15803d; /* Darker green for special strings */
+}
+
+.cm-s-default .cm-meta {
+  color: #6b7280; /* Gray for metadata */
+}
+
+.cm-s-default .cm-builtin {
+  color: #7c3aed; /* Violet for built-in functions */
+}
+
+.cm-s-default .cm-tag {
+  color: #ea580c; /* Orange for tags */
+}
+
+.cm-s-default .cm-attribute {
+  color: #0284c7; /* Sky blue for attributes */
+}
+
+/* Error highlighting */
+.cm-s-default .cm-error {
+  color: #dc2626; /* Red for errors */
+  text-decoration: underline wavy #dc2626;
+}
