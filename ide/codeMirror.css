@@ -602,6 +602,10 @@ li.CodeMirror-hint-active {
   color: #7c3aed; /* Violet for built-in functions */
 }
 
+.cm-noPaintDefinedInParsers {
+  color: #888;
+}
+
 .cm-s-default .cm-tag {
   color: #ea580c; /* Orange for tags */
 }
