@@ -107,7 +107,7 @@ class EditorApp {
     this.folderName = ""
     this.previewIFrame = null
     this.initCodeMirror("custom")
-    window.addEventListener("resize", () => this.codeMirrorInstance.setSize(this.width, 490))
+    window.addEventListener("resize", () => this.updateEditorDimensions())
 
     // Add file filter input handler
     this.fileFilter = document.getElementById("fileFilter")
@@ -116,6 +116,17 @@ class EditorApp {
       this.updateUrlWithFilter()
     })
     this.fusionEditor = new FusionEditor(AppConstants.parsers, this)
+  }
+
+  get editorHeight() {
+    return Math.max(300, window.innerHeight - 200)
+  }
+
+  updateEditorDimensions() {
+    const { editorHeight } = this
+    this.codeMirrorInstance.setSize(this.width, editorHeight)
+    const fileList = document.getElementById("fileList")
+    fileList.style.height = `${editorHeight - 138}px`
   }
 
   getEditorMode(fileName) {
@@ -163,7 +174,7 @@ class EditorApp {
       })
     }
 
-    this.codeMirrorInstance.setSize(this.width, 490)
+    this.updateEditorDimensions()
   }
 
   rehighlight() {
