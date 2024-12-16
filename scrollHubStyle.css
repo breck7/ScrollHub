@@ -29,10 +29,6 @@ body {
   box-sizing: border-box;
 }
 
-.selectedFile {
-  font-weight: bold;
-}
-
 #errorMessage {
   color: red;
   flex: 100%;
@@ -95,6 +91,19 @@ body {
   height: 352px;
   max-width: 200px;
   overflow: auto;
+}
+#fileList a {
+  display: block;
+  padding: 0;
+  padding-left: 5px;
+  margin: 0;
+}
+#fileList a:hover {
+  text-decoration: none;
+  background-color: var(--border-light);
+}
+#fileList a.selectedFile {
+  background-color: var(--border-light);
 }
 
 .nonScrollFile {

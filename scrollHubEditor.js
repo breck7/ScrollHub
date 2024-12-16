@@ -712,7 +712,7 @@ class EditorApp {
       return `<a class="${isScrollFile ? "" : "nonScrollFile"} ${selected} ${isTrackedByGit}" href="edit.html?folderName=${folderName}&fileName=${encodeURIComponent(file)}">${file}</a>`
     })
 
-    this.fileListEl.innerHTML = fileLinks.join("<br>")
+    this.fileListEl.innerHTML = fileLinks.join("")
   }
 
   updateFilteredFileList() {
