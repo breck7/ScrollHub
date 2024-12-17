@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.58.0 12/17/2024
+🎉 update scroll
+🏥 format fixes
+
 📦 0.57.0 12/17/2024
 🎉 format file command
 🎉 many color and style improvements
