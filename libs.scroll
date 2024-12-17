@@ -1,0 +1,2 @@
+buildJs
+inlineJs ide/libs.js ide/parsers.js modes.js

@@ -5,9 +5,7 @@ metaTags
 inlineCss .gazette.css .scroll.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
 
-./ide/libs.js
-./ide/parsers.js
-modes.js
+libs.js
 
 # <a id="folderNameLink" target="visit">New file</a>
 <div id="spinner"></div>
