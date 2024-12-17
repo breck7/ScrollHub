@@ -371,7 +371,9 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   word-break: normal;
 }
 
-.CodeMirror-wrap pre .cm-atom {
+.CodeMirror-wrap pre .cm-atom,
+.CodeMirror-wrap pre .cm-keyword,
+.CodeMirror-wrap pre .cm-def {
   /* If its a long atom like a URL, break it anywhere. */
   word-break: break-all;
 }
