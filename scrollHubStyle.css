@@ -52,6 +52,7 @@ body {
 }
 .deleteFileLink,
 .duplicateFileLink,
+.formatFileLink,
 .renameFileLink {
   color: var(--light-grey);
   margin-left: 20px;

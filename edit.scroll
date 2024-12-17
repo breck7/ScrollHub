@@ -22,6 +22,7 @@ modes.js
  <button onclick="app.saveCommand(); return false;" class="scrollButton publishButton">Publish</button>
  <a class="renameFileLink">Rename File</a>
  <a class="duplicateFileLink">Duplicate File</a>
+ <a class="formatFileLink">Format File</a>
  <a class="deleteFileLink">Delete File</a>
 </div>
 </form>
@@ -29,6 +30,6 @@ modes.js
 
 div#gitClone.greyText
 
-inlineJs scrollHubEditor.js
+inlineJs FusionEditor.js scrollHubEditor.js
 
 buildHtml
