@@ -9,4 +9,3 @@ codeFromFile releaseNotes.scroll
 codeFromFile serverSetup.scroll
 codeFromFile ScrollHub.js
 codeFromFile scrollHubEditor.js
-

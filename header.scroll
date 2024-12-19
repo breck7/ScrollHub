@@ -5,4 +5,3 @@ metaTags
 inlineCss .gazette.css .scroll.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
 editButton
-

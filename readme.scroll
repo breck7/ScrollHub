@@ -16,10 +16,8 @@ Follow the steps below to run your own ScrollHub server in 60 seconds!
 
 serverSetup.scroll
 
-
 Optional steps:
 - Create a DNS A Record pointing from your domain or subdomain to your new server.
-
 
 # Helpful Dev Environment Aliases
 codeFromFile .bash_aliases.sh

@@ -65,10 +65,10 @@ body {
 }
 
 #previewIFrame {
-  height: 600px;
-  width: 400px;
+  height: 900px;
+  width: 600px;
   border: 0;
-  transform: scale(0.5);
+  transform: scale(0.34);
   transform-origin: 0 0;
 }
 
