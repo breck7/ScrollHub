@@ -1903,10 +1903,35 @@ scrollVersionLink`
   }
 
   async startHttpServer() {
-    const { app, port } = this
-    const httpServer = http.createServer(app)
-    httpServer.listen(port, () => console.log(`HTTP server running at http://localhost:${port}`))
-    return httpServer
+    const { app } = this
+    const startPort = this.port
+    const maxPort = startPort + 100
+    for (let port = startPort; port <= maxPort; port++) {
+      try {
+        const httpServer = http.createServer(app)
+        await new Promise((resolve, reject) => {
+          httpServer.on("error", err => {
+            if (err.code === "EADDRINUSE") {
+              console.log(`Port ${port} is busy, trying ${port + 1}...`)
+              resolve(false)
+            } else reject(err)
+          })
+
+          httpServer.listen(port, () => {
+            console.log(`HTTP server running at http://localhost:${port}`)
+            this.port = port // Store the actual bound port
+            resolve(true)
+          })
+        }).then(success => {
+          if (success) return httpServer
+        })
+
+        if (httpServer.listening) return httpServer
+      } catch (err) {
+        console.error(`Error trying port ${port}:`, err)
+        if (port === maxPort) throw new Error(`Could not find an available port between ${startPort} and ${maxPort}`)
+      }
+    }
   }
 
   async stopServers() {
