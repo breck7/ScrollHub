@@ -1723,6 +1723,7 @@ ${prefix}${hash}<br>
     await fsp.writeFile(path.join(__dirname, "folders.csv"), particles.asCsv, "utf8")
     await fsp.writeFile(path.join(__dirname, "folders.tsv"), particles.asTsv, "utf8")
     await fsp.writeFile(path.join(__dirname, "folders.json"), JSON.stringify(folders, null, 2), "utf8")
+    const processName = this.hostname + (this.port === 80 ? "" : ":" + this.port)
     const scroll = `settings.scroll
 homeButton
 buildHtml
@@ -1733,8 +1734,8 @@ title Folders
 scrollHubStyle.css
 
 container 1000px
-# ${this.hostname} serves ${folders.length} folders.
- index.html ${this.hostname}
+# ${processName} is serving ${folders.length} folders.
+ index.html ${processName}
  style font-size: 150%;
 
 center
