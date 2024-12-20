@@ -14,6 +14,7 @@ list.scroll
 *.crt
 *.key
 *.txt
+.*
 trash/
 now.txt
 ipToGeo/

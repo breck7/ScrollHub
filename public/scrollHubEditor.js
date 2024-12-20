@@ -1,5 +1,5 @@
 const getBaseUrlForFolder = (folderName, hostname, protocol) => {
-  if (hostname === "localhost") return "http://localhost/" + folderName
+  if (hostname === "localhost" || hostname.startsWith("localhost:")) return `http://${hostname}/${folderName}`
 
   if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
 
@@ -9,7 +9,7 @@ const getBaseUrlForFolder = (folderName, hostname, protocol) => {
 }
 
 const getCloneUrlForFolder = (folderName, hostname, protocol) => {
-  if (hostname === "localhost") return "http://localhost/" + folderName + ".git"
+  if (hostname === "localhost" || hostname.startsWith("localhost:")) return `http://${hostname}/${folderName}.git`
 
   if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName + ".git"
 
@@ -488,8 +488,15 @@ class EditorApp {
     }
   }
 
+  get hostnameWithPort() {
+    const hostname = window.location.hostname
+    const port = window.location.port
+    if (!port || port === 80 || port === 443) return hostname
+    return hostname + ":" + port
+  }
+
   get rootUrl() {
-    return getBaseUrlForFolder(this.folderName, window.location.hostname, window.location.protocol)
+    return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, window.location.protocol)
   }
 
   updatePreviewIFrame() {
@@ -509,7 +516,7 @@ class EditorApp {
   }
 
   get cloneUrl() {
-    return getCloneUrlForFolder(this.folderName, window.location.hostname, window.location.protocol)
+    return getCloneUrlForFolder(this.folderName, this.hostnameWithPort, window.location.protocol)
   }
 
   copyClone() {

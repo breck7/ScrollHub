@@ -1,2 +1,2 @@
 buildJs
-inlineJs node_modules/lodash/lodash.min.js lodash.js ide/libs.js ide/parsers.js modes.js
+inlineJs lodash.min.js lodash.js ide/libs.js ide/parsers.js modes.js
