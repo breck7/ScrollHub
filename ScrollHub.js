@@ -1757,6 +1757,7 @@ table folders.csv
 endColumns
 tableSearch
 scrollVersionLink`
+    // todo: move these to .hub folder. 1 per process.
     await fsp.writeFile(path.join(__dirname, "folders.scroll"), scroll, "utf8")
     await fsp.writeFile(path.join(__dirname, "foldersPublished.html"), `<a id="foldersPublished" class="greyText" href="folders.html">${folders.length} folders</a>`, "utf8")
     await this.buildScrollHubPages()
