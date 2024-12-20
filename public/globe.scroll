@@ -8,7 +8,7 @@ a#summaryLink Trends
 div#log-container
 
 globe.css
-external/three.min.js
+three.min.js
 globe.js
 favicon globeFavicon.png
 openGraphImage https://hub.scroll.pub/globe.png

@@ -1,6 +1,9 @@
 title ScrollHub: publish faster
 
-settings.scroll
+baseUrl http://hub.scroll.pub/
+openGraphImage screenshot.png
+editBaseUrl https://github.com/breck7/ScrollHub/blob/main
+
 metaTags
 inlineCss .gazette.css .scroll.css scrollHubStyle.css
 
@@ -34,4 +37,7 @@ Docs
 
 br 2
 
-footer.scroll
+buildHtml
+
+scrollVersionLink
+

@@ -198,6 +198,7 @@ class ScrollHub {
     this.rootFolder = dir
     const hubFolder = path.join(dir, ".hub")
     this.hubFolder = hubFolder
+    this.publicFolder = path.join(hubFolder, "public")
     this.trashFolder = path.join(hubFolder, "trash")
     this.certsFolder = path.join(hubFolder, "certs")
     this.globalLogFile = path.join(hubFolder, ".log.txt")
@@ -395,6 +396,8 @@ class ScrollHub {
     //   next()
     // })
 
+    // Serve the process's public folder
+    app.use(express.static(this.publicFolder, { dotfiles: "allow" }))
     // Serve the root directory statically
     app.use(express.static(__dirname, { dotfiles: "allow" }))
   }
@@ -436,7 +439,7 @@ class ScrollHub {
       const file = new ScrollFile(undefined, reqFile, new ScrollFileSystem())
       await file.fuse()
       await file.scrollProgram.buildAll()
-    } else await this.buildScrollHubPages()
+    } else await this.buildPublicFolder()
     this.isSummarizing[folder] = false
   }
 
@@ -1514,11 +1517,14 @@ ${prefix}${hash}<br>
   }
 
   ensureInstalled() {
-    const { hubFolder, rootFolder, trashFolder, certsFolder } = this
+    const { hubFolder, rootFolder, trashFolder, certsFolder, publicFolder } = this
     if (!fs.existsSync(hubFolder)) fs.mkdirSync(hubFolder)
     if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
     if (!fs.existsSync(certsFolder)) fs.mkdirSync(certsFolder)
     if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
+    if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder)
+    // copy public folder
+    execSync(`cp -R ${path.join(__dirname, "public")} ${this.hubFolder}`)
   }
 
   ensureTemplatesInstalled() {
@@ -1720,9 +1726,10 @@ ${prefix}${hash}<br>
   async buildListFile() {
     const folders = Object.values(this.folderCache).map(folder => folder.stats)
     const particles = new Particle(folders)
-    await fsp.writeFile(path.join(__dirname, "folders.csv"), particles.asCsv, "utf8")
-    await fsp.writeFile(path.join(__dirname, "folders.tsv"), particles.asTsv, "utf8")
-    await fsp.writeFile(path.join(__dirname, "folders.json"), JSON.stringify(folders, null, 2), "utf8")
+    const { publicFolder } = this
+    await fsp.writeFile(path.join(publicFolder, "folders.csv"), particles.asCsv, "utf8")
+    await fsp.writeFile(path.join(publicFolder, "folders.tsv"), particles.asTsv, "utf8")
+    await fsp.writeFile(path.join(publicFolder, "folders.json"), JSON.stringify(folders, null, 2), "utf8")
     const processName = this.hostname + (this.port === 80 ? "" : ":" + this.port)
     const scroll = `settings.scroll
 homeButton
@@ -1734,7 +1741,7 @@ title Folders
 scrollHubStyle.css
 
 container 1000px
-# ${processName} is serving ${folders.length} folders.
+# ${processName} is serving ${folders.length} folders in ${this.rootFolder}
  index.html ${processName}
  style font-size: 150%;
 
@@ -1758,13 +1765,13 @@ endColumns
 tableSearch
 scrollVersionLink`
     // todo: move these to .hub folder. 1 per process.
-    await fsp.writeFile(path.join(__dirname, "folders.scroll"), scroll, "utf8")
-    await fsp.writeFile(path.join(__dirname, "foldersPublished.html"), `<a id="foldersPublished" class="greyText" href="folders.html">${folders.length} folders</a>`, "utf8")
-    await this.buildScrollHubPages()
+    await fsp.writeFile(path.join(publicFolder, "folders.scroll"), scroll, "utf8")
+    await fsp.writeFile(path.join(publicFolder, "foldersPublished.html"), `<a id="foldersPublished" class="greyText" href="folders.html">${folders.length} folders</a>`, "utf8")
+    await this.buildPublicFolder()
   }
 
-  async buildScrollHubPages() {
-    await execAsync(`scroll build`, { cwd: __dirname })
+  async buildPublicFolder() {
+    await execAsync(`scroll build`, { cwd: this.publicFolder })
   }
 
   handleCreateError(res, params) {
