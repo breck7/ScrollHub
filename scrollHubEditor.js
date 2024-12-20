@@ -145,7 +145,10 @@ class EditorApp {
     const urlParams = new URL(window.location).searchParams
     this.openFolder(urlParams.get("folderName") || window.location.hostname)
     let fileName = urlParams.get("fileName") || ""
-    if (fileName.startsWith("/")) this.setFileNameInUrl(fileName.replace(/^\/+/, "")) // strip leading slashes
+    if (fileName.startsWith("/")) {
+      fileName = fileName.replace(/^\/+/, "")
+      this.setFileNameInUrl(fileName) // strip leading slashes
+    }
 
     // Set initial filter value from URL if present
     const filterValue = urlParams.get("filter") || ""
