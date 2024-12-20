@@ -202,7 +202,7 @@ class ScrollHub {
     this.trashFolder = path.join(hubFolder, "trash")
     this.certsFolder = path.join(hubFolder, "certs")
     this.globalLogFile = path.join(hubFolder, ".log.txt")
-    this.storyLogFile = path.join(hubFolder, "writes.txt")
+    this.storyLogFile = path.join(hubFolder, ".writes.txt")
     this.folderCache = {}
     this.sseClients = new Set()
     this.dashboard = new Dashboard(this.globalLogFile)
