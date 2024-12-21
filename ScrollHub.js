@@ -100,7 +100,7 @@ const generateFileName = async (basePath, strategy, content) => {
 
 const getBaseUrlForFolder = (folderName, hostname, protocol, isLocalHost) => {
   // if localhost, no custom domains
-  if (isLocalHost) return "http://localhost/" + folderName
+  if (isLocalHost) return `/${folderName}`
 
   if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
 
@@ -1662,11 +1662,13 @@ ${prefix}${hash}<br>
         })
       })
 
+      const folderLink = getBaseUrlForFolder(folder, this.hostname, "https:", this.isLocalHost)
+
       const entry = {
         files,
         stats: {
           folder,
-          folderLink: getBaseUrlForFolder(folder, this.hostname, "https:", this.isLocalHost),
+          folderLink,
           created: firstCommitTimestamp,
           revised: lastCommitTimestamp,
           files: fileCount,
