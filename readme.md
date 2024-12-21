@@ -1,72 +1,110 @@
-# ScrollHub: The fastest way to publish
-
-ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more. It provides a seamless platform for content creation and distribution.
-
-Try it yourself at: [https://hub.scroll.pub](https://hub.scroll.pub)
-
-## 🚀 Quick Start: Run your own ScrollHub in 60 seconds
-
-Launch a new Ubuntu Droplet on [Digital Ocean](https://www.digitalocean.com) (or your cloud provider of choice), then SSH into your server and run this oneliner:
-
-```bash
-apt install -y make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.pub" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && git config --global receive.denyCurrentBranch updateInstead && pm2 start server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
-```
-
-### Optional Steps:
-
-1. Create a DNS A Record pointing from your domain or subdomain to your new server
-2. Torify your site with an onion domain using [Tor Project](https://www.torproject.org/about/history/):
-
-```bash
-sudo apt update && sudo apt install -y tor && echo -e "HiddenServiceDir /var/lib/tor/hidden_service/\nHiddenServicePort 80 127.0.0.1:3000" | sudo tee -a /etc/tor/torrc && sudo systemctl restart tor && sudo cat /var/lib/tor/hidden_service/hostname
-```
-
-## 🛠️ Development Environment Setup
-
-### Helpful Aliases
-
-Add these to your shell configuration for a smoother workflow:
-
-```bash
-# Scroll
-alias sb="scroll build"
-
-# Npm
-alias x="npm run"
-
 # ScrollHub
-alias hub="hub start"
 
-# Git
-alias gs="git status"
-alias ga="git add ."
-alias gc="git commit --allow-empty-message -m ''"
-alias acp="git add . && git commit --allow-empty-message -m '' && git push"
-```
+ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more. It provides a fast, efficient way to manage and serve content with built-in version control and real-time editing capabilities.
 
-Note: Make sure server-side `.gitignore` includes all log and frequently changed files to avoid local push conflicts.
+[![Version](https://img.shields.io/badge/version-0.60.0-blue.svg)](https://hub.scroll.pub)
 
-## 🔧 Git Troubleshooting
+## Features
 
-ScrollHub uses git for versioning files. If you're developing locally and encounter merge conflicts:
+- 🚀 **Instant Publishing**: The fastest way to publish content online
+- 📝 **Universal Content Support**: Publish websites, scientific articles, blog posts, books, and more
+- 🔄 **Built-in Version Control**: Integrated Git support for versioning and collaboration
+- 🎨 **Live Preview**: Real-time editing with instant preview
+- 🛠️ **Multiple File Format Support**: Write in Scroll and Parsers, plus HTML, CSS, JavaScript, and more
+- 📊 **Traffic Analytics**: Built-in live traffic monitoring and visualization
+- 🌐 **Custom Domain Support**: Serve content on your own domain
 
-1. Check the git status for a folder by visiting: `https://hub.scroll.pub/status/[folderName]`
-2. It's recommended to prevent force pushes on your server with:
+## Quick Start
+
+Get your own ScrollHub server up and running in 60 seconds:
 
 ```bash
-git config --system receive.denyNonFastForwards true
+apt install -y make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.pub" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && npm install -g . && git config --global receive.denyCurrentBranch updateInstead && cd && pm2 start ~/ScrollHub/server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
 ```
 
-## 📦 Release Notes
+Optional: Create a DNS A Record pointing from your domain or subdomain to your new server.
 
-The complete release history is available in multiple formats:
+## Development Environment
 
-- [CSV format](releaseNotes.csv)
-- [TSV format](releaseNotes.tsv)
-- [JSON format](releaseNotes.json)
+Add these helpful aliases to your `.bash_aliases`:
 
-View the full changelog with detailed release notes at [Release Notes](https://scroll.pub/releaseNotes.html).
+```bash
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+```
 
-## 📄 Public Domain
+## Features in Detail
 
-ScrollHub is released into the public domain.
+### Content Management
+
+- Create and edit content with a powerful built-in editor
+- Real-time preview of changes
+- Support for multiple file formats
+- Automatic formatting for supported file types
+
+### Version Control
+
+- Built-in Git integration
+- View file revision history
+- Compare changes between versions
+- Revert to previous versions
+
+### File Operations
+
+- Upload files via drag-and-drop
+- Rename files and folders
+- Create new files from templates
+- Duplicate existing content
+- Delete files and folders with confirmation
+
+### Monitoring
+
+- Real-time traffic monitoring
+- Request logging
+- Traffic visualization
+- Download traffic data in multiple formats
+
+## API Routes
+
+ScrollHub provides several API endpoints for managing content:
+
+- `/readFile.htm` - Read file content
+- `/writeFile.htm` - Write file content
+- `/uploadFile.htm` - Upload files
+- `/build.htm` - Build folder content
+- `/format/:folderName` - Format files
+- `/status/:folderName` - Get Git status
+- And many more...
+
+## Technical Details
+
+- Built with Node.js and Express
+- Uses CodeMirror for the editor
+- Integrates with Git for version control
+- Supports multiple parsers and file formats
+- Real-time server-sent events for updates
+- PM2 process management
+
+## Latest Updates
+
+🎉 Version 0.60.0 (12/20/2024)
+
+- Run unlimited ScrollHub processes on one machine
+- Each process independently serves its own root folder
+- Custom port support
+
+See [Release Notes](https://hub.scroll.pub/releaseNotes.html) for full changelog.
+
+## Public Domain
+
+ScrollHub is public domain.
+
+## Try It Online
+
+Visit [https://hub.scroll.pub](https://hub.scroll.pub) to try ScrollHub without installation.
+
+---
+
+For more information, visit the [ScrollHub Documentation](https://hub.scroll.pub).

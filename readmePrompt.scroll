@@ -4,8 +4,8 @@ Below is the contents of this project/repo.
 
 Generate a beautiful readme.md file from this.
 
-codeFromFile readme.scroll
-codeFromFile releaseNotes.scroll
-codeFromFile serverSetup.scroll
+codeFromFile public/readme.scroll
+codeFromFile public/releaseNotes.scroll
+codeFromFile public/serverSetup.scroll
 codeFromFile ScrollHub.js
-codeFromFile scrollHubEditor.js
+codeFromFile public/scrollHubEditor.js
