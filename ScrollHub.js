@@ -1205,7 +1205,7 @@ ${prefix}${hash}<br>
       res.send(stdout.toString())
     } catch (error) {
       console.error(`Error running '${command}' in '${folderName}':`, error)
-      res.status(500).send(`An error occurred while running '${command}' in '${folderName}'`)
+      res.status(500).send(`An error occurred while running '${command}' in '${folderName}': ` + error.message)
     }
   }
 
