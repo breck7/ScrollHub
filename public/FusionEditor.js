@@ -34,6 +34,7 @@ class FusionEditor {
     const { bufferValue, ScrollFile } = this
     const filename = "/" + this.parent.fileName
     this.fakeFs[filename] = bufferValue
+    delete this.fs._expandedImportCache[filename] // todo: cleanup
     const file = new ScrollFile(bufferValue, filename, this.fs)
     await file.fuse()
     this.fusedFile = file
