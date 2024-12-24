@@ -203,6 +203,7 @@ class ScrollHub {
     this.trashFolder = path.join(hubFolder, "trash")
     this.certsFolder = path.join(hubFolder, "certs")
     this.globalLogFile = path.join(hubFolder, ".log.txt")
+    this.slowLogFile = path.join(hubFolder, ".slow.txt")
     this.storyLogFile = path.join(hubFolder, ".writes.txt")
     this.folderCache = {}
     this.sseClients = new Set()
@@ -483,7 +484,7 @@ class ScrollHub {
   }
 
   async logRequest(req, res) {
-    const { folderCache, globalLogFile } = this
+    const { folderCache, globalLogFile, slowLogFile } = this
     const ip = req.ip || req.connection.remoteAddress
     const folderName = this.getFolderName(req)
 
@@ -491,6 +492,12 @@ class ScrollHub {
     fs.appendFile(globalLogFile, logEntry, err => {
       if (err) console.error("Failed to log request:", err)
     })
+
+    if (performance.now() - req.startTime > 1000) {
+      fs.appendFile(slowLogFile, logEntry, err => {
+        if (err) console.error("Failed to log slow request:", err)
+      })
+    }
 
     this.broadCastMessage(folderName, logEntry, ip)
 
