@@ -31,6 +31,7 @@ const scrollFs = new ScrollFileSystem()
 // This
 const { Dashboard } = require("./dashboard.js")
 const { CronRunner } = require("./CronRunner.js")
+const { Agent } = require("./Agent.js")
 
 const exists = async filePath => {
   const fileExists = await fsp
@@ -753,12 +754,28 @@ ${prefix}${hash}<br>
 
     app.post("/createFolder.htm", checkWritePermissions, async (req, res) => this.handleCreateFolder(req.body.folderName, req, res))
 
+    const agent = new Agent("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")
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
-      // Post prompt to an LLM
-      // Have LLM return folderName (probably a subdomain) and initial files
-      // Write those files to disk; set folder name
-      const folderName = await "todo"
-      this.handleCreateFolder(folderName, req, res)
+      try {
+        const prompt = req.body.prompt
+        if (!prompt) return res.status(400).send("Prompt is required")
+
+        // Get existing names for domain uniqueness check
+        const existingNames = Object.keys(this.folderCache)
+
+        // Generate website content from prompt
+        const { folderName, files } = await agent.createFolderNameAndFilesFromPrompt(prompt, existingNames)
+
+        // Create the folder with generated files
+        await this.createFolderFromFiles(folderName, files)
+
+        // Add to story and redirect
+        this.addStory(req, `created ${folderName} from prompt`)
+        res.redirect(`/edit.html?folderName=${folderName}`)
+      } catch (error) {
+        console.error("Error creating from prompt:", error)
+        res.status(500).send("Failed to create website from prompt: " + error.message)
+      }
     })
 
     app.post("/cloneFolder.htm", checkWritePermissions, async (req, res) => {
@@ -1824,6 +1841,21 @@ scrollVersionLink`
     }
   }
 
+  async createFolderFromFiles(folderName, files) {
+    const folderPath = path.join(this.rootFolder, folderName)
+    await fsp.mkdir(folderPath, { recursive: true })
+    for (const [filename, content] of Object.entries(files)) {
+      const filePath = path.join(folderPath, filename)
+      await fsp.mkdir(path.dirname(filePath), { recursive: true })
+      await fsp.writeFile(filePath, content, "utf8")
+    }
+    await execAsync("git init", { cwd: folderPath })
+    await execAsync("git add .", { cwd: folderPath })
+    await execAsync('git commit -m "Initial commit"', { cwd: folderPath })
+    await this.updateFolderAndBuildList(folderName)
+  }
+
+  // We support a lot of different strategies for creating a folder. Yeah, its a bit wierd. Probably should clean this up.
   async createFolder(rawInput) {
     const { folderCache } = this
     const { folderName, template, errorMessage } = this.makeFolderNameAndTemplateFromInput(rawInput, folderCache)

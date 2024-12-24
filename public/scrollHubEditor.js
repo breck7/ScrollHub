@@ -195,7 +195,7 @@ class EditorApp {
   autoOpen() {
     const { filenames } = this
     const lowerFilenames = new Set(filenames.map(f => f.toLowerCase()))
-    const defaultFiles = ["index.scroll", "readme.scroll", "readme.md", "index.html", "package.json"]
+    const defaultFiles = ["index.scroll", "readme.scroll", "index.html", "readme.md", "package.json"]
     let file = filenames[0]
     for (let f of defaultFiles) {
       if (lowerFilenames.has(f)) {

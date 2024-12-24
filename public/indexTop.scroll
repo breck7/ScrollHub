@@ -1,0 +1,21 @@
+importOnly
+title ScrollHub: publish faster
+
+baseUrl http://hub.scroll.pub/
+openGraphImage screenshot.png
+editBaseUrl https://github.com/breck7/ScrollHub/blob/main
+
+metaTags
+inlineCss .gazette.css .scroll.css scrollHubStyle.css
+
+css .thin {font-weight: 100;}
+
+# *Scroll*Hub
+ style font-size: 320%; font-weight:200;
+## The _fastest_ way to publish
+
+br 2
+
+createLinks.scroll
+
+br 2

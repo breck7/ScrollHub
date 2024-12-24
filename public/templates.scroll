@@ -1,14 +1,15 @@
 buildHtml
 
 homeButton
-css
- body {
-  font-family: "SF Pro", "Helvetica Neue", "Segoe UI", "Arial" !important;
- }
+css body { font-family: "SF Pro", "Helvetica Neue", "Segoe UI", "Arial" !important;}
+
 
 center
 # Create from template
  style font-weight: 300; font-size: 200%;
+
+center
+createLinks.scroll
 
 center
 table folders.json
@@ -56,3 +57,4 @@ css
   position: relative;
   overflow: hidden;
  }
+ a {text-decoration: none;}
