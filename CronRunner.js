@@ -7,12 +7,12 @@ class CronRunner {
     this.interval = 1 * 60 * 1000 // 1 minute default
     this.isRunning = false
     this.runningJobs = new Set()
+    this.minute = 0
   }
 
   start() {
     if (this.isRunning) return
     this.isRunning = true
-    this.checkCronFiles()
     this.timer = setInterval(() => this.checkCronFiles(), this.interval)
     console.log("CronRunner started")
     return this
@@ -29,12 +29,21 @@ class CronRunner {
     const { rootFolder, folderCache } = this.scrollHub
     const folderNames = Object.keys(folderCache)
 
+    console.log(`Running Cron Loop. Minute ${this.minute}`)
+    this.minute++
     for (const folderName of folderNames) {
-      const cronPath = path.join(rootFolder, folderName, "cron.scroll")
       try {
         // Skip if already running
         if (this.runningJobs.has(folderName)) continue
 
+        const cronJsPath = path.join(rootFolder, folderName, "cron.js")
+        const jsExists = await this.scrollHub.exists(cronJsPath)
+        if (jsExists) {
+          delete require.cache[require.resolve(cronJsPath)]
+          require(cronJsPath)
+        }
+
+        const cronPath = path.join(rootFolder, folderName, "cron.scroll")
         const exists = await this.scrollHub.exists(cronPath)
         if (!exists) continue
 
