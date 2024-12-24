@@ -62,7 +62,7 @@ class Dashboard {
   }
 
   parseLogEntry(entry) {
-    const regex = /^(read|write) ([^ ]+) ([^ ]+) (\d+) ([^ ]+) (.+)$/
+    const regex = /^(read|write) ([^ ]+) ([^ ]+) (\d+) ([^ ]+) ([^ ]+) ([^ ]+) (.+)$/
     const match = entry.match(regex)
     if (match) {
       const url = match[3]
@@ -76,7 +76,9 @@ class Dashboard {
         filename: filename,
         timestamp: new Date(parseInt(match[4])),
         ip: match[5],
-        userAgent: match[6]
+        responseTime: match[6],
+        statusCode: match[7],
+        userAgent: match[8]
       }
     }
     return null

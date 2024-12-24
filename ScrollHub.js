@@ -449,7 +449,15 @@ class ScrollHub {
     const checkWritePermissions = this.checkWritePermissions.bind(this)
     if (!fs.existsSync(this.storyLogFile)) fs.writeFileSync(this.storyLogFile, "", "utf8")
     const { app, folderCache } = this
-    app.use(this.logRequest.bind(this))
+
+    app.use((req, res, next) => {
+      req.startTime = performance.now()
+
+      res.on("finish", () => {
+        this.logRequest(req, res)
+      })
+      next()
+    })
 
     app.use("/summarizeRequests.htm", checkWritePermissions, async (req, res) => {
       const folderName = this.getFolderName(req)
@@ -465,16 +473,21 @@ class ScrollHub {
     app.get("/hostname.htm", (req, res) => res.send(req.hostname))
   }
 
-  async logRequest(req, res, next) {
-    const { rootFolder, folderCache, globalLogFile } = this
+  reqToLog(req, res) {
     const { hostname, method, url, protocol } = req
     const ip = req.ip || req.connection.remoteAddress
     const userAgent = parseUserAgent(req.get("User-Agent") || "Unknown")
     const folderName = this.getFolderName(req)
+    const responseTime = ((performance.now() - req.startTime) / 1000).toFixed(1)
+    return `${method === "GET" ? "read" : "write"} ${folderName || hostname} ${protocol}://${hostname}${url} ${Date.now()} ${ip} ${responseTime} ${res.statusCode} ${userAgent}\n`
+  }
 
-    // todo: log after request? save status response, etc? flag bots?
-    const logEntry = `${method === "GET" ? "read" : "write"} ${folderName || hostname} ${protocol}://${hostname}${url} ${Date.now()} ${ip} ${userAgent}\n`
+  async logRequest(req, res) {
+    const { folderCache, globalLogFile } = this
+    const ip = req.ip || req.connection.remoteAddress
+    const folderName = this.getFolderName(req)
 
+    const logEntry = this.reqToLog(req, res)
     fs.appendFile(globalLogFile, logEntry, err => {
       if (err) console.error("Failed to log request:", err)
     })
@@ -489,7 +502,6 @@ class ScrollHub {
         console.error(`Failed to log request to folder log (${folderLogFile}):`, err)
       }
     }
-    next()
   }
 
   getFolderLogFile(folderName) {

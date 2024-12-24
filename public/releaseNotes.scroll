@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.62.0 12/24/2024
+🎉 Moved analytics logging to after response finishes and added response time and status code
+
 📦 0.61.0 12/23/2024
 🎉 Added create via AI. Requires adding your Claude API key to server.
 
