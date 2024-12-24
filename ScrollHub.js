@@ -228,6 +228,7 @@ class ScrollHub {
     console.log(`Max memory: ${v8.getHeapStatistics().heap_size_limit / 1024 / 1024} MB`)
 
     this.initFileRoutes()
+    this.initAIRoutes()
     this.initGitRoutes()
     this.initHistoryRoutes()
     this.initZipRoutes()
@@ -748,13 +749,16 @@ ${prefix}${hash}<br>
     }
   }
 
-  initFileRoutes() {
-    const { app, rootFolder, folderCache } = this
+  initAIRoutes() {
+    const { app, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
-
-    app.post("/createFolder.htm", checkWritePermissions, async (req, res) => this.handleCreateFolder(req.body.folderName, req, res))
-
-    const agent = new Agent("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")
+    const keyPath = path.join(this.hubFolder, "claude.txt")
+    if (!fs.existsSync(keyPath)) {
+      console.log("No Claude API key found. Skipping AI routes")
+      return
+    }
+    const apiKey = fs.readFileSync(keyPath, "utf8").trim()
+    const agent = new Agent(apiKey)
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
       try {
         const prompt = req.body.prompt
@@ -777,6 +781,13 @@ ${prefix}${hash}<br>
         res.status(500).send("Failed to create website from prompt: " + error.message)
       }
     })
+  }
+
+  initFileRoutes() {
+    const { app, rootFolder, folderCache } = this
+    const checkWritePermissions = this.checkWritePermissions.bind(this)
+
+    app.post("/createFolder.htm", checkWritePermissions, async (req, res) => this.handleCreateFolder(req.body.folderName, req, res))
 
     app.post("/cloneFolder.htm", checkWritePermissions, async (req, res) => {
       try {

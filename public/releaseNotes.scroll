@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.61.0 12/23/2024
+🎉 Added create via AI. Requires adding your Claude API key to server.
+
 📦 0.60.0 12/20/2024
 🎉 You can now run unlimited ScrollHub processes on one machine-each independently serving their own root folder on their own port.
 
