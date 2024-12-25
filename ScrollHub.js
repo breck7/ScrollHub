@@ -41,6 +41,12 @@ const exists = async filePath => {
   return fileExists
 }
 
+const ScrollToHtml = async scrollCode => {
+  const page = new ScrollFile(scrollCode)
+  await page.fuse()
+  return page.scrollProgram.asHtml
+}
+
 const generateFileName = async (basePath, strategy, content) => {
   let name = "untitled.scroll"
   switch (strategy) {
@@ -376,13 +382,51 @@ class ScrollHub {
     this.app.use(fileUpload({ limits: { fileSize: this.maxUploadSize } }))
   }
 
+  async sendFolderNotFound(res, hostname) {
+    const message = `title Folder Not Found
+
+css
+ body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  line-height: 1.6;
+ }
+ h1 { color: #333; }
+ .message { color: #666; }
+ .suggestion { margin-top: 20px; color: #0066cc; }
+
+# Folder Not Found
+
+The folder "${hostname}" does not exist on this ScrollHub instance.
+ link https://github.com/breck7/ScrollHub ScrollHub
+ class message
+
+If you'd like to create this folder, visit our main site to get started.
+ link https://${this.hostname} our main site
+ class suggestion`
+    // Use 400 (Bad Request) for unknown hostname
+    const html = await ScrollToHtml(message)
+    res.status(400).send(html)
+    return
+  }
+
   enableStaticFileServing() {
     const { app, folderCache, rootFolder } = this
-    // New middleware to route domains to the matching folder
     app.use((req, res, next) => {
       const hostname = req.hostname?.toLowerCase()
-      if (!hostname || !folderCache[hostname]) return next()
 
+      // If no hostname, continue to next middleware
+      if (!hostname) return next()
+
+      // If hostname is the main server hostname, continue to next middleware
+      if (hostname === this.hostname || hostname === "localhost") return next()
+
+      // If the domain doesn't exist in folderCache, return custom 404
+      if (!folderCache[hostname]) return this.sendFolderNotFound(res, hostname)
+
+      // If domain exists, serve from its folder
       const folderPath = path.join(rootFolder, hostname)
       express.static(folderPath, { dotfiles: "allow" })(req, res, next)
     })
