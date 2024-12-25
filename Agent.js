@@ -18,12 +18,12 @@ class Agent {
     const systemPrompt = `You are an expert web developer. Create a website based on this request: "${prompt}"
 
 Requirements:
-- Use only vanilla HTML, CSS, and JavaScript (NO frameworks, NO external dependencies)
+- Use only Scroll, vanilla HTML, CSS, and JavaScript (NO frameworks, NO external dependencies)
 - Create clean, semantic HTML5
 - Make it mobile-responsive
 - Follow modern best practices and accessibility guidelines
 - Keep it simple but professional
-- Include basic SEO meta tags
+- Include basic SEO meta tags using Scroll
 - Use only relative links and no external resources
 - Do not put a copyright symbol or all rights reserved in the footer.
 - Make it beautiful. Dazzling. Advanced used of CSS.
@@ -32,8 +32,17 @@ First suggest a short, memorable domain name ending in .scroll.pub that represen
 
 ---domain---
 (domain.scroll.pub here)
----index.html---
-(HTML content here)
+---index.scroll---
+buildHtml
+baseUrl https://(domain.scroll.pub here)
+metaTags
+editButton
+title (Title here)
+style.css
+body.html
+script.js
+---body.html---
+(HTML body content here)
 ---style.css---
 (CSS content here)
 ---script.js---
@@ -87,7 +96,7 @@ First suggest a short, memorable domain name ending in .scroll.pub that represen
     }
 
     // Add a default README
-    files["README.md"] = `# ${finalDomain}\nWebsite generated from prompt: ${prompt}`
+    files["readme.scroll"] = `# ${finalDomain}\nWebsite generated from prompt: ${prompt}`
 
     return {
       folderName: finalDomain,

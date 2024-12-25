@@ -792,6 +792,8 @@ ${prefix}${hash}<br>
         // Create the folder with generated files
         await this.createFolderFromFiles(folderName, files)
 
+        await this.buildFolder(folderName)
+
         // Add to story and redirect
         this.addStory(req, `created ${folderName} from prompt`)
         res.redirect(`/edit.html?folderName=${folderName}`)
