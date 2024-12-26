@@ -3,6 +3,7 @@ title ScrollHub: publish faster
 
 baseUrl http://hub.scroll.pub/
 openGraphImage screenshot.png
+homeButton
 editBaseUrl https://github.com/breck7/ScrollHub/blob/main
 
 metaTags

@@ -445,8 +445,6 @@ If you'd like to create this folder, visit our main site to get started.
 
     // Serve the process's public folder
     app.use(express.static(this.publicFolder, { dotfiles: "allow" }))
-    // Serve the root directory statically
-    app.use(express.static(__dirname, { dotfiles: "allow" }))
   }
 
   init404Routes() {
