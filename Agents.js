@@ -173,8 +173,8 @@ class Agents {
     return Object.values(this.agents)
   }
 
-  async createFolderNameAndFilesFromPrompt(userPrompt, existingNames) {
-    const agent = this.agents.claude || this.agents.deepseek
+  async createFolderNameAndFilesFromPrompt(userPrompt, existingNames, agentName) {
+    const agent = this.agents[agentName] || this.allAgents[0]
     const prompt = new SimpleCreationPrompt(userPrompt, existingNames)
     await agent.do(prompt)
     return prompt.parsedResponse

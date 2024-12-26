@@ -1,6 +1,7 @@
 <div id="spinner"></div>
 <form method="post" action="createFromPrompt.htm" id="createForm">
-<input type="text" id="folderName" name="prompt" placeholder="Describe the website you want"><button class="scrollButton createButton">Create from AI</button>
+<input type="hidden" name="agent" value="AGENT">
+<input type="text" id="folderName" name="prompt" placeholder="Describe the website you want"><button class="scrollButton createButton">Create with AGENT</button>
 <div id="errorMessage"></div>
 inlineJs create.js
 </form>

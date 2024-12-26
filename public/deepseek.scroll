@@ -1,4 +1,4 @@
 indexTop.scroll
-replace AGENT Claude
+replace AGENT DeepSeek
 createFromPrompt.scroll
 indexBottom.scroll

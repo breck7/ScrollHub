@@ -823,13 +823,14 @@ ${prefix}${hash}<br>
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
       try {
         const prompt = req.body.prompt
+        const agent = (req.body.agent || "claude").toLowerCase()
         if (!prompt) return res.status(400).send("Prompt is required")
 
         // Get existing names for domain uniqueness check
         const existingNames = Object.keys(this.folderCache)
 
         // Generate website content from prompt
-        const { folderName, files } = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames)
+        const { folderName, files } = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames, agent)
 
         // Create the folder with generated files
         await this.createFolderFromFiles(folderName, files)
@@ -837,7 +838,7 @@ ${prefix}${hash}<br>
         await this.buildFolder(folderName)
 
         // Add to story and redirect
-        this.addStory(req, `created ${folderName} from prompt`)
+        this.addStory(req, `created ${folderName} from prompt using ${agent}`)
         res.redirect(`/edit.html?folderName=${folderName}`)
       } catch (error) {
         console.error("Error creating from prompt:", error)
