@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.66.0 12/26/2024
+🎉 Generalized Agent code and added support for deepseek
+
 📦 0.65.0 12/25/2024
 🎉 Stop serving all folders from all custom domains
 🎉 Stop serving non-existant domains

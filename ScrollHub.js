@@ -31,7 +31,7 @@ const scrollFs = new ScrollFileSystem()
 // This
 const { Dashboard } = require("./dashboard.js")
 const { CronRunner } = require("./CronRunner.js")
-const { Agent } = require("./Agent.js")
+const { Agents } = require("./Agents.js")
 
 const exists = async filePath => {
   const fileExists = await fsp
@@ -819,13 +819,7 @@ ${prefix}${hash}<br>
   initAIRoutes() {
     const { app, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
-    const keyPath = path.join(this.hubFolder, "claude.txt")
-    if (!fs.existsSync(keyPath)) {
-      console.log("No Claude API key found. Skipping AI routes")
-      return
-    }
-    const apiKey = fs.readFileSync(keyPath, "utf8").trim()
-    const agent = new Agent(apiKey)
+    const agents = new Agents(this.hubFolder)
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
       try {
         const prompt = req.body.prompt
@@ -835,7 +829,7 @@ ${prefix}${hash}<br>
         const existingNames = Object.keys(this.folderCache)
 
         // Generate website content from prompt
-        const { folderName, files } = await agent.createFolderNameAndFilesFromPrompt(prompt, existingNames)
+        const { folderName, files } = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames)
 
         // Create the folder with generated files
         await this.createFolderFromFiles(folderName, files)
