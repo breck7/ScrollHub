@@ -414,6 +414,18 @@ If you'd like to create this folder, visit our main site to get started.
 
   enableStaticFileServing() {
     const { app, folderCache, rootFolder } = this
+
+    const isRootHost = req => {
+      const hostname = req.hostname?.toLowerCase()
+      // If its the main hostname, serve the folders directly
+      if (hostname === this.hostname || hostname === "localhost") return true
+      const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+      if (ipv4Regex.test(hostname))
+        // treat direct IP requests as host requests
+        return true
+      return false
+    }
+
     app.use((req, res, next) => {
       const hostname = req.hostname?.toLowerCase()
 
@@ -421,9 +433,9 @@ If you'd like to create this folder, visit our main site to get started.
       if (!hostname) return next()
 
       // If hostname is the main server hostname, continue to next middleware
-      if (hostname === this.hostname || hostname === "localhost") return next()
+      if (isRootHost(req)) return next()
 
-      // If the domain doesn't exist in folderCache, return custom 404
+      // If the hostname requested isnt root host and doesn't exist in folderCache, return 400
       if (!folderCache[hostname]) return this.sendFolderNotFound(res, hostname)
 
       // If domain exists, serve from its folder
@@ -431,17 +443,11 @@ If you'd like to create this folder, visit our main site to get started.
       express.static(folderPath, { dotfiles: "allow" })(req, res, next)
     })
 
-    // Serve the folders directory from the root URL
-    app.use("/", express.static(rootFolder, { dotfiles: "allow" }))
-
-    // todo:?
-    // Only serve folders from root URL on the main hostname
-    // app.use((req, res, next) => {
-    //   if (req.hostname?.toLowerCase() === this.hostname) {
-    //     return express.static(rootFolder)(req, res, next)
-    //   }
-    //   next()
-    // })
+    app.use((req, res, next) => {
+      // On the root host, all folders are served like: rootDomain/folder/
+      if (isRootHost(req)) return express.static(rootFolder, { dotfiles: "allow" })(req, res, next)
+      next()
+    })
 
     // Serve the process's public folder
     app.use(express.static(this.publicFolder, { dotfiles: "allow" }))
