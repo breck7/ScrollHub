@@ -3,8 +3,9 @@ const readline = require("readline")
 const fsp = require("fs").promises
 const path = require("path")
 
-class Dashboard {
-  constructor(inputFile) {
+class TrafficMonitor {
+  constructor(inputFile, hubFolder) {
+    this.hubFolder = hubFolder
     this.inputFile = inputFile
     this.stats = {} // Combined daily and folder stats
     this.totalLines = 0
@@ -19,7 +20,7 @@ class Dashboard {
 
     // Prepare the cache file path
     const firstPart = ip4.split(".")[0]
-    const cacheDir = path.join(__dirname, "ipToGeo", firstPart)
+    const cacheDir = path.join(this.hubFolder, "ipToGeo", firstPart)
     const cacheFile = path.join(cacheDir, `${ip4}.json`)
 
     try {
@@ -222,4 +223,4 @@ class Dashboard {
   }
 }
 
-module.exports = { Dashboard }
+module.exports = { TrafficMonitor }

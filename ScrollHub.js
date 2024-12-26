@@ -29,7 +29,7 @@ const packageJson = require("./package.json")
 const scrollFs = new ScrollFileSystem()
 
 // This
-const { Dashboard } = require("./dashboard.js")
+const { TrafficMonitor } = require("./TrafficMonitor.js")
 const { CronRunner } = require("./CronRunner.js")
 const { Agents } = require("./Agents.js")
 
@@ -213,7 +213,7 @@ class ScrollHub {
     this.storyLogFile = path.join(hubFolder, ".writes.txt")
     this.folderCache = {}
     this.sseClients = new Set()
-    this.dashboard = new Dashboard(this.globalLogFile)
+    this.trafficMonitor = new TrafficMonitor(this.globalLogFile, this.hubFolder)
   }
 
   startAll() {
@@ -346,7 +346,7 @@ class ScrollHub {
 
   async broadCastMessage(folderName, log, ip) {
     if (!this.sseClients.size) return
-    const geo = await this.dashboard.ipToGeo(ip === "::1" ? "98.150.188.43" : ip)
+    const geo = await this.trafficMonitor.ipToGeo(ip === "::1" ? "98.150.188.43" : ip)
     const name = (geo.regionName + "/" + geo.country).replace(/ /g, "")
     log = [log.trim(), name, geo.lat, geo.lon].join(" ")
     this.sseClients.forEach(client => {
@@ -454,7 +454,7 @@ If you'd like to create this folder, visit our main site to get started.
   }
 
   init404Routes() {
-    const { app, rootFolder } = this
+    const { app, rootFolder, hubFolder } = this
     //The 404 Route (ALWAYS Keep this as the last route)
     app.get("*", async (req, res) => {
       const folderName = this.getFolderName(req)
@@ -467,22 +467,22 @@ If you'd like to create this folder, visit our main site to get started.
           res.status(404).sendFile(notFoundPage)
         })
         .catch(() => {
-          res.status(404).sendFile(path.join(__dirname, "404.html"))
+          res.status(404).sendFile(path.join(hubFolder, "404.html"))
         })
     })
   }
 
   isSummarizing = {}
   async buildRequestsSummary(folder = "") {
-    const { rootFolder, folderCache } = this
+    const { rootFolder, folderCache, hubFolder } = this
     if (this.isSummarizing[folder]) return
     this.isSummarizing[folder] = true
     if (folder && !folderCache[folder]) return
     const logFile = folder ? this.getFolderLogFile(folder) : this.globalLogFile
-    const outputPath = folder ? path.join(rootFolder, folder) : path.join(__dirname)
-    const dashboard = new Dashboard(logFile)
-    await dashboard.processLogFile()
-    const content = folder ? dashboard.csv : dashboard.csvTotal
+    const outputPath = folder ? path.join(rootFolder, folder) : path.join(this.publicFolder)
+    const trafficMonitor = new TrafficMonitor(logFile, hubFolder)
+    await trafficMonitor.processLogFile()
+    const content = folder ? trafficMonitor.csv : trafficMonitor.csvTotal
     await fsp.writeFile(path.join(outputPath, ".requests.csv"), content, "utf8")
     if (folder) {
       const reqFile = path.join(outputPath, ".requests.scroll")
@@ -1431,7 +1431,7 @@ ${prefix}${hash}<br>
   }
 
   initVandalProtection() {
-    const allowedIpsPath = path.join(__dirname, "allowedIps.txt")
+    const allowedIpsPath = path.join(this.hubFolder, ".allowedIps.txt")
     const readAllowedIPs = () => {
       if (!fs.existsSync(allowedIpsPath)) return null
 
