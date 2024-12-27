@@ -496,7 +496,8 @@ class EditorApp {
   }
 
   get rootUrl() {
-    return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, window.location.protocol)
+    const protocol = this.useSsl ? window.location.protocol : "http:"
+    return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, protocol)
   }
 
   updatePreviewIFrame() {
@@ -516,7 +517,8 @@ class EditorApp {
   }
 
   get cloneUrl() {
-    return getCloneUrlForFolder(this.folderName, this.hostnameWithPort, window.location.protocol)
+    const protocol = this.useSsl ? window.location.protocol : "http:"
+    return getCloneUrlForFolder(this.folderName, this.hostnameWithPort, protocol)
   }
 
   copyClone() {
@@ -595,12 +597,16 @@ class EditorApp {
     window.location.href = `/edit.html?folderName=${result}`
   }
 
+  useSsl = false
+
   async fetchAndDisplayFileList() {
     const { folderName } = this
     try {
       const response = await fetch(`/ls.json?folderName=${folderName}`)
       if (!response.ok) throw new Error(await response.text())
-      const allFiles = await response.json()
+      const allData = await response.json()
+      const allFiles = allData.files
+      this.useSsl = allData.hasSslCert
 
       const filtered = {}
       Object.keys(allFiles).forEach(key => {

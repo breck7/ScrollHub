@@ -849,6 +849,15 @@ ${prefix}${hash}<br>
     })
   }
 
+  async doesHaveSslCert(folderName) {
+    // by default assume root server has ssl certs
+    if (!folderName.includes(".")) return true
+    // Now we see if the custom domain has one
+    const certPath = path.join(this.certsFolder, `${folderName}.crt`)
+    const hasSslCert = await exists(certPath)
+    return hasSslCert
+  }
+
   initFileRoutes() {
     const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
@@ -874,10 +883,13 @@ ${prefix}${hash}<br>
 
     app.get("/ls.json", async (req, res) => {
       const folderName = this.getFolderName(req)
-      if (!folderCache[folderName]) return res.status(404).send(`Folder '${folderName}' not found`)
+      const folderEntry = folderCache[folderName]
+      if (!folderEntry) return res.status(404).send(`Folder '${folderName}' not found`)
       res.setHeader("Content-Type", "text/json")
       const files = await this.getFileList(folderName)
-      res.send(JSON.stringify(files))
+      if (folderEntry.hasSslCert === undefined) folderEntry.hasSslCert = await this.doesHaveSslCert(folderName)
+
+      res.send(JSON.stringify({ files, hasSslCert: folderEntry.hasSslCert }))
     })
 
     app.get("/readFile.htm", async (req, res) => {
@@ -1756,10 +1768,12 @@ ${prefix}${hash}<br>
         })
       })
 
-      const folderLink = getBaseUrlForFolder(folder, this.hostname, "http:", this.isLocalHost)
+      const hasSslCert = await this.doesHaveSslCert(folder)
+      const folderLink = getBaseUrlForFolder(folder, this.hostname, hasSslCert ? "https:" : "http:", this.isLocalHost)
 
       const entry = {
         files,
+        hasSslCert,
         stats: {
           folder,
           folderLink,
