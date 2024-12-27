@@ -13,6 +13,10 @@ class AbstractPrompt {
     this.response = response
     return this
   }
+
+  setDebugLog(completion) {
+    this.completion = completion
+  }
 }
 
 class SimpleCreationPrompt extends AbstractPrompt {
@@ -100,14 +104,20 @@ script.js
   }
 }
 
-class AbstractAgent {}
+class AbstractAgent {
+  constructor(apiKey, hubFolder) {
+    this.apiKey = apiKey
+    this.hubFolder = hubFolder
+  }
+}
 
 class Claude extends AbstractAgent {
-  constructor(apiKey) {
-    super(apiKey)
-    this.client = new Anthropic({
-      apiKey
-    })
+  get client() {
+    if (!this._client)
+      this._client = new Anthropic({
+        apiKey: this.apiKey
+      })
+    return this._client
   }
   name = "Claude"
   async do(prompt) {
@@ -120,9 +130,9 @@ class Claude extends AbstractAgent {
       temperature: 0.7,
       messages: [{ role: "user", content: prompt.systemPrompt }]
     })
-
     // Parse Claude's response into domain and files
     const response = completion.content[0].text
+    prompt.setDebugLog(completion)
     return prompt.setResponse(response)
   }
 }
@@ -130,21 +140,23 @@ class Claude extends AbstractAgent {
 class OpenAIAgent extends AbstractAgent {}
 
 class DeepSeek extends AbstractAgent {
-  constructor(apiKey) {
-    super(apiKey)
-    this.openai = new OpenAI({
-      baseURL: "https://api.deepseek.com",
-      apiKey
-    })
+  get client() {
+    if (!this._client)
+      this._client = new OpenAI({
+        baseURL: "https://api.deepseek.com",
+        apiKey: this.apiKey
+      })
+    return this._client
   }
   name = "DeepSeek"
   async do(prompt) {
     console.log("Sending prompt to deepseek")
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.client.chat.completions.create({
       messages: [{ role: "system", content: prompt.systemPrompt }],
       model: "deepseek-chat"
     })
     const response = completion.choices[0].message.content
+    prompt.setDebugLog(completion)
     return prompt.setResponse(response)
   }
 }
@@ -152,8 +164,8 @@ class DeepSeek extends AbstractAgent {
 const AgentClasses = { claude: Claude, deepseek: DeepSeek, openai: OpenAIAgent }
 
 class Agents {
-  constructor(keyFolder) {
-    this.keyFolder = keyFolder
+  constructor(hubFolder) {
+    this.hubFolder = hubFolder
     this.agents = {}
     this.availableAgents.forEach(agent => this.loadAgent(agent))
   }
@@ -161,15 +173,15 @@ class Agents {
   availableAgents = "claude deepseek".split(" ")
 
   loadAgent(name) {
-    const { keyFolder } = this
-    const keyPath = path.join(keyFolder, `${name}.txt`)
+    const { hubFolder } = this
+    const keyPath = path.join(hubFolder, `${name}.txt`)
     if (!fs.existsSync(keyPath)) {
       console.log(`No ${name} API key found. Skipping ${name} agent`)
       return
     }
     const apiKey = fs.readFileSync(keyPath, "utf8").trim()
     const agentConstructor = AgentClasses[name]
-    this.agents[name] = new agentConstructor(apiKey)
+    this.agents[name] = new agentConstructor(apiKey, hubFolder)
   }
 
   get allAgents() {
@@ -180,7 +192,7 @@ class Agents {
     const agent = this.agents[agentName] || this.allAgents[0]
     const prompt = new SimpleCreationPrompt(userPrompt, existingNames, agent)
     await agent.do(prompt)
-    return prompt.parsedResponse
+    return prompt
   }
 
   // todo: wire this up

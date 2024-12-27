@@ -830,7 +830,9 @@ ${prefix}${hash}<br>
         const existingNames = Object.keys(this.folderCache)
 
         // Generate website content from prompt
-        const { folderName, files } = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames, agent)
+        const response = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames, agent)
+        const { folderName, files } = response.parsedResponse
+        files["prompt.json"] = JSON.stringify(response.completion, null, 2)
 
         // Create the folder with generated files
         await this.createFolderFromFiles(folderName, files)
