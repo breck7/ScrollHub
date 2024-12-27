@@ -1756,7 +1756,7 @@ ${prefix}${hash}<br>
         })
       })
 
-      const folderLink = getBaseUrlForFolder(folder, this.hostname, "https:", this.isLocalHost)
+      const folderLink = getBaseUrlForFolder(folder, this.hostname, "http:", this.isLocalHost)
 
       const entry = {
         files,
