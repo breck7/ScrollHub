@@ -44,6 +44,36 @@ class EditorApp {
     this.codeMirrorInstance.setSize(this.width, editorHeight)
     const fileList = document.getElementById("fileList")
     fileList.style.height = `${editorHeight - 138}px`
+    if (this.isFocusMode) {
+      console.log("Entering focus mode")
+      document.querySelector(".buttonRow").style.display = "none"
+      document.querySelector(".editorHolder").classList.add("focusMode")
+      const width = Math.min(800, document.body.clientWidth)
+      this.codeMirrorInstance.setSize(width, window.innerHeight)
+    }
+  }
+
+  exitFocusMode() {
+    this.isFocusMode = false
+    document.querySelector(".buttonRow").style.display = "block"
+    document.querySelector(".editorHolder").classList.remove("focusMode")
+    this.updateEditorDimensions()
+  }
+
+  enterFocusMode() {
+    this.isFocusMode = true
+    // Request browser full screen
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen()
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      document.documentElement.webkitRequestFullscreen()
+    } else if (document.documentElement.msRequestFullscreen) {
+      document.documentElement.msRequestFullscreen()
+    }
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement) this.exitFocusMode()
+    })
+    this.updateEditorDimensions()
   }
 
   getEditorMode(fileName) {
@@ -758,6 +788,11 @@ class EditorApp {
     document.querySelector(".formatFileLink").addEventListener("click", async evt => {
       evt.preventDefault()
       this.formatFileCommand()
+    })
+
+    document.querySelector(".focusLink").addEventListener("click", async evt => {
+      evt.preventDefault()
+      this.enterFocusMode()
     })
 
     document.querySelector(".deleteFileLink").addEventListener("click", async e => {

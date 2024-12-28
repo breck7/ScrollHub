@@ -53,6 +53,7 @@ body {
 .deleteFileLink,
 .duplicateFileLink,
 .formatFileLink,
+.focusLink,
 .renameFileLink {
   color: var(--light-grey);
   margin-left: 20px;
@@ -155,6 +156,16 @@ form {
   border-left: 1px solid rgb(232, 232, 232);
   padding: 7px;
 }
+.editorHolder.focusMode {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  background: white;
+  padding-left: calc((100vw - 800px) / 2);
+}
 
 input[type="text"],
 textarea {
@@ -207,6 +218,7 @@ textarea {
   text-align: center;
   left: 0;
   right: 0;
+  z-index: 3;
 }
 
 #spinner span {
