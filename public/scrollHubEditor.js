@@ -373,7 +373,7 @@ class EditorApp {
   keyboardShortcuts = {
     "command+s": "saveAndPublishCommand",
     "ctrl+n": "createFileCommand",
-    "ctrl+f": "toggleFocusModeCommand",
+    "shift+f": "toggleFocusModeCommand",
     "ctrl+p": "refreshParserCommand",
     "?": "toggleHelpCommand"
   }
@@ -416,7 +416,7 @@ class EditorApp {
         that.saveAndPublishCommand()
         evt.preventDefault()
         return true
-      } else if (keyboardShortcuts[shortcut]) {
+      } else if (keyboardShortcuts[shortcut] && !that.codeMirrorInstance.hasFocus()) {
         that[keyboardShortcuts[shortcut]]()
         evt.preventDefault()
         return true
