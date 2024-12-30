@@ -53,14 +53,19 @@ class EditorApp {
     }
   }
 
-  exitFocusMode() {
+  exitFocusModeCommand() {
     this.isFocusMode = false
     document.querySelector(".buttonRow").style.display = "block"
     document.querySelector(".editorHolder").classList.remove("focusMode")
     this.updateEditorDimensions()
   }
 
-  enterFocusMode() {
+  toggleFocusModeCommand() {
+    if (this.isFocusMode) this.exitFocusModeCommand()
+    else this.enterFocusModeCommand()
+  }
+
+  enterFocusModeCommand() {
     this.isFocusMode = true
     // Request browser full screen
     if (document.documentElement.requestFullscreen) {
@@ -71,7 +76,7 @@ class EditorApp {
       document.documentElement.msRequestFullscreen()
     }
     document.addEventListener("fullscreenchange", () => {
-      if (!document.fullscreenElement) this.exitFocusMode()
+      if (!document.fullscreenElement) this.exitFocusModeCommand()
     })
     this.updateEditorDimensions()
   }
@@ -250,7 +255,7 @@ class EditorApp {
 
     this.setFileContent(content)
     this.setFileNameInUrl(fileName)
-    await this.refreshParser()
+    await this.refreshParserCommand()
     this.updateEditorMode(fileName)
     this.updatePreviewIFrame()
 
@@ -299,7 +304,7 @@ class EditorApp {
       this.fileName = this.sanitizeFileName(fileName)
     }
     await this.writeFile("Publishing...", this.bufferValue, this.fileName)
-    await this.refreshParser()
+    await this.refreshParserCommand()
     this.updatePreviewIFrame()
   }
 
@@ -344,43 +349,75 @@ class EditorApp {
     console.log(`'${folderName}' built`)
   }
 
-  async saveCommand() {
+  async saveAndPublishCommand() {
     await this.saveFile()
     await this.fetchAndDisplayFileList()
     await this.buildFolderCommand()
   }
 
-  async refreshParser() {
+  async refreshParserCommand() {
     await this.fusionEditor.buildMainProgram()
     console.log("Parser refreshed")
     this.rehighlight()
   }
 
+  toggleHelpCommand() {
+    if (this.isHelpOpen) closeModal(document.querySelector("#helpModal"))
+    else openModal("helpModal")
+  }
+
+  get isHelpOpen() {
+    return document.querySelector("#helpModal").style.display === "block"
+  }
+
+  keyboardShortcuts = {
+    "command+s": "saveAndPublishCommand",
+    "ctrl+n": "createFileCommand",
+    "ctrl+f": "toggleFocusModeCommand",
+    "ctrl+p": "refreshParserCommand",
+    "?": "toggleHelpCommand"
+  }
+
+  loadHelpContent() {
+    const { keyboardShortcuts } = this
+    const shortcutElements = Object.keys(keyboardShortcuts)
+      .map(key => {
+        const command = keyboardShortcuts[key]
+        const description = lodash.startCase(command.replace("Command", ""))
+        const keyStr = key.replace("command", "cmd")
+        return `
+        <div class="shortcut" onclick="app.${command}()">
+          <kbd>${keyStr}</kbd> <span>${description}</span>
+        </div>
+      `
+      })
+      .join("")
+
+    document.querySelector("#helpModal").innerHTML =
+      document.querySelector("#helpModal").innerHTML +
+      `
+      <div class="keyboard-shortcuts">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
+          ${shortcutElements}
+        </div>
+      </div>
+    `
+  }
+
   bindKeyboardShortcuts() {
+    const { keyboardShortcuts } = this
     const that = this
-
-    const keyboardShortcuts = {
-      "command+s": () => {
-        that.saveCommand()
-      },
-      "ctrl+n": () => {
-        that.createFileCommand()
-      },
-      "ctrl+p": async () => {
-        that.refreshParser()
-      }
-    }
-
     // note: I do not rememeber why we do any of this stopCallback stuff but it seems hard won knowledge ;)
     Mousetrap._originalStopCallback = Mousetrap.prototype.stopCallback
     Mousetrap.prototype.stopCallback = async function (evt, element, shortcut) {
       if (shortcut === "command+s") {
         // save. refresh preview
-        that.saveCommand()
+        that.saveAndPublishCommand()
         evt.preventDefault()
         return true
       } else if (keyboardShortcuts[shortcut]) {
-        keyboardShortcuts[shortcut]()
+        that[keyboardShortcuts[shortcut]]()
         evt.preventDefault()
         return true
       }
@@ -391,12 +428,13 @@ class EditorApp {
 
     Object.keys(keyboardShortcuts).forEach(key => {
       Mousetrap.bind(key, function (evt) {
-        keyboardShortcuts[key]()
+        that[keyboardShortcuts[key]]()
         // todo: handle the below when we need to
         if (evt.preventDefault) evt.preventDefault()
         return false
       })
     })
+    this.loadHelpContent()
   }
 
   handleDragOver(event) {
@@ -737,7 +775,7 @@ class EditorApp {
   }
 
   async createFileCommand() {
-    let fileName = prompt("Enter a filename", "untitled")
+    let fileName = prompt("Enter a filename", "untitled").replace(/ /g, "")
     if (!fileName) return ""
     await this.writeFile("Creating file...", "", fileName)
   }
@@ -788,11 +826,6 @@ class EditorApp {
     document.querySelector(".formatFileLink").addEventListener("click", async evt => {
       evt.preventDefault()
       this.formatFileCommand()
-    })
-
-    document.querySelector(".focusLink").addEventListener("click", async evt => {
-      evt.preventDefault()
-      this.enterFocusMode()
     })
 
     document.querySelector(".deleteFileLink").addEventListener("click", async e => {
