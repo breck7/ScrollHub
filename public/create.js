@@ -81,7 +81,7 @@ class CreateFromZipper {
       }
 
       const data = await response.text()
-      window.location = `/edit.html?folderName=${data}`
+      window.location = `/edit.html?folderName=${data}&command=showWelcomeMessageCommand`
     } catch (error) {
       console.error("Error uploading file:", error.message)
       throw error // Re-throw the error if you want calling code to handle it

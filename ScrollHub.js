@@ -809,7 +809,7 @@ ${prefix}${hash}<br>
       if (result.errorMessage) return this.handleCreateError(res, result)
       const { folderName } = result
       this.addStory(req, `created ${folderName}`)
-      res.redirect(`/edit.html?folderName=${folderName}`)
+      res.redirect(`/edit.html?folderName=${folderName}&command=showWelcomeMessageCommand`)
     } catch (error) {
       console.error(error)
       res.status(500).send("Sorry, an error occurred while creating the folder:", error)
@@ -841,7 +841,7 @@ ${prefix}${hash}<br>
 
         // Add to story and redirect
         this.addStory(req, `created ${folderName} from prompt using ${agent}`)
-        res.redirect(`/edit.html?folderName=${folderName}`)
+        res.redirect(`/edit.html?folderName=${folderName}&command=showWelcomeMessageCommand`)
       } catch (error) {
         console.error("Error creating from prompt:", error)
         res.status(500).send("Failed to create website from prompt: " + error.message)
@@ -874,7 +874,7 @@ ${prefix}${hash}<br>
         const { folderName } = result
         this.addStory(req, `cloned ${sourceFolderName} to ${cloneName}`)
         if (req.body.redirect === "false") return res.send(cloneName)
-        res.redirect(`/edit.html?folderName=${cloneName}`)
+        res.redirect(`/edit.html?folderName=${cloneName}&command=showWelcomeMessageCommand`)
       } catch (error) {
         console.error(error)
         res.status(500).send("Sorry, an error occurred while cloning the folder:", error)

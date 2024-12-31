@@ -197,7 +197,8 @@ class EditorApp {
         this.setFileContent(decodeURIComponent(buffer))
       } else {
         await this.fetchAndDisplayFileList()
-        this.autoOpen()
+        await this.autoOpen()
+        if (urlParams.get("command") === "showWelcomeMessageCommand") this.showWelcomeMessageCommand()
       }
     } else {
       this.fetchAndDisplayFileList()
@@ -227,7 +228,7 @@ class EditorApp {
     window.history.replaceState(null, "", url)
   }
 
-  autoOpen() {
+  async autoOpen() {
     const { filenames } = this
     const lowerFilenames = new Set(filenames.map(f => f.toLowerCase()))
     const defaultFiles = ["index.scroll", "readme.scroll", "index.html", "readme.md", "package.json"]
@@ -238,7 +239,7 @@ class EditorApp {
         break
       }
     }
-    this.openFile(file)
+    await this.openFile(file)
   }
 
   async openFolder(folderName) {
@@ -361,24 +362,29 @@ class EditorApp {
     this.rehighlight()
   }
 
-  toggleHelpCommand() {
-    if (this.isHelpOpen) closeModal(document.querySelector("#helpModal"))
-    else openModal("helpModal")
+  toggleHelpCommand(event) {
+    if (this._openModal === "help") this.closeHelpModalCommand()
+    else this.openHelpModalCommand(event)
   }
 
-  get isHelpOpen() {
-    return document.querySelector("#helpModal").style.display === "block"
+  closeHelpModalCommand() {
+    this.closeModal()
   }
 
-  keyboardShortcuts = {
-    "command+s": "saveAndPublishCommand",
-    "ctrl+n": "createFileCommand",
-    "shift+f": "toggleFocusModeCommand",
-    "ctrl+p": "refreshParserCommand",
-    "?": "toggleHelpCommand"
+  _modalContent
+  openModal(content, modalName, event) {
+    this._openModal = modalName
+    if (!this._modalContent) this._modalContent = document.querySelector("#theModal").innerHTML
+    document.querySelector("#theModal").innerHTML = this._modalContent + content
+    openModal("theModal", event)
   }
 
-  loadHelpContent() {
+  closeModal() {
+    closeModal(document.querySelector("#theModal"))
+    delete this._openModal
+  }
+
+  openHelpModalCommand(event) {
     const { keyboardShortcuts } = this
     const shortcutElements = Object.keys(keyboardShortcuts)
       .map(key => {
@@ -392,9 +398,7 @@ class EditorApp {
       `
       })
       .join("")
-
-    document.querySelector("#helpModal").innerHTML =
-      document.querySelector("#helpModal").innerHTML +
+    this.openModal(
       `
       <div class="keyboard-shortcuts">
         <h3>Keyboard Shortcuts</h3>
@@ -402,7 +406,19 @@ class EditorApp {
           ${shortcutElements}
         </div>
       </div>
-    `
+    `,
+      "help",
+      event
+    )
+  }
+
+  keyboardShortcuts = {
+    "command+s": "saveAndPublishCommand",
+    "ctrl+n": "createFileCommand",
+    "shift+f": "toggleFocusModeCommand",
+    "ctrl+p": "refreshParserCommand",
+    "?": "toggleHelpCommand",
+    "ctrl+w": "showWelcomeMessageCommand"
   }
 
   bindKeyboardShortcuts() {
@@ -434,7 +450,6 @@ class EditorApp {
         return false
       })
     })
-    this.loadHelpContent()
   }
 
   handleDragOver(event) {
@@ -474,6 +489,34 @@ class EditorApp {
         await this.handleImageUrl(url, filename)
       }
     }
+  }
+
+  async showWelcomeMessageCommand() {
+    const content = `# Welcome to ScrollHub!
+
+Your new folder ${this.folderName} is now live on the web!
+ link ${this.permalink} ${this.folderName}
+  target preview
+
+You can edit it here live.
+
+You can also download your work to your local machine and even host it yourself (ScrollHub source is on GitHub).
+ https://github.com/breck7/ScrollHub ScrollHub source is on GitHub
+  target _blank
+
+We are working hard on Scroll and ScrollHub to let you create and publish your best work.
+
+I'd love to hear from you! Please email me (breck@scroll.pub) with any requests or feedback.
+
+Now, go publish!
+
+-Breck
+Follow me on X
+ https://x.com/breckyunits
+  target _blank`
+
+    const html = await this.fusionEditor.scrollToHtml(content)
+    this.openModal(html, "welcome")
   }
 
   getFilenameFromUrl(url) {
