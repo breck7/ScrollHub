@@ -143,7 +143,8 @@ class EditorApp {
     const mode = this.getEditorMode(fileName)
     const modeChanged = mode !== this.mode
     if (!modeChanged && mode !== "custom") return
-    if (this.currentParser === this.parser) return
+    if (!modeChanged && mode === "custom" && this.currentParser === this.parser) return
+    console.log("Setting editor mode: " + mode)
     this.currentParser = this.parser
     const currentContent = this.codeMirrorInstance.getValue()
     this.initCodeMirror(mode)
@@ -380,7 +381,7 @@ class EditorApp {
   }
 
   closeModal() {
-    closeModal(document.querySelector("#theModal"))
+    if (document.querySelector("#theModal").style.display === "block") closeModal(document.querySelector("#theModal"))
     delete this._openModal
   }
 
@@ -392,7 +393,7 @@ class EditorApp {
         const description = lodash.startCase(command.replace("Command", ""))
         const keyStr = key.replace("command", "cmd")
         return `
-        <div class="shortcut" onclick="app.${command}()">
+        <div class="shortcut" onclick="app.${command}(event)">
           <kbd>${keyStr}</kbd> <span>${description}</span>
         </div>
       `
@@ -491,7 +492,7 @@ class EditorApp {
     }
   }
 
-  async showWelcomeMessageCommand() {
+  async showWelcomeMessageCommand(event) {
     const content = `# Welcome to ScrollHub!
 
 Your new folder ${this.folderName} is now live on the web!
@@ -516,7 +517,7 @@ Follow me on X
   target _blank`
 
     const html = await this.fusionEditor.scrollToHtml(content)
-    this.openModal(html, "welcome")
+    this.openModal(html, "welcome", event)
   }
 
   getFilenameFromUrl(url) {

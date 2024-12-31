@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.69.0 12/30/2024
+🎉 added welcome message
+🏥 mode fix
+
 📦 0.68.0 12/30/2024
 🎉 added keyboard shortcuts help
 
