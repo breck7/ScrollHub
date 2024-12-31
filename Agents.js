@@ -80,6 +80,8 @@ script.js
       }
     }
 
+    if (!suggestedDomain) suggestedDomain = "error"
+
     // Ensure the suggested domain ends with .scroll.pub
     if (!suggestedDomain.endsWith(".scroll.pub")) {
       suggestedDomain = suggestedDomain.replace(/\.scroll\.pub.*$/, "") + ".scroll.pub"
