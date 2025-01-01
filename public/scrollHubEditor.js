@@ -346,7 +346,7 @@ class EditorApp {
     if (!response.ok) {
       console.error(message)
       this.showError(message.message.split(".")[0])
-    } else if (message.includes("Error")) {
+    } else if (message.includes("SyntaxError")) {
       this.showError("There may have been an error building your site. Please check console logs.")
       console.error(message)
     }
