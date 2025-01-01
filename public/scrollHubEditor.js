@@ -128,7 +128,17 @@ class EditorApp {
       })
     }
 
+    this.codeMirrorInstance.on("keyup", () => this._onCodeKeyUp())
+
     this.updateEditorDimensions()
+  }
+
+  _onCodeKeyUp() {
+    const code = this.codeMirrorInstance.getValue()
+    if (this._code === code) return
+    this._code = code
+    // no-op at the moment
+    // todo: save to local storage? autosave? other?
   }
 
   rehighlight() {
