@@ -4,7 +4,7 @@ class Node {
     this.y = y
     this.vx = ((Math.random() > 0.5 ? 1 : -1) * Math.log10(folderData.revisions)) / 10
     this.vy = ((Math.random() > 0.5 ? 1 : -1) * Math.log10(folderData.revisions)) / 10
-    this.radius = Math.min(folderData.revisions, 3)
+    this.radius = Math.min(folderData.revisions, 1)
     this.folder = folderData.folder
     this.folderLink = folderData.folderLink
     this.created = new Date(folderData.created)
@@ -133,7 +133,7 @@ class NodesAnimation {
       if (this.hoveredNode !== node) node.update(this.width, this.height)
       this.drawNode(node)
     })
-    this.drawConnections()
+    // this.drawConnections()
     requestAnimationFrame(() => this.animate())
   }
 }
