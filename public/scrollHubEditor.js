@@ -342,10 +342,13 @@ class EditorApp {
       method: "POST",
       body: formData
     })
+    const message = await response.text()
     if (!response.ok) {
-      const error = await response.text()
-      console.error(error)
-      this.showError(error.message.split(".")[0])
+      console.error(message)
+      this.showError(message.message.split(".")[0])
+    } else if (message.includes("Error")) {
+      this.showError("There may have been an error building your site. Please check console logs.")
+      console.error(message)
     }
 
     console.log(`'${folderName}' built`)
