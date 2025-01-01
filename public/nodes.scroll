@@ -1,0 +1,30 @@
+<canvas id="nodesCanvas"></canvas>
+css
+ :root {
+     --primary-color: #1a2b4d;
+     --secondary-color: #2a4b8d;
+     --accent-color: #4b8bfd;
+     --scrollColorLink: white;
+ }
+ * {
+     margin: 0;
+     padding: 0;
+     box-sizing: border-box;
+     z-index: 1;
+ }
+ body {
+     min-height: 100vh;
+     background: radial-gradient(circle at center, var(--secondary-color), var(--primary-color));
+     font-family: system-ui, -apple-system, sans-serif;
+     color: white;
+     position: relative;
+ }
+ #nodesCanvas {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     z-index: -1;
+ }
+nodes.js

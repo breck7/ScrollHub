@@ -28,9 +28,13 @@ css
  }
  .modal-content {
    background: white;
+   color: black;
    padding: 20px;
    border-radius: 5px;
    text-align: center;
+ }
+ .modal-content a {
+   color: unset;
  }
  .spinner {
    border: 4px solid #f3f3f3;

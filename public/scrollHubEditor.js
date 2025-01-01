@@ -547,7 +547,9 @@ class EditorApp {
   }
 
   async showWelcomeMessageCommand(event) {
-    const content = `# Welcome to ScrollHub!
+    const content = `container 600px
+
+# Welcome to ScrollHub!
 
 Your new folder ${this.folderName} is now live on the web!
  link ${this.permalink} ${this.folderName}
