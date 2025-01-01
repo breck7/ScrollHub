@@ -1,149 +1,194 @@
+:root {
+  /* Base colors */
+  --cm-bg: #ffffff;
+  --cm-fg: #2a2a2a;
+  --cm-border: #ddd;
+  --cm-gutter-bg: #f7f7f7;
+  --cm-gutter-border: #e1e4e8;
+  --cm-line-number: #999;
+  --cm-cursor: #4a89dc;
+
+  /* Selection */
+  --cm-selection-bg: #d9d9d9;
+  --cm-selection-focused-bg: #d7d4f0;
+
+  /* Search */
+  --cm-search-bg: rgba(255, 255, 0, 0.4);
+
+  /* Syntax highlighting */
+  --cm-keyword: #9333ea;
+  --cm-atom: #0891b2;
+  --cm-number: #0d9488;
+  --cm-def: #2563eb;
+  --cm-variable: #334155;
+  --cm-variable-2: #3b82f6;
+  --cm-variable-3: #0d9488;
+  --cm-type: #0d9488;
+  --cm-comment: #64748b;
+  --cm-string: #333333;
+  --cm-string-2: #15803d;
+  --cm-meta: #6b7280;
+  --cm-builtin: #7c3aed;
+  --cm-tag: #ea580c;
+  --cm-attribute: #0284c7;
+  --cm-error: #dc2626;
+  --cm-header: blue;
+  --cm-quote: #090;
+  --cm-negative: #d44;
+  --cm-positive: #292;
+  --cm-link: #00c;
+  --cm-bracket: #997;
+
+  /* UI Elements */
+  --cm-matching-bracket: #0b0;
+  --cm-nonmatching-bracket: #a22;
+  --cm-matching-tag-bg: rgba(255, 150, 0, 0.3);
+  --cm-active-line-bg: #e8f2ff;
+  --cm-fat-cursor-bg: #7e7;
+  --cm-fat-cursor-mark: rgba(20, 255, 20, 0.5);
+}
+
+[data-theme="dark"] {
+  /* Base colors */
+  --cm-bg: #1a1a1a;
+  --cm-fg: #d4d4d4;
+  --cm-border: #404040;
+  --cm-gutter-bg: #2a2a2a;
+  --cm-gutter-border: #404040;
+  --cm-line-number: #888;
+  --cm-cursor: #6ba4ee;
+
+  /* Selection */
+  --cm-selection-bg: #264f78;
+  --cm-selection-focused-bg: #2c5380;
+
+  /* Search */
+  --cm-search-bg: rgba(255, 255, 0, 0.2);
+
+  /* Syntax highlighting */
+  --cm-keyword: #c792ea;
+  --cm-atom: #56c8d8;
+  --cm-number: #4ec9b0;
+  --cm-def: #569cd6;
+  --cm-variable: #9cdcfe;
+  --cm-variable-2: #4fc1ff;
+  --cm-variable-3: #4ec9b0;
+  --cm-type: #4ec9b0;
+  --cm-comment: #608b4e;
+  --cm-string: rgb(205, 214, 209);
+  --cm-string-2: #4ec9b0;
+  --cm-meta: #888888;
+  --cm-builtin: #c586c0;
+  --cm-tag: #f29668;
+  --cm-attribute: #4ec9b0;
+  --cm-error: #f44747;
+  --cm-header: #569cd6;
+  --cm-quote: #608b4e;
+  --cm-negative: #f44747;
+  --cm-positive: #4ec9b0;
+  --cm-link: #569cd6;
+  --cm-bracket: #888888;
+
+  /* UI Elements */
+  --cm-matching-bracket: #4ec9b0;
+  --cm-nonmatching-bracket: #f44747;
+  --cm-matching-tag-bg: rgba(255, 150, 0, 0.15);
+  --cm-active-line-bg: #2c2c2c;
+  --cm-fat-cursor-bg: #4ec9b0;
+  --cm-fat-cursor-mark: rgba(20, 255, 20, 0.25);
+}
+
 /* BASICS */
 
 .CodeMirror {
-  /* Set height, width, borders, and global font properties here */
-  font-family: monospace;
+  font-family: "JetBrains Mono", "Fira Code", "IBM Plex Mono", "Source Code Pro", Consolas, monospace;
   height: 300px;
-  color: black;
+  color: var(--cm-fg);
+  background: var(--cm-bg);
   direction: ltr;
 }
 
 /* PADDING */
 
 .CodeMirror-lines {
-  padding: 4px 0; /* Vertical padding around content */
+  padding: 4px 0;
 }
 .CodeMirror pre {
-  padding: 0 4px; /* Horizontal padding of content */
+  padding: 0 4px;
 }
 
 .CodeMirror-scrollbar-filler,
 .CodeMirror-gutter-filler {
-  background-color: white; /* The little square between H and V scrollbars */
+  background-color: var(--cm-bg);
 }
 
 /* GUTTER */
 
 .CodeMirror-gutters {
-  border-right: 1px solid #ddd;
-  background-color: #f7f7f7;
+  border-right: 1px solid var(--cm-gutter-border);
+  background-color: var(--cm-gutter-bg);
   white-space: nowrap;
 }
-.CodeMirror-linenumbers {
-}
+
 .CodeMirror-linenumber {
   padding: 0 3px 0 5px;
   min-width: 20px;
   text-align: right;
-  color: #999;
+  color: var(--cm-line-number);
   white-space: nowrap;
-}
-
-.CodeMirror-guttermarker {
-  color: black;
-}
-.CodeMirror-guttermarker-subtle {
-  color: #999;
 }
 
 /* CURSOR */
 
 .CodeMirror-cursor {
-  border-left: 1px solid black;
+  border-left: 2px solid var(--cm-cursor);
   border-right: none;
   width: 0;
 }
-/* Shown when moving in bi-directional text */
+
 .CodeMirror div.CodeMirror-secondarycursor {
   border-left: 1px solid silver;
 }
+
 .cm-fat-cursor .CodeMirror-cursor {
   width: auto;
   border: 0 !important;
-  background: #7e7;
+  background: var(--cm-fat-cursor-bg);
 }
+
 .cm-fat-cursor div.CodeMirror-cursors {
   z-index: 1;
 }
+
 .cm-fat-cursor-mark {
-  background-color: rgba(20, 255, 20, 0.5);
+  background-color: var(--cm-fat-cursor-mark);
   -webkit-animation: blink 1.06s steps(1) infinite;
   -moz-animation: blink 1.06s steps(1) infinite;
   animation: blink 1.06s steps(1) infinite;
 }
+
 .cm-animate-fat-cursor {
   width: auto;
   border: 0;
   -webkit-animation: blink 1.06s steps(1) infinite;
   -moz-animation: blink 1.06s steps(1) infinite;
   animation: blink 1.06s steps(1) infinite;
-  background-color: #7e7;
-}
-@-moz-keyframes blink {
-  0% {
-  }
-  50% {
-    background-color: transparent;
-  }
-  100% {
-  }
-}
-@-webkit-keyframes blink {
-  0% {
-  }
-  50% {
-    background-color: transparent;
-  }
-  100% {
-  }
-}
-@keyframes blink {
-  0% {
-  }
-  50% {
-    background-color: transparent;
-  }
-  100% {
-  }
-}
-
-/* Can style cursor different in overwrite (non-insert) mode */
-.CodeMirror-overwrite .CodeMirror-cursor {
-}
-
-.cm-tab {
-  display: inline-block;
-  text-decoration: inherit;
-}
-
-.CodeMirror-rulers {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -50px;
-  bottom: -20px;
-  overflow: hidden;
-}
-.CodeMirror-ruler {
-  border-left: 1px solid #ccc;
-  top: 0;
-  bottom: 0;
-  position: absolute;
+  background-color: var(--cm-fat-cursor-bg);
 }
 
 /* DEFAULT THEME */
 
 .cm-s-default .cm-header {
-  color: blue;
+  color: var(--cm-header);
 }
 .cm-s-default .cm-quote {
-  color: #090;
+  color: var(--cm-quote);
 }
 .cm-negative {
-  color: #d44;
+  color: var(--cm-negative);
 }
 .cm-positive {
-  color: #292;
+  color: var(--cm-positive);
 }
 .cm-header,
 .cm-strong {
@@ -154,125 +199,118 @@
 }
 .cm-link {
   text-decoration: underline;
+  color: var(--cm-link);
 }
 .cm-strikethrough {
   text-decoration: line-through;
 }
 
 .cm-s-default .cm-keyword {
-  color: #708;
+  color: var(--cm-keyword);
 }
 .cm-s-default .cm-atom {
-  color: #219;
+  color: var(--cm-atom);
 }
 .cm-s-default .cm-number {
-  color: #164;
+  color: var(--cm-number);
 }
 .cm-s-default .cm-def {
-  color: #00f;
+  color: var(--cm-def);
 }
-.cm-s-default .cm-variable,
-.cm-s-default .cm-punctuation,
-.cm-s-default .cm-property,
-.cm-s-default .cm-operator {
+.cm-s-default .cm-variable {
+  color: var(--cm-variable);
 }
 .cm-s-default .cm-variable-2 {
-  color: #05a;
+  color: var(--cm-variable-2);
 }
 .cm-s-default .cm-variable-3,
 .cm-s-default .cm-type {
-  color: #085;
+  color: var(--cm-type);
 }
 .cm-s-default .cm-comment {
-  color: #a50;
+  color: var(--cm-comment);
+  font-style: italic;
 }
 .cm-s-default .cm-string {
-  color: #a11;
+  color: var(--cm-string);
 }
 .cm-s-default .cm-string-2 {
-  color: #f50;
+  color: var(--cm-string-2);
 }
 .cm-s-default .cm-meta {
-  color: #555;
+  color: var(--cm-meta);
 }
 .cm-s-default .cm-qualifier {
-  color: #555;
+  color: var(--cm-meta);
 }
 .cm-s-default .cm-builtin {
-  color: #30a;
+  color: var(--cm-builtin);
 }
 .cm-s-default .cm-bracket {
-  color: #997;
+  color: var(--cm-bracket);
 }
 .cm-s-default .cm-tag {
-  color: #170;
+  color: var(--cm-tag);
 }
 .cm-s-default .cm-attribute {
-  color: #00c;
+  color: var(--cm-attribute);
 }
-.cm-s-default .cm-hr {
-  color: #999;
-}
-.cm-s-default .cm-link {
-  color: #00c;
-}
-
 .cm-s-default .cm-error {
-  color: #f00;
-}
-.cm-invalidchar {
-  color: #f00;
+  color: var(--cm-error);
+  text-decoration: underline wavy var(--cm-error);
 }
 
-.CodeMirror-composing {
-  border-bottom: 2px solid;
+/* Selection */
+.CodeMirror-selected {
+  background: var(--cm-selection-bg);
+}
+.CodeMirror-focused .CodeMirror-selected {
+  background: var(--cm-selection-focused-bg);
 }
 
-/* Default styles for common addons */
-
+/* Matching */
 div.CodeMirror span.CodeMirror-matchingbracket {
-  color: #0b0;
+  color: var(--cm-matching-bracket);
 }
 div.CodeMirror span.CodeMirror-nonmatchingbracket {
-  color: #a22;
+  color: var(--cm-nonmatching-bracket);
 }
 .CodeMirror-matchingtag {
-  background: rgba(255, 150, 0, 0.3);
+  background: var(--cm-matching-tag-bg);
 }
+
+/* Active line */
 .CodeMirror-activeline-background {
-  background: #e8f2ff;
+  background: var(--cm-active-line-bg);
 }
 
-/* STOP */
+/* Search highlighting */
+.cm-searching {
+  background-color: var(--cm-search-bg);
+}
 
-/* The rest of this file contains styles related to the mechanics of
-   the editor. You probably shouldn't touch them. */
+/* Rest of mechanical CSS */
 
 .CodeMirror {
   position: relative;
   overflow: hidden;
-  background: white;
 }
 
 .CodeMirror-scroll {
-  overflow: scroll !important; /* Things will break if this is overridden */
-  /* 30px is the magic margin used to hide the element's real scrollbars */
-  /* See overflow: hidden in .CodeMirror */
+  overflow: scroll !important;
   margin-bottom: -30px;
   margin-right: -30px;
   padding-bottom: 30px;
   height: 100%;
-  outline: none; /* Prevent dragging from highlighting the element */
+  outline: none;
   position: relative;
 }
+
 .CodeMirror-sizer {
   position: relative;
   border-right: 30px solid transparent;
 }
 
-/* The fake, visible scrollbars. Used to force redraw during scrolling
-   before actual scrolling happens, thus preventing shaking and
-   flickering artifacts. */
 .CodeMirror-vscrollbar,
 .CodeMirror-hscrollbar,
 .CodeMirror-scrollbar-filler,
@@ -281,22 +319,26 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   z-index: 6;
   display: none;
 }
+
 .CodeMirror-vscrollbar {
   right: 0;
   top: 0;
   overflow-x: hidden;
   overflow-y: scroll;
 }
+
 .CodeMirror-hscrollbar {
   bottom: 0;
   left: 0;
   overflow-y: hidden;
   overflow-x: scroll;
 }
+
 .CodeMirror-scrollbar-filler {
   right: 0;
   bottom: 0;
 }
+
 .CodeMirror-gutter-filler {
   left: 0;
   bottom: 0;
@@ -309,6 +351,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   min-height: 100%;
   z-index: 3;
 }
+
 .CodeMirror-gutter {
   white-space: normal;
   height: 100%;
@@ -316,36 +359,41 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   vertical-align: top;
   margin-bottom: -30px;
 }
+
 .CodeMirror-gutter-wrapper {
   position: absolute;
   z-index: 4;
   background: none !important;
   border: none !important;
 }
+
 .CodeMirror-gutter-background {
   position: absolute;
   top: 0;
   bottom: 0;
   z-index: 4;
 }
+
 .CodeMirror-gutter-elt {
   position: absolute;
   cursor: default;
   z-index: 4;
 }
+
 .CodeMirror-gutter-wrapper ::selection {
   background-color: transparent;
 }
+
 .CodeMirror-gutter-wrapper ::-moz-selection {
   background-color: transparent;
 }
 
 .CodeMirror-lines {
   cursor: text;
-  min-height: 1px; /* prevents collapsing before first draw */
+  min-height: 1px;
 }
+
 .CodeMirror pre {
-  /* Reset some styles that the rest of the page might have set */
   -moz-border-radius: 0;
   -webkit-border-radius: 0;
   border-radius: 0;
@@ -365,6 +413,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   -webkit-font-variant-ligatures: contextual;
   font-variant-ligatures: contextual;
 }
+
 .CodeMirror-wrap pre {
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -374,7 +423,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .CodeMirror-wrap pre .cm-atom,
 .CodeMirror-wrap pre .cm-keyword,
 .CodeMirror-wrap pre .cm-def {
-  /* If its a long atom like a URL, break it anywhere. */
   word-break: break-all;
 }
 
@@ -390,10 +438,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .CodeMirror-linewidget {
   position: relative;
   z-index: 2;
-  padding: 0.1px; /* Force widget margins to stay inside of the container */
-}
-
-.CodeMirror-widget {
+  padding: 0.1px;
 }
 
 .CodeMirror-rtl pre {
@@ -404,7 +449,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   outline: none;
 }
 
-/* Force content-box sizing for the elements where we expect it */
 .CodeMirror-scroll,
 .CodeMirror-sizer,
 .CodeMirror-gutter,
@@ -426,6 +470,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   position: absolute;
   pointer-events: none;
 }
+
 .CodeMirror-measure pre {
   position: static;
 }
@@ -435,6 +480,7 @@ div.CodeMirror-cursors {
   position: relative;
   z-index: 3;
 }
+
 div.CodeMirror-dragcursors {
   visibility: visible;
 }
@@ -443,29 +489,20 @@ div.CodeMirror-dragcursors {
   visibility: visible;
 }
 
-.CodeMirror-selected {
-  background: #d9d9d9;
-}
-.CodeMirror-focused .CodeMirror-selected {
-  background: #d7d4f0;
-}
 .CodeMirror-crosshair {
   cursor: crosshair;
 }
+
 .CodeMirror-line::selection,
 .CodeMirror-line > span::selection,
 .CodeMirror-line > span > span::selection {
-  background: #d7d4f0;
+  background: var(--cm-selection-focused-bg);
 }
+
 .CodeMirror-line::-moz-selection,
 .CodeMirror-line > span::-moz-selection,
 .CodeMirror-line > span > span::-moz-selection {
-  background: #d7d4f0;
-}
-
-.cm-searching {
-  background-color: #ffa;
-  background-color: rgba(255, 255, 0, 0.4);
+  background: var(--cm-selection-focused-bg);
 }
 
 /* Used to force a border model for a node */
@@ -490,25 +527,22 @@ span.CodeMirror-selectedtext {
   background: none;
 }
 
+/* Hints */
 .CodeMirror-hints {
   position: absolute;
   z-index: 10;
   overflow: hidden;
   list-style: none;
-
   margin: 0;
   padding: 2px;
-
   -webkit-box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
   -moz-box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
   box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
   border-radius: 3px;
-  border: 1px solid silver;
-
-  background: white;
+  border: 1px solid var(--cm-border);
+  background: var(--cm-bg);
   font-size: 90%;
   font-family: monospace;
-
   max-height: 20em;
   overflow-y: auto;
 }
@@ -518,111 +552,42 @@ span.CodeMirror-selectedtext {
   padding: 0 4px;
   border-radius: 2px;
   white-space: pre;
-  color: black;
+  color: var(--cm-fg);
   cursor: pointer;
 }
 
 li.CodeMirror-hint-active {
-  background: #08f;
-  color: white;
+  background: var(--cm-cursor);
+  color: var(--cm-bg);
 }
 
-/* BASICS */
-.CodeMirror {
-  /* Modern font stack optimized for code */
-  font-family: "JetBrains Mono", "Fira Code", "IBM Plex Mono", "Source Code Pro", Consolas, monospace;
-  color: #2a2a2a;
+/* Animation keyframes */
+@-moz-keyframes blink {
+  0% {
+  }
+  50% {
+    background-color: transparent;
+  }
+  100% {
+  }
 }
 
-/* Enhancing the general UI elements */
-.CodeMirror-gutters {
-  border-right: 1px solid #e1e4e8;
-  background-color: #f6f8fa;
+@-webkit-keyframes blink {
+  0% {
+  }
+  50% {
+    background-color: transparent;
+  }
+  100% {
+  }
 }
 
-.CodeMirror-linenumber {
-  color: #6e7781;
-}
-
-/* Selection colors */
-.CodeMirror-selected {
-  background: #e3e8f3;
-}
-
-.CodeMirror-focused .CodeMirror-selected {
-  background: #d0d8eb;
-}
-
-/* Cursor styling */
-.CodeMirror-cursor {
-  border-left: 2px solid #4a89dc;
-}
-
-/* Syntax highlighting colors */
-.cm-s-default .cm-keyword {
-  color: #9333ea; /* Purple for keywords */
-}
-
-.cm-s-default .cm-atom {
-  color: #0891b2; /* Cyan for atoms */
-}
-
-.cm-s-default .cm-number {
-  color: #0d9488; /* Teal for numbers */
-}
-
-.cm-s-default .cm-def {
-  color: #2563eb; /* Blue for definitions */
-}
-
-.cm-s-default .cm-variable {
-  color: #334155; /* Slate for variables */
-}
-
-.cm-s-default .cm-variable-2 {
-  color: #3b82f6; /* Lighter blue for special variables */
-}
-
-.cm-s-default .cm-variable-3,
-.cm-s-default .cm-type {
-  color: #0d9488; /* Teal for types */
-}
-
-.cm-s-default .cm-comment {
-  color: #64748b; /* Slate for comments */
-  font-style: italic;
-}
-
-.cm-s-default .cm-string {
-  color: #333;
-}
-
-.cm-s-default .cm-string-2 {
-  color: #15803d; /* Darker green for special strings */
-}
-
-.cm-s-default .cm-meta {
-  color: #6b7280; /* Gray for metadata */
-}
-
-.cm-s-default .cm-builtin {
-  color: #7c3aed; /* Violet for built-in functions */
-}
-
-.cm-noPaintDefinedInParsers {
-  color: #888;
-}
-
-.cm-s-default .cm-tag {
-  color: #ea580c; /* Orange for tags */
-}
-
-.cm-s-default .cm-attribute {
-  color: #0284c7; /* Sky blue for attributes */
-}
-
-/* Error highlighting */
-.cm-s-default .cm-error {
-  color: #dc2626; /* Red for errors */
-  text-decoration: underline wavy #dc2626;
+@keyframes blink {
+  0% {
+  }
+  50% {
+    background-color: transparent;
+  }
+  100% {
+  }
 }

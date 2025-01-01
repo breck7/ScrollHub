@@ -6,8 +6,10 @@ openGraphImage screenshot.png
 homeButton
 editBaseUrl https://github.com/breck7/ScrollHub/blob/main
 
+
 metaTags
 inlineCss .gazette.css .scroll.css scrollHubStyle.css
+css html[data-theme=dark], html[data-theme=dark] * { color-scheme: dark; }
 
 css .thin {font-weight: 100;}
 

@@ -173,6 +173,7 @@ class EditorApp {
   }
 
   async main() {
+    this.initTheme()
     this.bindFileButtons()
     this.bindFileListListeners()
     this.bindFileDrop()
@@ -422,7 +423,22 @@ class EditorApp {
     "shift+f": "toggleFocusModeCommand",
     "ctrl+p": "refreshParserCommand",
     "?": "toggleHelpCommand",
-    "ctrl+w": "showWelcomeMessageCommand"
+    "ctrl+w": "showWelcomeMessageCommand",
+    "shift+t": "toggleThemeCommand"
+  }
+
+  initTheme() {
+    document.documentElement.setAttribute("data-theme", this.theme)
+  }
+
+  get theme() {
+    return localStorage.getItem("editorTheme") || "light"
+  }
+
+  toggleThemeCommand() {
+    const newTheme = this.theme === "light" ? "dark" : "light"
+    document.documentElement.setAttribute("data-theme", newTheme)
+    localStorage.setItem("editorTheme", newTheme)
   }
 
   bindKeyboardShortcuts() {
