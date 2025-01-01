@@ -1,4 +1,1 @@
-indexTop.scroll
-replace AGENT Claude
-createFromPrompt.scroll
-indexBottom.scroll
+claude.scroll

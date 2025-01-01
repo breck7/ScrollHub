@@ -10,6 +10,8 @@ inlineJs create.js
   <div class="modal-content">
     <div class="spinner"></div>
     <p>Creating your website...</p>
+    <p>This takes between 30 and 60 seconds.</p>
+    <p>While you wait, say hi via <a href="mailto:breck@scroll.pub" target="_blank">breck@scroll.pub</a> or <a href="https://x.com/breckyunits" target="_blank">X</a></p>
   </div>
  </div>
 css

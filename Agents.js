@@ -193,6 +193,7 @@ class Agents {
   async createFolderNameAndFilesFromPrompt(userPrompt, existingNames, agentName) {
     const agent = this.agents[agentName] || this.allAgents[0]
     const prompt = new SimpleCreationPrompt(userPrompt, existingNames, agent)
+    if (!agent) throw new Error(`Agent ${agentName} not found. Is API key set?`)
     await agent.do(prompt)
     return prompt
   }
