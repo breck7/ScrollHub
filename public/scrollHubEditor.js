@@ -58,6 +58,7 @@ class EditorApp {
     document.querySelector(".buttonRow").style.display = "block"
     document.querySelector(".editorHolder").classList.remove("focusMode")
     this.updateEditorDimensions()
+    this.enableAutocomplete()
   }
 
   toggleFocusModeCommand() {
@@ -78,6 +79,7 @@ class EditorApp {
     document.addEventListener("fullscreenchange", () => {
       if (!document.fullscreenElement) this.exitFocusModeCommand()
     })
+    this.disableAutocomplete()
     this.updateEditorDimensions()
   }
 
@@ -138,10 +140,13 @@ class EditorApp {
   }
 
   mode = "custom"
+  autocomplete = true
   currentParser = null
   updateEditorMode(fileName) {
     const mode = this.getEditorMode(fileName)
     const modeChanged = mode !== this.mode
+    if (!this.autocomplete) this.disableAutocomplete()
+    else this.enableAutocomplete()
     if (!modeChanged && mode !== "custom") return
     if (!modeChanged && mode === "custom" && this.currentParser === this.parser) return
     console.log("Setting editor mode: " + mode)
@@ -150,6 +155,26 @@ class EditorApp {
     this.initCodeMirror(mode)
     this.codeMirrorInstance.setValue(currentContent)
     this.mode = mode
+  }
+
+  toggleAutocompleteCommand() {
+    this.autocomplete = !this.autocomplete
+    if (this.autocomplete) this.enableAutocomplete()
+    else this.disableAutocomplete()
+  }
+
+  disableAutocomplete() {
+    this.autocomplete = false
+    this.codeMirrorInstance.setOption("showHint", false)
+    if (!this._hintOptions) this._hintOptions = this.codeMirrorInstance.getOption("hintOptions")
+    this.codeMirrorInstance.setOption("hintOptions", { completeSingle: false })
+  }
+
+  enableAutocomplete() {
+    if (this.autocomplete) return
+    this.autocomplete = true
+    this.codeMirrorInstance.setOption("showHint", true)
+    this.codeMirrorInstance.setOption("hintOptions", this._hintOptions)
   }
 
   get bufferValue() {
