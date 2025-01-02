@@ -299,6 +299,8 @@ class EditorApp {
 
     if (!this.files) await this.fetchAndDisplayFileList()
     else this.renderFileList()
+
+    if (this.isModalOpen && this._openModal === "metrics") this.openMetricsCommand()
   }
 
   bindFileDrop() {
@@ -419,9 +421,44 @@ class EditorApp {
     openModal("theModal", event)
   }
 
+  get isModalOpen() {
+    return document.querySelector("#theModal").style.display === "block"
+  }
+
   closeModal() {
-    if (document.querySelector("#theModal").style.display === "block") closeModal(document.querySelector("#theModal"))
+    if (this.isModalOpen) closeModal(document.querySelector("#theModal"))
     delete this._openModal
+  }
+
+  get metrics() {
+    // Calculate document metrics
+    const content = this.bufferValue
+    const words = (content.match(/\S+/g) || []).filter(word => !/[.]\w+[(]|[[\]{}()]|[.]\w+$|[@]|[;\|\#\`,=+\-*/%]/.test(word))
+    const chars = content.length
+    const sentences = content.split(/[.!?]+\s+/).filter(s => s.trim().length > 0)
+    const readingTimeMinutes = Math.max(1, Math.ceil(words.length / 200))
+
+    // Calculate average word length
+    const avgWordLength = words.length ? (words.join("").length / words.length).toFixed(1) : 0
+
+    // Count unique words
+    const uniqueWords = new Set(words.map(w => w.toLowerCase().replace(/[.,!?]$/, ""))).size
+
+    return `
+    <div class="shortcut-category">
+      <h3>Document Metrics</h3>
+      <div><span class="metric-label">Words:</span><span class="metric-value">${words.length}</span></div>
+      <div><span class="metric-label">Characters:</span><span class="metric-value">${chars}</span></div>
+      <div><span class="metric-label">Sentences:</span><span class="metric-value">${sentences.length}</span></div>
+      <div><span class="metric-label">Reading Time:</span><span class="metric-value">${readingTimeMinutes} min</span></div>
+      <div><span class="metric-label">Average Word Length:</span><span class="metric-value">${avgWordLength}</span></div>
+      <div><span class="metric-label">Unique Words:</span><span class="metric-value">${uniqueWords}</span></div>
+      </div>
+    `
+  }
+
+  openMetricsCommand(event) {
+    this.openModal(this.metrics, "metrics", event)
   }
 
   openHelpModalCommand(event) {
@@ -461,20 +498,33 @@ class EditorApp {
       <div class="keyboard-shortcuts">
         <h3>Keyboard Shortcuts</h3>
         ${categoryElements}
-        <div class="community-section" style="margin-top: 20px;">
-          <h3>Community</h3>
           <div style="text-align: center;">
+            ScrollHub Community: 
             <a href="https://github.com/breck7/ScrollHub" target="_blank">GitHub</a> · 
             <a href="https://x.com/breckyunits" target="_blank">Twitter</a> · 
             <a href="https://www.youtube.com/watch?v=LghkzIOBqMY&list=PLnN2hBdpELHqcBeZIJyxT-WKyJ34lqqt-" target="_blank">YouTube</a> · 
             <a href="https://www.reddit.com/r/WorldWideScroll/" target="_blank">Reddit</a>
           </div>
-        </div>
       </div>
     `,
       "help",
       event
     )
+  }
+
+  nextFileCommand() {
+    const { scrollFiles } = this
+    const currentIndex = scrollFiles.indexOf(this.fileName)
+    const nextIndex = (currentIndex + 1) % scrollFiles.length
+    console.log(nextIndex)
+    this.openFile(scrollFiles[nextIndex])
+  }
+
+  previousFileCommand() {
+    const { scrollFiles } = this
+    const currentIndex = scrollFiles.indexOf(this.fileName)
+    const prevIndex = (currentIndex - 1 + scrollFiles.length) % scrollFiles.length
+    this.openFile(scrollFiles[prevIndex])
   }
 
   keyboardShortcuts = Object.values(
@@ -486,6 +536,9 @@ command+p formatFileCommand File
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
+command+3 openMetricsCommand Editor
+alt+right nextFileCommand Navigation
+alt+left previousFileCommand Navigation
 command+/ toggleHelpCommand Help
 ? toggleHelpCommand Help
 ctrl+w showWelcomeMessageCommand Help`
@@ -815,6 +868,10 @@ Follow me on X or GitHub
     return Object.keys(this.files)
   }
 
+  get scrollFiles() {
+    return this.filenames.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+  }
+
   renderFileList() {
     const { files, filenames, folderName } = this
     const currentFileName = this.fileName
@@ -902,16 +959,18 @@ Follow me on X or GitHub
     await this.writeFile("Creating file...", "", fileName)
   }
 
+  _isFirstOpen = true
   setFileContent(value) {
     document.getElementById("fileEditor").value = value.replace(/\r/g, "")
     this.codeMirrorInstance.setValue(value)
     const lines = value.split("\n")
     const lastLine = lines.pop()
-    if (lines.length < 24) {
+    if (lines.length < 24 && this._isFirstOpen) {
       // if its a small file, put user right in editing experience
       this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
       this.codeMirrorInstance.focus()
     }
+    this._isFirstOpen = false
   }
   async duplicateFile() {
     const { fileName } = this

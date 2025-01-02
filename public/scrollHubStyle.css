@@ -345,3 +345,15 @@ textarea {
   color: var(--kbd-text);
   transition: background 0.2s;
 }
+
+.metric-label {
+  color: var(--text-subtle);
+  display: inline-block;
+  width: 200px;
+  padding: 4px 0;
+}
+.metric-value {
+  color: var(--text-default);
+  font-weight: bold;
+  padding-left: 8px;
+}
