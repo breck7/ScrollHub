@@ -31,6 +31,7 @@ const scrollFs = new ScrollFileSystem()
 // This
 const { TrafficMonitor } = require("./TrafficMonitor.js")
 const { CronRunner } = require("./CronRunner.js")
+const { FolderIndex } = require("./FolderIndex.js")
 const { Agents } = require("./Agents.js")
 
 const exists = async filePath => {
@@ -103,17 +104,6 @@ const generateFileName = async (basePath, strategy, content) => {
   if (fileExists) throw new Error(`File ${fullPath} exists`)
 
   return fullPath
-}
-
-const getBaseUrlForFolder = (folderName, hostname, protocol, isLocalHost) => {
-  // if localhost, no custom domains
-  if (isLocalHost) return `/${folderName}`
-
-  if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
-
-  // now it might be a custom domain, serve it as if it is
-  // of course, sometimes it would not be
-  return protocol + "//" + folderName
 }
 
 const requestsFile = folderName => `title Traffic Data
@@ -213,6 +203,7 @@ class ScrollHub {
     this.storyLogFile = path.join(hubFolder, ".writes.txt")
     this.folderCache = {}
     this.sseClients = new Set()
+    this.folderIndex = new FolderIndex(this)
     this.trafficMonitor = new TrafficMonitor(this.globalLogFile, this.hubFolder)
   }
 
@@ -1229,7 +1220,7 @@ ${prefix}${hash}<br>
         delete folderCache[oldFolderName]
 
         // Update folder cache with new name
-        await this.updateFolder(newFolderName)
+        await this.folderIndex.updateFolder(newFolderName)
 
         // Rebuild the list file
         this.buildListFile()
@@ -1442,7 +1433,7 @@ ${prefix}${hash}<br>
       this.folderCache[folderName] = JSON.parse(entry)
       return
     }
-    this.updateFolder(folderName)
+    this.folderIndex.updateFolder(folderName)
   }
 
   initVandalProtection() {
@@ -1660,142 +1651,8 @@ ${prefix}${hash}<br>
     }
   }
 
-  // todo: speed this up. throttle?
-  async updateFolder(folder) {
-    const { rootFolder } = this
-    const fullPath = path.join(rootFolder, folder)
-
-    // Get list of files tracked by git and their sizes
-    let fileCount = 0
-    let fileSize = 0
-    try {
-      // Get list of tracked files with their sizes
-      const gitLsFiles = await new Promise((resolve, reject) => {
-        const gitProcess = spawn("git", ["ls-files", "-z", "--with-tree=HEAD"], { cwd: fullPath })
-        let result = ""
-        gitProcess.stdout.on("data", data => {
-          result += data.toString()
-        })
-        gitProcess.on("close", code => {
-          if (code === 0) {
-            resolve(result.trim())
-          } else {
-            reject(new Error(`git process exited with code ${code}`))
-          }
-        })
-      })
-
-      // Split by null character and filter empty entries
-      const files = gitLsFiles.split("\0").filter(Boolean)
-      fileCount = files.length
-
-      // Get size of each tracked file
-      await Promise.all(
-        files.map(async file => {
-          const filePath = path.join(fullPath, file)
-          try {
-            if (!(await exists(filePath))) return
-            const fileStats = await fsp.stat(filePath)
-            fileSize += fileStats.size
-          } catch (err) {
-            console.error(`Error getting stats for file: ${file}`, err)
-          }
-        })
-      )
-
-      // Get number of git commits
-      const gitCommits = await new Promise((resolve, reject) => {
-        const gitProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: fullPath })
-        let result = ""
-        gitProcess.stdout.on("data", data => {
-          result += data.toString()
-        })
-        gitProcess.on("close", code => {
-          if (code === 0) {
-            resolve(result.trim())
-          } else {
-            reject(new Error(`git process exited with code ${code}`))
-          }
-        })
-      })
-      const commitCount = parseInt(gitCommits, 10)
-
-      // Get last commit hash
-      const lastCommitHash = await new Promise((resolve, reject) => {
-        const gitProcess = spawn("git", ["rev-parse", "HEAD"], { cwd: fullPath })
-        let result = ""
-        gitProcess.stdout.on("data", data => {
-          result += data.toString()
-        })
-        gitProcess.on("close", code => {
-          if (code === 0) {
-            resolve(result.trim())
-          } else {
-            reject(new Error(`git process exited with code ${code}`))
-          }
-        })
-      })
-
-      // Get last commit timestamp
-      const lastCommitTimestamp = await new Promise((resolve, reject) => {
-        const gitProcess = spawn("git", ["log", "-1", "--format=%ct"], { cwd: fullPath })
-        let result = ""
-        gitProcess.stdout.on("data", data => {
-          result += data.toString()
-        })
-        gitProcess.on("close", code => {
-          if (code === 0) {
-            resolve(new Date(parseInt(result.trim(), 10) * 1000))
-          } else {
-            reject(new Error(`git process exited with code ${code}`))
-          }
-        })
-      })
-
-      // Get folder creation time from git
-      const firstCommitTimestamp = await new Promise((resolve, reject) => {
-        const gitProcess = spawn("git", ["log", "--reverse", "--format=%ct", "--max-count=1"], { cwd: fullPath })
-        let result = ""
-        gitProcess.stdout.on("data", data => {
-          result += data.toString()
-        })
-        gitProcess.on("close", code => {
-          if (code === 0) {
-            resolve(new Date(parseInt(result.trim(), 10) * 1000))
-          } else {
-            reject(new Error(`git process exited with code ${code}`))
-          }
-        })
-      })
-
-      const hasSslCert = await this.doesHaveSslCert(folder)
-      const folderLink = getBaseUrlForFolder(folder, this.hostname, hasSslCert ? "https:" : "http:", this.isLocalHost)
-
-      const entry = {
-        files,
-        hasSslCert,
-        stats: {
-          folder,
-          folderLink,
-          created: firstCommitTimestamp,
-          revised: lastCommitTimestamp,
-          files: fileCount,
-          mb: Math.ceil(fileSize / (1024 * 1024)),
-          revisions: commitCount,
-          hash: lastCommitHash.substr(0, 10)
-        },
-        zip: undefined
-      }
-      this.folderCache[folder] = entry
-      await fsp.writeFile(this.getStatsPath(folder), JSON.stringify(entry, null, 2), "utf8")
-    } catch (err) {
-      console.error(`Error getting git information for folder: ${folder}`, err)
-      return null
-    }
-  }
-
   async updateFolderAndBuildList(folderName) {
-    await this.updateFolder(folderName)
+    await this.folderIndex.updateFolder(folderName)
     this.buildListFile()
   }
 
