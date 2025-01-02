@@ -24,6 +24,7 @@ libs.js
  <a class="duplicateFileLink">Duplicate File</a>
  <a class="formatFileLink">Format File</a>
  <a class="deleteFileLink">Delete File</a>
+ <a class="focusLink" onclick="app.enterFocusModeCommand()">Focus</a>
  </div>
 </div>
 </form>

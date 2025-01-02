@@ -81,6 +81,7 @@ class EditorApp {
     })
     this.disableAutocomplete()
     this.updateEditorDimensions()
+    if (!this.codeMirrorInstance.hasFocus()) this.focusOnEnd()
   }
 
   getEditorMode(fileName) {
@@ -447,18 +448,23 @@ class EditorApp {
     return `
     <div class="shortcut-category">
       <h3>Document Metrics</h3>
+      <div><span class="metric-label">Sentences:</span><span class="metric-value">${sentences.length}</span></div>
       <div><span class="metric-label">Words:</span><span class="metric-value">${words.length}</span></div>
       <div><span class="metric-label">Characters:</span><span class="metric-value">${chars}</span></div>
-      <div><span class="metric-label">Sentences:</span><span class="metric-value">${sentences.length}</span></div>
-      <div><span class="metric-label">Reading Time:</span><span class="metric-value">${readingTimeMinutes} min</span></div>
       <div><span class="metric-label">Average Word Length:</span><span class="metric-value">${avgWordLength}</span></div>
       <div><span class="metric-label">Unique Words:</span><span class="metric-value">${uniqueWords}</span></div>
+      <div><span class="metric-label">Reading Time:</span><span class="metric-value">${readingTimeMinutes} min</span></div>
       </div>
     `
   }
 
   openMetricsCommand(event) {
     this.openModal(this.metrics, "metrics", event)
+  }
+
+  toggleMetricsCommand(event) {
+    if (this._openModal === "metrics") this.closeModal()
+    else this.openMetricsCommand(event)
   }
 
   openHelpModalCommand(event) {
@@ -536,7 +542,7 @@ command+p formatFileCommand File
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
-command+3 openMetricsCommand Editor
+command+3 toggleMetricsCommand Editor
 alt+right nextFileCommand Navigation
 alt+left previousFileCommand Navigation
 command+/ toggleHelpCommand Help
@@ -964,14 +970,18 @@ Follow me on X or GitHub
     document.getElementById("fileEditor").value = value.replace(/\r/g, "")
     this.codeMirrorInstance.setValue(value)
     const lines = value.split("\n")
-    const lastLine = lines.pop()
-    if (lines.length < 24 && this._isFirstOpen) {
-      // if its a small file, put user right in editing experience
-      this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
-      this.codeMirrorInstance.focus()
-    }
+    // if its a small file, put user right in editing experience
+    if (lines.length < 24 && this._isFirstOpen) this.focusOnEnd()
     this._isFirstOpen = false
   }
+
+  focusOnEnd() {
+    const lines = this.codeMirrorInstance.getValue().split("\n")
+    const lastLine = lines.pop()
+    this.codeMirrorInstance.setCursor({ line: lines.length, ch: lastLine.length })
+    this.codeMirrorInstance.focus()
+  }
+
   async duplicateFile() {
     const { fileName } = this
     // Generate default name for the duplicate file
