@@ -426,24 +426,49 @@ class EditorApp {
 
   openHelpModalCommand(event) {
     const { keyboardShortcuts } = this
-    const shortcutElements = Object.keys(keyboardShortcuts)
-      .map(key => {
-        const command = keyboardShortcuts[key]
-        const description = lodash.startCase(command.replace("Command", ""))
-        const keyStr = key.replace("command", "cmd")
+    // Group shortcuts by category
+    const shortcutsByCategory = lodash.groupBy(keyboardShortcuts, "category")
+
+    // Generate HTML for each category
+    const categoryElements = Object.entries(shortcutsByCategory)
+      .map(([category, shortcuts]) => {
+        const shortcutElements = shortcuts
+          .map(shortcut => {
+            const command = shortcut.command
+            const description = lodash.startCase(command.replace("Command", ""))
+            const keyStr = shortcut.key.replace("command", "cmd")
+            return `
+            <div class="shortcut" onclick="app.${command}(event)">
+              <kbd>${keyStr}</kbd> <span>${description}</span>
+            </div>
+          `
+          })
+          .join("")
+
         return `
-        <div class="shortcut" onclick="app.${command}(event)">
-          <kbd>${keyStr}</kbd> <span>${description}</span>
-        </div>
-      `
+          <div class="shortcut-category">
+            <h4>${category}</h4>
+            <div class="shortcuts-grid">
+              ${shortcutElements}
+            </div>
+          </div>
+        `
       })
       .join("")
+
     this.openModal(
       `
       <div class="keyboard-shortcuts">
         <h3>Keyboard Shortcuts</h3>
-        <div class="shortcuts-grid">
-          ${shortcutElements}
+        ${categoryElements}
+        <div class="community-section" style="margin-top: 20px;">
+          <h3>Community</h3>
+          <div style="text-align: center;">
+            <a href="https://github.com/breck7/ScrollHub" target="_blank">GitHub</a> · 
+            <a href="https://x.com/breckyunits" target="_blank">Twitter</a> · 
+            <a href="https://www.youtube.com/watch?v=LghkzIOBqMY&list=PLnN2hBdpELHqcBeZIJyxT-WKyJ34lqqt-" target="_blank">YouTube</a> · 
+            <a href="https://www.reddit.com/r/WorldWideScroll/" target="_blank">Reddit</a>
+          </div>
         </div>
       </div>
     `,
@@ -452,15 +477,20 @@ class EditorApp {
     )
   }
 
-  keyboardShortcuts = {
-    "command+s": "saveAndPublishCommand",
-    "ctrl+n": "createFileCommand",
-    "shift+f": "toggleFocusModeCommand",
-    "ctrl+p": "refreshParserCommand",
-    "?": "toggleHelpCommand",
-    "ctrl+w": "showWelcomeMessageCommand",
-    "shift+t": "toggleThemeCommand"
-  }
+  keyboardShortcuts = Object.values(
+    Particle.fromSsv(
+      `key command category
+command+s saveAndPublishCommand File
+ctrl+n createFileCommand File
+command+p formatFileCommand File
+command+. toggleFocusModeCommand Editor
+shift+t toggleThemeCommand Editor
+ctrl+p refreshParserCommand Editor
+command+/ toggleHelpCommand Help
+? toggleHelpCommand Help
+ctrl+w showWelcomeMessageCommand Help`
+    ).toObject()
+  )
 
   initTheme() {
     document.documentElement.setAttribute("data-theme", this.theme)
@@ -478,17 +508,14 @@ class EditorApp {
 
   bindKeyboardShortcuts() {
     const { keyboardShortcuts } = this
+    const map = {}
+    keyboardShortcuts.forEach(row => (map[row.key] = row.command))
     const that = this
     // note: I do not rememeber why we do any of this stopCallback stuff but it seems hard won knowledge ;)
     Mousetrap._originalStopCallback = Mousetrap.prototype.stopCallback
-    Mousetrap.prototype.stopCallback = async function (evt, element, shortcut) {
-      if (shortcut === "command+s") {
-        // save. refresh preview
-        that.saveAndPublishCommand()
-        evt.preventDefault()
-        return true
-      } else if (keyboardShortcuts[shortcut] && !that.codeMirrorInstance.hasFocus()) {
-        that[keyboardShortcuts[shortcut]]()
+    Mousetrap.prototype.stopCallback = async function (evt, element, keyPress) {
+      if (map[keyPress] && (!that.codeMirrorInstance.hasFocus() || keyPress.startsWith("command"))) {
+        that[map[keyPress]]()
         evt.preventDefault()
         return true
       }
@@ -497,9 +524,9 @@ class EditorApp {
       return Mousetrap._originalStopCallback.call(this, evt, element)
     }
 
-    Object.keys(keyboardShortcuts).forEach(key => {
-      Mousetrap.bind(key, function (evt) {
-        that[keyboardShortcuts[key]]()
+    keyboardShortcuts.forEach(shortcut => {
+      Mousetrap.bind(shortcut.key, function (evt) {
+        that[shortcut.command]()
         // todo: handle the below when we need to
         if (evt.preventDefault) evt.preventDefault()
         return false
