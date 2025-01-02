@@ -205,6 +205,7 @@ class ScrollHub {
     this.sseClients = new Set()
     this.folderIndex = new FolderIndex(this)
     this.trafficMonitor = new TrafficMonitor(this.globalLogFile, this.hubFolder)
+    this.version = packageJson.version
   }
 
   startAll() {
@@ -219,8 +220,8 @@ class ScrollHub {
     this.enableFileUploads()
 
     this.initAnalytics()
-    this.addStory({ ip: "admin" }, `started ScrollHub v${packageJson.version}`)
-    console.log(`ScrollHub version: ${packageJson.version}`)
+    this.addStory({ ip: "admin" }, `started ScrollHub v${this.version}`)
+    console.log(`ScrollHub version: ${this.version}`)
     console.log(`Serving all folders in: ${this.rootFolder}`)
     console.log(`Saving runtime data in: ${this.hubFolder}`)
     console.log(`Max memory: ${v8.getHeapStatistics().heap_size_limit / 1024 / 1024} MB`)
@@ -777,18 +778,17 @@ ${prefix}${hash}<br>
 
     // Get all unique directories containing tracked files
     const directoriesSet = new Set()
-    const tracked = new Set(cachedEntry.files)
-    const trackedFiles = cachedEntry.files
-    trackedFiles.forEach(file => directoriesSet.add(path.join(folderPath, path.dirname(file))))
+    Object.keys(cachedEntry.files).forEach(file => directoriesSet.add(path.join(folderPath, path.dirname(file))))
 
-    const files = {}
+    const files = cachedEntry.files
     for (let dir of directoriesSet) {
       const fileNames = (await fsp.readdir(dir, { withFileTypes: true })).filter(dirent => dirent.isFile() && dirent.name !== ".git" && dirent.name !== ".DS_Store").map(dirent => dirent.name)
       fileNames.forEach(file => {
         const relativePath = path.join(dir, file).replace(folderPath, "").substr(1)
-        files[relativePath] = {
-          versioned: tracked.has(relativePath)
-        }
+        if (!files[relativePath])
+          files[relativePath] = {
+            versioned: false
+          }
       })
     }
     return files
@@ -880,7 +880,16 @@ ${prefix}${hash}<br>
       const files = await this.getFileList(folderName)
       if (folderEntry.hasSslCert === undefined) folderEntry.hasSslCert = await this.doesHaveSslCert(folderName)
 
-      res.send(JSON.stringify({ files, hasSslCert: folderEntry.hasSslCert }))
+      res.send(JSON.stringify({ files, hasSslCert: folderEntry.hasSslCert }, undefined, 2))
+    })
+
+    app.get("/ls.csv", async (req, res) => {
+      const folderName = this.getFolderName(req)
+      const folderEntry = folderCache[folderName]
+      if (!folderEntry) return res.status(404).send(`Folder '${folderName}' not found`)
+      res.setHeader("Content-Type", "text/plain")
+      const files = await this.getFileList(folderName)
+      res.send(new Particle(files).asCsv)
     })
 
     app.get("/readFile.htm", async (req, res) => {
@@ -1430,8 +1439,10 @@ ${prefix}${hash}<br>
     const statsPath = this.getStatsPath(folderName)
     if (await exists(statsPath)) {
       const entry = await fsp.readFile(statsPath, "utf8")
-      this.folderCache[folderName] = JSON.parse(entry)
-      return
+      const parsed = JSON.parse(entry)
+      this.folderCache[folderName] = parsed
+      const cacheOkay = parsed.scrollHubVersion // if we change cache format in future, just check scrollHubVersion here
+      if (cacheOkay) return
     }
     this.folderIndex.updateFolder(folderName)
   }

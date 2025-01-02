@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.71.0 1/2/2025
+🎉 update Scroll
+🎉 ls.csv route
+🎉 ls.json now includes mtimes and filesizes
+
 📦 0.70.0 1/1/2025
 🎉 added dark mode to editor
 

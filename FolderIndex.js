@@ -45,17 +45,25 @@ class FolderIndex {
       })
 
       // Split by null character and filter empty entries
-      const files = gitLsFiles.split("\0").filter(Boolean)
-      fileCount = files.length
+      const fileList = gitLsFiles.split("\0").filter(Boolean)
+      fileCount = fileList.length
+      const files = {}
 
       // Get size of each tracked file
       await Promise.all(
-        files.map(async file => {
+        fileList.map(async file => {
           const filePath = path.join(fullPath, file)
           try {
             if (!(await scrollHub.exists(filePath))) return
             const fileStats = await fsp.stat(filePath)
             fileSize += fileStats.size
+            files[file] = {
+              versioned: true,
+              file,
+              size: fileStats.size,
+              mtime: fileStats.mtime,
+              ctime: fileStats.ctime
+            }
           } catch (err) {
             console.error(`Error getting stats for file: ${file}`, err)
           }
@@ -133,6 +141,7 @@ class FolderIndex {
       const entry = {
         files,
         hasSslCert,
+        scrollHubVersion: scrollHub.version,
         stats: {
           folder,
           folderLink,
