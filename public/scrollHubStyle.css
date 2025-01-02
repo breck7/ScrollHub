@@ -332,3 +332,14 @@ textarea {
 .shortcut:active {
   transform: translateY(1px);
 }
+
+.newSiteLink a {
+  background: var(--kbd-bg);
+  border-radius: 4px;
+  padding: 4px 8px;
+  min-width: 24px;
+  text-align: center;
+  font-family: monospace;
+  color: var(--kbd-text);
+  transition: background 0.2s;
+}

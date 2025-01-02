@@ -551,25 +551,20 @@ class EditorApp {
 
 # Welcome to ScrollHub!
 
-Your new folder ${this.folderName} is now live on the web!
+${this.folderName} is live!
  link ${this.permalink} ${this.folderName}
   target preview
+ class newSiteLink
 
-You can edit it here live.
+Scroll and ScrollHub are tools to help you refine and publish your best ideas.
 
-You can also download your work to your local machine and even host it yourself (ScrollHub source is on GitHub).
- https://github.com/breck7/ScrollHub ScrollHub source is on GitHub
-  target _blank
-
-We are working hard on Scroll and ScrollHub to let you create and publish your best work.
-
-I'd love to hear from you! Please email me (breck@scroll.pub) with any requests or feedback.
-
-Now, go publish!
+Email me (breck@scroll.pub) with any requests or feedback.
 
 -Breck
-Follow me on X
- https://x.com/breckyunits
+Follow me on X or GitHub
+ https://x.com/breckyunits X
+  target _blank
+ https://github.com/breck7 GitHub
   target _blank`
 
     const html = await this.fusionEditor.scrollToHtml(content)
@@ -765,7 +760,7 @@ Follow me on X
     window.location.href = `/edit.html?folderName=${result}`
   }
 
-  useSsl = false
+  useSsl = window.location.protocol === "https:"
 
   async fetchAndDisplayFileList() {
     const { folderName } = this
