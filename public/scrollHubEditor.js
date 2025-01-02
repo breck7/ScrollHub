@@ -475,6 +475,7 @@ class EditorApp {
     // Generate HTML for each category
     const categoryElements = Object.entries(shortcutsByCategory)
       .map(([category, shortcuts]) => {
+        if (category === "Hidden") return ""
         const shortcutElements = shortcuts
           .map(shortcut => {
             const command = shortcut.command
@@ -543,9 +544,9 @@ command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
 command+3 toggleMetricsCommand Editor
-alt+right nextFileCommand Navigation
-alt+left previousFileCommand Navigation
-command+/ toggleHelpCommand Help
+command+1 previousFileCommand Navigation
+command+2 nextFileCommand Navigation
+command+/ toggleHelpCommand Hidden
 ? toggleHelpCommand Help
 ctrl+w showWelcomeMessageCommand Help`
     ).toObject()
