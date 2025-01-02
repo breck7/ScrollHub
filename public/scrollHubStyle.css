@@ -210,6 +210,9 @@ form {
   background: var(--focus-mode-bg);
   padding-left: calc((100vw - 800px) / 2);
 }
+.editorHolder.focusMode .CodeMirror-vscrollbar {
+  display: none !important;
+}
 
 input[type="text"],
 textarea {
