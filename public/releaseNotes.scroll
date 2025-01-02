@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.72.0 1/2/2025
+🎉 added writing metrics
+🎉 added file keyboard nav
+🎉 added keyboard shortcut headers
+
 📦 0.71.0 1/2/2025
 🎉 update Scroll
 🎉 ls.csv route
