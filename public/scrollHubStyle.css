@@ -210,8 +210,6 @@ form {
   z-index: 2;
   font-size: 133%;
   background: var(--focus-mode-bg);
-  padding-top: 20px;
-  padding-bottom: 20px;
   padding-left: calc((100vw - 800px) / 2);
 }
 .editorHolder.focusMode .CodeMirror-vscrollbar {

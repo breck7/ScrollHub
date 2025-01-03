@@ -49,7 +49,7 @@ class EditorApp {
       document.querySelector(".buttonRow").style.display = "none"
       document.querySelector(".editorHolder").classList.add("focusMode")
       const width = Math.min(800, document.body.clientWidth)
-      this.codeMirrorInstance.setSize(width, window.innerHeight - 40) // subtract 40 for padding
+      this.codeMirrorInstance.setSize(width, window.innerHeight) // subtract 40 for padding
     }
   }
 
