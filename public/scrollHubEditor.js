@@ -49,8 +49,15 @@ class EditorApp {
       document.querySelector(".buttonRow").style.display = "none"
       document.querySelector(".editorHolder").classList.add("focusMode")
       const width = Math.min(800, document.body.clientWidth)
-      this.codeMirrorInstance.setSize(width, window.innerHeight)
+      this.codeMirrorInstance.setSize(width, window.innerHeight - 40) // subtract 40 for padding
     }
+  }
+
+  get width() {
+    const bodyWidth = document.body.clientWidth
+    const maxWidth = 784
+    let computedWidth = bodyWidth - 270
+    return Math.max(100, Math.min(maxWidth, computedWidth))
   }
 
   exitFocusModeCommand() {
@@ -190,13 +197,6 @@ class EditorApp {
 
   get bufferValue() {
     return this.codeMirrorInstance.getValue().replace(/\r/g, "")
-  }
-
-  get width() {
-    const bodyWidth = document.body.clientWidth
-    const maxWidth = 784
-    let computedWidth = bodyWidth - 270
-    return Math.max(100, Math.min(maxWidth, computedWidth))
   }
 
   showError(message) {
