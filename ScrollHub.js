@@ -349,6 +349,17 @@ class ScrollHub {
     this.app.use(compression())
   }
 
+  getBaseUrlForFolder(folderName, hostname, protocol, isLocalHost) {
+    // if localhost, no custom domains
+    if (isLocalHost) return `/${folderName}`
+
+    if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
+
+    // now it might be a custom domain, serve it as if it is
+    // of course, sometimes it would not be
+    return protocol + "//" + folderName
+  }
+
   enableCors() {
     this.app.use((req, res, next) => {
       res.setHeader("Access-Control-Allow-Origin", "*")
@@ -504,7 +515,8 @@ If you'd like to create this folder, visit our main site to get started.
       if (folderName) {
         await this.buildRequestsSummary(folderName)
         if (req.body.particle) return res.send("Done.")
-        return res.redirect(folderName + "/.requests.html")
+        const base = this.getBaseUrlForFolder(folderName, req.hostname, req.protocol, this.isLocalHost)
+        return res.redirect(base + "/.requests.html")
       }
       await this.buildRequestsSummary()
       res.send(`Done.`)

@@ -3,17 +3,6 @@ const { spawn } = require("child_process")
 const fsp = require("fs").promises
 const AnsiToHtml = require("ansi-to-html")
 
-const getBaseUrlForFolder = (folderName, hostname, protocol, isLocalHost) => {
-  // if localhost, no custom domains
-  if (isLocalHost) return `/${folderName}`
-
-  if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
-
-  // now it might be a custom domain, serve it as if it is
-  // of course, sometimes it would not be
-  return protocol + "//" + folderName
-}
-
 class FolderIndex {
   constructor(scrollHub) {
     this.scrollHub = scrollHub
@@ -137,7 +126,7 @@ class FolderIndex {
       })
 
       const hasSslCert = await scrollHub.doesHaveSslCert(folder)
-      const folderLink = getBaseUrlForFolder(folder, scrollHub.hostname, hasSslCert ? "https:" : "http:", scrollHub.isLocalHost)
+      const folderLink = scrollHub.getBaseUrlForFolder(folder, scrollHub.hostname, hasSslCert ? "https:" : "http:", scrollHub.isLocalHost)
 
       const entry = {
         files,
