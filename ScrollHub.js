@@ -515,7 +515,7 @@ If you'd like to create this folder, visit our main site to get started.
       if (folderName) {
         await this.buildRequestsSummary(folderName)
         if (req.body.particle) return res.send("Done.")
-        const base = this.getBaseUrlForFolder(folderName, req.hostname, req.protocol, this.isLocalHost)
+        const base = this.getBaseUrlForFolder(folderName, req.hostname, req.protocol + ":", this.isLocalHost)
         return res.redirect(base + "/.requests.html")
       }
       await this.buildRequestsSummary()
