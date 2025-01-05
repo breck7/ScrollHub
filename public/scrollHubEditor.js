@@ -480,7 +480,7 @@ class EditorApp {
           .map(shortcut => {
             const command = shortcut.command
             const description = lodash.startCase(command.replace("Command", ""))
-            const keyStr = shortcut.key.replace("command", "cmd")
+            const keyStr = shortcut.key.startsWith("nokey") ? "&nbsp;" : shortcut.key.replace("command", "cmd")
             return `
             <div class="shortcut" onclick="app.${command}(event)">
               <kbd>${keyStr}</kbd> <span>${description}</span>
@@ -548,7 +548,7 @@ command+1 previousFileCommand Navigation
 command+2 nextFileCommand Navigation
 command+/ toggleHelpCommand Hidden
 ? toggleHelpCommand Help
-ctrl+w showWelcomeMessageCommand Help`
+nokey1 showWelcomeMessageCommand Help`
     ).toObject()
   )
 
@@ -567,7 +567,7 @@ ctrl+w showWelcomeMessageCommand Help`
   }
 
   bindKeyboardShortcuts() {
-    const { keyboardShortcuts } = this
+    const keyboardShortcuts = this.keyboardShortcuts.filter(key => !key.key.startsWith("nokey"))
     const map = {}
     keyboardShortcuts.forEach(row => (map[row.key] = row.command))
     const that = this
@@ -788,10 +788,24 @@ Follow me on X or GitHub
     setTimeout(() => this.hideSpinner(), 3000)
   }
 
+  openIframeModal(event) {
+    const url = event.currentTarget.href
+    const { folderName } = this
+    const modalContent = `
+        <iframe 
+          src="${url}" 
+          style="width: 100%; height: 80vh; border: none;"
+        ></iframe>
+  `
+
+    this.openModal(modalContent, url, event)
+  }
+
+  // Update the updateFooterLinks method to use the new modal
   updateFooterLinks() {
     const { folderName } = this
     document.getElementById("gitClone").innerHTML =
-      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}">traffic</a> · <a class="folderActionLink" href="/diffs.htm/${folderName}?count=10">revisions</a> · <a class="folderActionLink" href="#" onclick="window.app.copyClone()">clone</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModal(event); return false; }">traffic</a> · <a class="folderActionLink" href="/commits.htm?folderName=${folderName}&count=10" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModal(event); return false; }">revisions</a> · <a class="folderActionLink" href="#" onclick="window.app.copyClone()">clone</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async renameFolder() {

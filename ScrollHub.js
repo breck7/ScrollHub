@@ -15,7 +15,6 @@ const compression = require("compression")
 const https = require("https")
 const http = require("http")
 const fileUpload = require("express-fileupload")
-const AnsiToHtml = require("ansi-to-html")
 
 // Git server
 const httpBackend = require("git-http-backend")
@@ -597,7 +596,7 @@ If you'd like to create this folder, visit our main site to get started.
   }
 
   initHistoryRoutes() {
-    const { app, rootFolder, folderCache } = this
+    const { app, rootFolder, folderCache, folderIndex } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
     app.get("/revisions.htm/:folderName", async (req, res) => {
       const folderName = req.params.folderName
@@ -615,115 +614,15 @@ If you'd like to create this folder, visit our main site to get started.
         res.status(500).send("An error occurred while fetching the git log")
       }
     })
-    app.get("/diffs.htm/:folderName", async (req, res) => {
-      const folderName = req.params.folderName
-      const folderPath = path.join(rootFolder, folderName)
+    app.get("/commits.htm", async (req, res) => {
+      const folderName = this.getFolderName(req)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
-      const count = req.query.count || 10
-
-      try {
-        // Check if there are any commits
-        const gitRevListProcess = spawn("git", ["rev-list", "--count", "HEAD"], { cwd: folderPath })
-        let commitCountData = ""
-
-        gitRevListProcess.stdout.on("data", data => {
-          commitCountData += data.toString()
-        })
-
-        gitRevListProcess.stderr.on("data", data => {
-          console.error(`git rev-list stderr: ${data}`)
-        })
-
-        gitRevListProcess.on("close", code => {
-          if (code !== 0) {
-            res.status(500).send("An error occurred while checking commit count")
-            return
-          }
-
-          const numCommits = parseInt(commitCountData.trim(), 10)
-          if (numCommits === 0) {
-            res.status(200).send("No commits available.")
-            return
-          }
-
-          // Now spawn git log process
-          const gitLogProcess = spawn("git", ["log", "-p", `-${count}`, "--color=always"], { cwd: folderPath })
-          const convert = new AnsiToHtml({ escapeXML: true })
-
-          res.setHeader("Content-Type", "text/html; charset=utf-8")
-          res.write(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Last 10 Commits for ${folderName}</title>
-  <style>
-    body { font-family: monospace; white-space: pre-wrap; word-wrap: break-word; padding: 5px; }
-    h2 { color: #333; }
-    .commit { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
-    .commit-message { font-weight: bold; color: #005cc5; }
-    input[type="submit"] { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; }
-  </style>
-</head>
-<body>
-`)
-
-          let buffer = ""
-          gitLogProcess.stdout.on("data", data => {
-            buffer += data.toString()
-            // Process complete lines
-            let lines = buffer.split("\n")
-            buffer = lines.pop() // Keep incomplete line in buffer
-
-            lines = lines.map(line => {
-              // Convert ANSI to HTML
-              line = convert.toHtml(line)
-              // Replace commit hashes with forms
-              line = line.replace(/(commit\s)([0-9a-f]{40})/, (match, prefix, hash) => {
-                return `${"-".repeat(60)}<br>
-${prefix}${hash}<br>
-<form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
-  <input type="hidden" name="hash" value="${hash}">
-  <input type="submit" value="Restore this version" onclick="return confirm('Restore this version?');">
-</form>`
-              })
-              return line
-            })
-
-            res.write(lines.join("\n") + "\n")
-          })
-
-          gitLogProcess.stderr.on("data", data => {
-            console.error(`git log stderr: ${data}`)
-          })
-
-          gitLogProcess.on("close", code => {
-            if (code !== 0) {
-              console.error(`git log process exited with code ${code}`)
-              res.status(500).end("An error occurred while fetching the git log")
-            } else {
-              // Process any remaining buffered data
-              if (buffer.length > 0) {
-                buffer = convert.toHtml(buffer)
-                buffer = buffer.replace(/(commit\s)([0-9a-f]{40})/, (match, prefix, hash) => {
-                  return `${"-".repeat(60)}<br>
-${prefix}${hash}<br>
-<form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
-  <input type="hidden" name="hash" value="${hash}">
-  <input type="submit" value="Restore this version" onclick="return confirm('Restore this version?');">
-</form>`
-                })
-                res.write(buffer)
-              }
-              res.end("</body></html>")
-            }
-          })
-        })
-      } catch (error) {
-        console.error(error)
-        res.status(500).send("An error occurred while fetching the git log")
-      }
+      await folderIndex.sendCommits(folderName, req.query.count || 10, res)
+    })
+    app.get("/commits.json", async (req, res) => {
+      const folderName = this.getFolderName(req)
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+      const commits = await folderIndex.getCommits(folderName, req.query.count || 10)
     })
 
     app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
@@ -745,7 +644,7 @@ ${prefix}${hash}<br>
 
         await this.buildFolder(folderName)
 
-        res.redirect("/diffs.htm/" + folderName)
+        res.redirect("/commits.htm?folderName=" + folderName)
         this.updateFolderAndBuildList(folderName)
       } catch (error) {
         console.error(error)
@@ -1734,7 +1633,7 @@ Download folders as JSON | CSV | TSV
 table folders.csv
  compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a>
   select folder folderLink links revised hash files mb revisions
-   compose hashLink diffs.htm/{folder}
+   compose hashLink commits.htm?folderName={folder}
     orderBy -revised
      rename revised lastRevised
       printTable

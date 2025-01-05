@@ -60,7 +60,7 @@ class ScrollHub {
 #### Git Integration
 - `/:repo.git/*` - Git repository access
 - `/revisions.htm/:folderName` - View commit history
-- `/diffs.htm/:folderName` - View file differences
+- `/commits.htm?folderName=:folderName` - View file differences
 - `/revert.htm/:folderName` - Restore previous versions
 
 #### Real-time Features
