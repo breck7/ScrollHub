@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.73.0 1/5/2025
+🎉 various improvements and fixes
+🏥 mobile layout fixes
+
 📦 0.72.0 1/2/2025
 🎉 added writing metrics
 🎉 added file keyboard nav

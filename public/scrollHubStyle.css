@@ -74,7 +74,6 @@ body {
   color: var(--light-grey);
   text-align: center;
   font-size: 0.8rem;
-  white-space: pre;
   font-family: monospace;
   margin: auto;
   padding: 0.5rem;
@@ -129,7 +128,7 @@ body {
 #fileList {
   margin: 0 10px;
   height: 352px;
-  max-width: 200px;
+  width: 200px;
   overflow: auto;
 }
 

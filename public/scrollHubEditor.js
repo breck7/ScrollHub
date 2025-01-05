@@ -36,14 +36,17 @@ class EditorApp {
   }
 
   get editorHeight() {
-    return Math.max(300, window.innerHeight - 200)
+    return this.isMobile ? 400 : Math.max(300, window.innerHeight - 200)
   }
 
   updateEditorDimensions() {
-    const { editorHeight } = this
-    this.codeMirrorInstance.setSize(this.width, editorHeight)
+    const { editorHeight, isMobile } = this
+    const fileListHeight = isMobile ? "auto" : `${editorHeight - 138}px`
+    const fileListWidth = isMobile ? document.body.clientWidth - 40 + "px" : "200px"
     const fileList = document.getElementById("fileList")
-    fileList.style.height = `${editorHeight - 138}px`
+    fileList.style.height = fileListHeight
+    fileList.style.width = fileListWidth
+    this.codeMirrorInstance.setSize(this.width, editorHeight)
     if (this.isFocusMode) {
       console.log("Entering focus mode")
       document.querySelector(".buttonRow").style.display = "none"
@@ -53,8 +56,13 @@ class EditorApp {
     }
   }
 
+  get isMobile() {
+    return window.innerWidth < 768
+  }
+
   get width() {
     const bodyWidth = document.body.clientWidth
+    if (this.isMobile) return bodyWidth - 40
     const maxWidth = 784
     let computedWidth = bodyWidth - 270
     return Math.max(100, Math.min(maxWidth, computedWidth))
@@ -804,7 +812,7 @@ Follow me on X or GitHub
   // Update the updateFooterLinks method to use the new modal
   updateFooterLinks() {
     const { folderName } = this
-    document.getElementById("gitClone").innerHTML =
+    document.getElementById("folderLinks").innerHTML =
       `<a class="folderActionLink" href="/globe.html?folderName=${folderName}" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModal(event); return false; }">traffic</a> · <a class="folderActionLink" href="/commits.htm?folderName=${folderName}&count=10" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModal(event); return false; }">revisions</a> · <a class="folderActionLink" href="#" onclick="window.app.copyClone()">clone</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
