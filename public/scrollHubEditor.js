@@ -336,12 +336,20 @@ class EditorApp {
     document.querySelector("#spinner").style.display = "block"
   }
 
+  showSpinnerWithStopwatch(message, style) {
+    this.showSpinner(message, style)
+    let count = 1
+    this.spinnerInterval = setInterval(() => (document.querySelector("#spinner").innerHTML = `<span${style}>${message} - ${count++}s</span>`), 1000)
+    document.querySelector("#spinner").style.display = "block"
+  }
+
   showError(message) {
     this.showSpinner(message, ` style="color:red;"`)
   }
 
   hideSpinner() {
     document.querySelector("#spinner").style.display = "none"
+    clearInterval(this.spinnerInterval)
   }
 
   async saveFile() {
@@ -400,8 +408,10 @@ class EditorApp {
   }
 
   async buildFolderAndRefreshCommand() {
+    this.showSpinnerWithStopwatch("Building")
     await this.buildFolderCommand()
     await this.refreshFileListCommand()
+    this.hideSpinner()
   }
 
   async saveAndPublishCommand() {
