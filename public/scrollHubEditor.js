@@ -159,17 +159,29 @@ class EditorApp {
 
   rehighlight() {
     if (this._parser === this.parser) return
-    console.log("rehighlighting needed")
+    console.log("rehighlighting needed - reinitializing CodeMirror")
     this._parser = this.parser
 
-    // todo: figure this out
+    // Store current state
+    const currentContent = this.codeMirrorInstance.getValue()
+    const currentCursor = this.codeMirrorInstance.getCursor()
+    const currentScrollInfo = this.codeMirrorInstance.getScrollInfo()
+
+    // Completely reinitialize CodeMirror with current mode
+    this.initCodeMirror(this.mode)
+
+    // Restore content and cursor position
+    this.codeMirrorInstance.setValue(currentContent)
+    this.codeMirrorInstance.setCursor(currentCursor)
+
+    // Restore scroll position
+    this.codeMirrorInstance.scrollTo(currentScrollInfo.left, currentScrollInfo.top)
   }
 
   mode = "custom"
   autocomplete = true
   currentParser = null
-  updateEditorMode(fileName) {
-    const mode = this.getEditorMode(fileName)
+  updateEditorMode(mode) {
     const modeChanged = mode !== this.mode
     if (!this.autocomplete) this.disableAutocomplete()
     else this.enableAutocomplete()
@@ -240,6 +252,7 @@ class EditorApp {
         this.refreshFileListCommand()
         buffer = buffer.replace(/TODAYS_DATE/g, new Date().toLocaleDateString("en-US"))
         this.setFileContent(decodeURIComponent(buffer))
+        await this.refreshParserCommand()
       } else {
         await this.refreshFileListCommand()
         await this.autoOpen()
@@ -302,7 +315,7 @@ class EditorApp {
     this.setFileContent(content)
     this.setFileNameInUrl(fileName)
     await this.refreshParserCommand()
-    this.updateEditorMode(fileName)
+    this.updateEditorMode(this.getEditorMode(fileName))
     this.updatePreviewIFrame()
 
     if (!this.files) await this.refreshFileListCommand()
