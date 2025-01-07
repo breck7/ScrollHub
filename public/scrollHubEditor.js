@@ -218,7 +218,6 @@ class EditorApp {
 
   async main() {
     this.initTheme()
-    this.bindFileButtons()
     this.bindFileListListeners()
     this.bindFileDrop()
     this.bindKeyboardShortcuts()
@@ -348,9 +347,9 @@ class EditorApp {
   async saveFile() {
     if (!this.fileName) {
       const name = new URL(window.location).searchParams.get("bufferName") || "untitled"
-      let fileName = prompt("Enter a filename", name)
+      let fileName = this.sanitizeFileName(prompt("Enter a filename", name))
       if (!fileName) return ""
-      this.fileName = this.sanitizeFileName(fileName)
+      this.fileName = fileName
     }
     await this.writeFile("Publishing...", this.bufferValue, this.fileName)
     await this.refreshParserCommand()
@@ -359,7 +358,6 @@ class EditorApp {
 
   async writeFile(spinnerText, content, fileName) {
     const { folderName } = this
-    fileName = this.sanitizeFileName(fileName)
     const filePath = `${folderName}/${fileName}`
     this.showSpinner(spinnerText)
     const formData = new FormData()
@@ -979,11 +977,13 @@ Follow me on X or GitHub
   }
 
   sanitizeFileName(fileName) {
-    return fileName.includes(".") ? fileName : fileName + ".scroll"
+    if (fileName === undefined || fileName === null) return ""
+    // Dont allow spaces in filenames. And if no extension, auto add .scroll.
+    return (fileName.includes(".") ? fileName : fileName + ".scroll").replace(/ /g, "")
   }
 
   async createFileCommand() {
-    let fileName = prompt("Enter a filename", "untitled").replace(/ /g, "")
+    let fileName = this.sanitizeFileName(prompt("Enter a filename", "untitled"))
     if (!fileName) return ""
     await this.writeFile("Creating file...", "", fileName)
   }
@@ -1005,16 +1005,16 @@ Follow me on X or GitHub
     this.codeMirrorInstance.focus()
   }
 
-  async duplicateFile() {
+  async duplicateFileCommand() {
     const { fileName } = this
     // Generate default name for the duplicate file
     const extension = fileName.includes(".") ? "." + fileName.split(".").pop() : ""
     const baseName = fileName.replace(extension, "")
     const defaultNewName = `${baseName}-copy${extension}`
 
-    const newFileName = prompt(`Enter name for the duplicate of "${fileName}":`, defaultNewName)
+    const newFileName = this.sanitizeFileName(prompt(`Enter name for the duplicate of "${fileName}":`, defaultNewName))
     if (!newFileName || newFileName === fileName) return
-    await this.writeFile("Duplicating...", this.bufferValue, this.sanitizeFileName(newFileName))
+    await this.writeFile("Duplicating...", this.bufferValue, newFileName)
   }
 
   async formatFileCommand() {
@@ -1022,43 +1022,28 @@ Follow me on X or GitHub
     this.setFileContent(bufferValue)
   }
 
-  bindFileButtons() {
-    const that = this
-    document.querySelector(".renameFileLink").addEventListener("click", async e => {
-      const oldFileName = that.fileName
-      const newFileName = prompt(`Enter new name for "${oldFileName}":`, oldFileName)
-      if (newFileName && newFileName !== oldFileName) {
-        this.performFileRename(oldFileName, this.sanitizeFileName(newFileName))
-      }
+  async renameFileCommand() {
+    const oldFileName = this.fileName
+    const newFileName = this.sanitizeFileName(prompt(`Enter new name for "${oldFileName}":`, oldFileName))
+    if (newFileName && newFileName !== oldFileName) this.performFileRename(oldFileName, newFileName)
+  }
+
+  async deleteFileCommand() {
+    const { fileName, folderName } = this
+    const userInput = prompt(`To delete this file, please type the file name: ${fileName}`)
+
+    if (!userInput || userInput !== fileName) return
+    this.showSpinner("Deleting...")
+    const response = await fetch(`/deleteFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(fileName)}`, {
+      method: "POST"
     })
 
-    document.querySelector(".duplicateFileLink").addEventListener("click", async evt => {
-      evt.preventDefault()
-      this.duplicateFile()
-    })
-
-    document.querySelector(".formatFileLink").addEventListener("click", async evt => {
-      evt.preventDefault()
-      this.formatFileCommand()
-    })
-
-    document.querySelector(".deleteFileLink").addEventListener("click", async e => {
-      e.preventDefault()
-
-      const { fileName, folderName } = this
-      const userInput = prompt(`To delete this file, please type the file name: ${fileName}`)
-
-      if (!userInput || userInput !== fileName) return
-      this.showSpinner("Deleting...")
-      const response = await fetch(`/deleteFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(fileName)}`, {
-        method: "POST"
-      })
-
-      const data = await response.text()
-      await this.fetchAndDisplayFileList()
-      this.autoOpen()
-      this.hideSpinner()
-    })
+    const data = await response.text()
+    await this.fetchAndDisplayFileList()
+    await this.autoOpen()
+    await this.buildFolderCommand()
+    await this.fetchAndDisplayFileList()
+    this.hideSpinner()
   }
 }
 

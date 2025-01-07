@@ -20,10 +20,10 @@ libs.js
  <textarea name="content" id="fileEditor" rows="30"></textarea>
  <div class="buttonRow">
  <button onclick="app.saveAndPublishCommand(); return false;" class="scrollButton publishButton">Publish</button>
- <a class="renameFileLink">Rename File</a>
- <a class="duplicateFileLink">Duplicate File</a>
- <a class="formatFileLink">Format File</a>
- <a class="deleteFileLink">Delete File</a>
+ <a class="renameFileLink" onclick="app.renameFileCommand()">Rename File</a>
+ <a class="duplicateFileLink" onclick="app.duplicateFileCommand()">Duplicate File</a>
+ <a class="formatFileLink" onclick="app.formatFileCommand()">Format File</a>
+ <a class="deleteFileLink" onclick="app.deleteFileCommand()">Delete File</a>
  <a class="focusLink" onclick="app.enterFocusModeCommand()">Focus</a>
  </div>
 </div>
