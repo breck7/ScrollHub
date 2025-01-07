@@ -31,10 +31,14 @@ class FusionEditor {
     this.fs._storage = urlWriter
   }
   async scrollToHtml(scrollCode) {
+    const parsed = await this.parseScroll(scrollCode)
+    return parsed.asHtml
+  }
+  async parseScroll(scrollCode) {
     const { ScrollFile } = this
     const page = new ScrollFile(scrollCode)
     await page.fuse()
-    return page.scrollProgram.asHtml
+    return page.scrollProgram
   }
   async getFusedFile() {
     const { bufferValue, ScrollFile } = this
