@@ -299,21 +299,23 @@ textarea {
   color: var(--text-color);
 }
 
+.shortcut-category {
+  break-inside: avoid;
+}
+
 .shortcuts-grid {
-  display: grid;
-  gap: 12px;
+  column-count: auto;
+  column-fill: auto;
+  column-width: 40ch;
+  column-gap: 1rem;
+  height: calc(100vh - 300px);
 }
 
 .shortcut {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  padding: 8px 0;
   cursor: pointer;
   color: var(--text-color);
-}
-
-.shortcut:hover kbd {
-  background: var(--kbd-hover);
+  display: block;
 }
 
 .shortcut kbd {
@@ -325,6 +327,10 @@ textarea {
   font-family: monospace;
   color: var(--kbd-text);
   transition: background 0.2s;
+}
+
+.shortcut:hover kbd {
+  background: var(--kbd-hover);
 }
 
 .shortcut:active kbd {

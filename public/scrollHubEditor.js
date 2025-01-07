@@ -237,16 +237,16 @@ class EditorApp {
     if (!fileName) {
       let buffer = urlParams.get("buffer")
       if (buffer) {
-        this.fetchAndDisplayFileList()
+        this.refreshFileListCommand()
         buffer = buffer.replace(/TODAYS_DATE/g, new Date().toLocaleDateString("en-US"))
         this.setFileContent(decodeURIComponent(buffer))
       } else {
-        await this.fetchAndDisplayFileList()
+        await this.refreshFileListCommand()
         await this.autoOpen()
         if (urlParams.get("command") === "showWelcomeMessageCommand") this.showWelcomeMessageCommand()
       }
     } else {
-      this.fetchAndDisplayFileList()
+      this.refreshFileListCommand()
       this.openFile(fileName)
     }
 
@@ -305,7 +305,7 @@ class EditorApp {
     this.updateEditorMode(fileName)
     this.updatePreviewIFrame()
 
-    if (!this.files) await this.fetchAndDisplayFileList()
+    if (!this.files) await this.refreshFileListCommand()
     else this.renderFileList()
 
     if (this.isModalOpen && this._openModal === "metrics") this.openMetricsCommand()
@@ -370,7 +370,7 @@ class EditorApp {
         body: formData
       })
       this.hideSpinner()
-      await this.fetchAndDisplayFileList()
+      await this.refreshFileListCommand()
       if (this.fileName !== fileName) this.openFile(fileName)
       this.buildFolderCommand()
     } catch (error) {
@@ -399,9 +399,14 @@ class EditorApp {
     console.log(`'${folderName}' built`)
   }
 
+  async buildFolderAndRefreshCommand() {
+    await this.buildFolderCommand()
+    await this.refreshFileListCommand()
+  }
+
   async saveAndPublishCommand() {
     await this.saveFile()
-    await this.fetchAndDisplayFileList()
+    await this.refreshFileListCommand()
     await this.buildFolderCommand()
   }
 
@@ -498,9 +503,7 @@ class EditorApp {
         return `
           <div class="shortcut-category">
             <h4>${category}</h4>
-            <div class="shortcuts-grid">
               ${shortcutElements}
-            </div>
           </div>
         `
       })
@@ -510,7 +513,9 @@ class EditorApp {
       `
       <div class="keyboard-shortcuts">
         <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
         ${categoryElements}
+        </div>
           <div style="text-align: center;">
             ScrollHub Community: 
             <a href="https://github.com/breck7/ScrollHub" target="_blank">GitHub</a> · 
@@ -546,6 +551,7 @@ class EditorApp {
 command+s saveAndPublishCommand File
 ctrl+n createFileCommand File
 command+p formatFileCommand File
+command+b buildFolderAndRefreshCommand Folder
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
@@ -708,7 +714,7 @@ Follow me on X or GitHub
     Promise.all(uploadPromises)
       .then(() => {
         console.log("All files uploaded successfully")
-        this.fetchAndDisplayFileList()
+        this.refreshFileListCommand()
         this.buildFolderCommand()
       })
       .catch(error => {
@@ -869,7 +875,7 @@ Follow me on X or GitHub
 
   useSsl = window.location.protocol === "https:"
 
-  async fetchAndDisplayFileList() {
+  async refreshFileListCommand() {
     const { folderName } = this
     try {
       const response = await fetch(`/ls.json?folderName=${folderName}`)
@@ -965,7 +971,7 @@ Follow me on X or GitHub
 
       this.hideSpinner()
       console.log(`File renamed from ${oldFileName} to ${newFileName}`)
-      this.fetchAndDisplayFileList()
+      this.refreshFileListCommand()
       this.buildFolderCommand()
 
       // If the renamed file was the current file, open the new file
@@ -1039,10 +1045,10 @@ Follow me on X or GitHub
     })
 
     const data = await response.text()
-    await this.fetchAndDisplayFileList()
+    await this.refreshFileListCommand()
     await this.autoOpen()
     await this.buildFolderCommand()
-    await this.fetchAndDisplayFileList()
+    await this.refreshFileListCommand()
     this.hideSpinner()
   }
 }
