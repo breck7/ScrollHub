@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.75.0 1/7/2025
+🎉 show file history command
+🏥 fix rehighlighting bug with remote imports
+
 📦 0.74.0 1/7/2025
 🎉 various improvements and fixes
 🏥 continue gracefully if errors in loading a scroll doc
