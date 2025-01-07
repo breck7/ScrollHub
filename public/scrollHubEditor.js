@@ -561,6 +561,7 @@ class EditorApp {
 command+s saveAndPublishCommand File
 ctrl+n createFileCommand File
 command+p formatFileCommand File
+command+h showFileHistoryCommand File
 command+b buildFolderAndRefreshCommand Folder
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
@@ -678,6 +679,36 @@ Follow me on X or GitHub
 
     const html = await this.fusionEditor.scrollToHtml(content)
     this.openModal(html, "welcome", event)
+  }
+
+  async showFileHistoryCommand(event) {
+    if (!this.fileName) return
+
+    try {
+      this.showSpinner("Loading file history...")
+      const response = await fetch(`/blame.htm?folderName=${this.folderName}&fileName=${encodeURIComponent(this.fileName)}`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch file history")
+      }
+
+      const history = await response.text()
+
+      // Format the history data into HTML
+      const formattedHistory = `
+        <div class="file-history">
+          <h3>File History: ${this.fileName}</h3>
+          <div class="history-content" style="white-space: pre-wrap; font-family: monospace; max-height: 70vh; overflow-y: auto;">${history}</div>
+        </div>
+      `
+
+      this.openModal(formattedHistory, "history", event)
+      this.hideSpinner()
+    } catch (error) {
+      console.error("Error fetching file history:", error)
+      this.showError("Failed to load file history: " + error.message)
+      setTimeout(() => this.hideSpinner(), 3000)
+    }
   }
 
   getFilenameFromUrl(url) {

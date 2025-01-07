@@ -1203,6 +1203,11 @@ If you'd like to create this folder, visit our main site to get started.
     app.get("/status/:folderName", checkWritePermissions, async (req, res) => {
       await this.runCommand(req, res, "git status")
     })
+
+    app.get("/blame.htm", checkWritePermissions, async (req, res) => {
+      const fileName = req.query.fileName.replace(/[^a-zA-Z0-9\/_.-]/g, "")
+      await this.runCommand(req, res, "git blame " + fileName)
+    })
   }
 
   async runScrollCommand(req, res, command) {
