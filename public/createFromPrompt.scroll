@@ -1,7 +1,8 @@
 <div id="spinner"></div>
 <form method="post" action="createFromPrompt.htm" id="createForm">
 <input type="hidden" name="agent" value="AGENT">
-<input type="text" id="folderName" name="prompt" placeholder="Describe the website you want"><button class="scrollButton createButton">Create with AGENT</button>
+<input type="hidden" name="template" value="TEMPLATE">
+<input type="text" id="folderName" name="prompt" placeholder="Describe the TEMPLATE you want"><button class="scrollButton createButton">Create with AGENT</button>
 <div id="errorMessage"></div>
 inlineJs create.js
 </form>
@@ -9,9 +10,9 @@ inlineJs create.js
 <div id="loadingModal" class="modal" style="display: none;">
   <div class="modal-content">
     <div class="spinner"></div>
-    <p>Creating your website...</p>
+    <p>Creating your TEMPLATE...</p>
     <p>This takes between 30 and 60 seconds.</p>
-    <p>While you wait, say hi via <a href="mailto:breck@scroll.pub" target="_blank">breck@scroll.pub</a> or <a href="https://x.com/breckyunits" target="_blank">X</a></p>
+    <p>While you wait, say hi on <a href="https://x.com/breckyunits" target="_blank">X</a></p>
   </div>
  </div>
 css
