@@ -35,7 +35,7 @@ css
    text-align: center;
  }
  .modal-content a {
-   color: unset;
+   color: #1a2b4d;
  }
  .spinner {
    border: 4px solid #f3f3f3;

@@ -191,6 +191,25 @@ Requirements:
 - Do not put a copyright symbol or all rights reserved or confidential or any of that mumbo jumbo.
 - Make it beautiful. Dazzling. Advanced used of CSS.
 
+Below is the Scroll Parser that implements the Slideshow. This should give you the class names for the styles.
+slideshowParser
+ // Left and right arrows navigate.
+ description Slideshow widget. *** delimits slides.
+ extends abstractScrollWithRequirementsParser
+ string copyFromExternal .jquery-3.7.1.min.js .slideshow.js
+ example
+  slideshow
+  Why did the cow cross the road?
+  ***
+  Because it wanted to go to the MOOOO-vies.
+  ***
+  THE END
+  ****
+ javascript
+  buildHtml() {
+   return \`<style>html {font-size: var(--scrollBaseFontSize, 28px);} body {margin: auto; width: 500px;}.slideshowNav{text-align: center; margin-bottom:20px; font-size: 24px;color: rgba(204,204,204,.8);} a{text-decoration: none; color: rgba(204,204,204,.8);}</style><script defer src=".jquery-3.7.1.min.js"></script><div class="slideshowNav"></div><script defer src=".slideshow.js"></script>\`
+  }
+
 First suggest a short, memorable domain name ending in .scroll.pub that represents this slideshow. Then provide the files. Use this exact format:
 
 ---domain---
