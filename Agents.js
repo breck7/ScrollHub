@@ -19,44 +19,6 @@ class AbstractPrompt {
   setDebugLog(completion) {
     this.completion = completion
   }
-}
-
-class SimpleCreationPrompt extends AbstractPrompt {
-  get systemPrompt() {
-    return `You are an expert web developer. Create a website based on this request: "${this.userPrompt}"
-
-Requirements:
-- Use only Scroll, vanilla HTML, CSS, and JavaScript (NO frameworks, NO external dependencies)
-- Create clean, semantic HTML5
-- Make it mobile-responsive
-- Follow modern best practices and accessibility guidelines
-- Keep it simple but professional
-- Include basic SEO meta tags using Scroll
-- Use only relative links and no external resources
-- Do not put a copyright symbol or all rights reserved in the footer.
-- Make it beautiful. Dazzling. Advanced used of CSS.
-
-First suggest a short, memorable domain name ending in .scroll.pub that represents this website. Then provide the website files. Use this exact format:
-
----domain---
-(domain.scroll.pub here)
----index.scroll---
-buildHtml
-baseUrl https://(domain.scroll.pub here)
-metaTags
-editButton /edit.html
-title (Title here)
-style.css
-body.html
-script.js
----body.html---
-(HTML body content here)
----style.css---
-(CSS content here)
----script.js---
-(JavaScript content here)
----end---`
-  }
 
   get parsedResponse() {
     const { response } = this
@@ -105,6 +67,44 @@ script.js
       folderName: finalDomain,
       files
     }
+  }
+}
+
+class SimpleCreationPrompt extends AbstractPrompt {
+  get systemPrompt() {
+    return `You are an expert web developer. Create a website based on this request: "${this.userPrompt}"
+
+Requirements:
+- Use only Scroll, vanilla HTML, CSS, and JavaScript (NO frameworks, NO external dependencies)
+- Create clean, semantic HTML5
+- Make it mobile-responsive
+- Follow modern best practices and accessibility guidelines
+- Keep it simple but professional
+- Include basic SEO meta tags using Scroll
+- Use only relative links and no external resources
+- Do not put a copyright symbol or all rights reserved in the footer.
+- Make it beautiful. Dazzling. Advanced used of CSS.
+
+First suggest a short, memorable domain name ending in .scroll.pub that represents this website. Then provide the website files. Use this exact format:
+
+---domain---
+(domain.scroll.pub here)
+---index.scroll---
+buildHtml
+baseUrl https://(domain.scroll.pub here)
+metaTags
+editButton /edit.html
+title (Title here)
+style.css
+body.html
+script.js
+---body.html---
+(HTML body content here)
+---style.css---
+(CSS content here)
+---script.js---
+(JavaScript content here)
+---end---`
   }
 }
 
@@ -171,6 +171,55 @@ scrollVersionLink
 (CSS content here)
 ---script.js---
 (JavaScript content here)
+---end---`
+  }
+}
+
+class SlideshowCreationPrompt extends SimpleCreationPrompt {
+  get systemPrompt() {
+    return `You are an expert design agency tasked with helping someone create a slideshow. Create a slideshow based on this request: "${this.userPrompt}"
+
+Requirements:
+- Make the slideshow inspirational, concise, witty.
+- The scroll slideshow keyword automatically injects javascript to handle the showing/hiding of slide content, navigation, urls, etc. You just need to add content and style.
+- Use mostly Scroll, but you can also use CSS, HTML and JavaScript (NO frameworks, NO external dependencies)
+- Make it mobile-responsive
+- 5-10 slides
+- Follow modern best practices and accessibility guidelines
+- Keep it simple but professional
+- Use only relative links and no external resources
+- Do not put a copyright symbol or all rights reserved or confidential or any of that mumbo jumbo.
+- Make it beautiful. Dazzling. Advanced used of CSS.
+
+First suggest a short, memorable domain name ending in .scroll.pub that represents this slideshow. Then provide the files. Use this exact format:
+
+---domain---
+(domain.scroll.pub here)
+---index.scroll---
+buildTxt
+buildHtml
+title (slideshow title for meta tags)
+metaTags
+style.css
+script.js
+slideshow
+***
+
+(first slide)
+
+***
+
+(slides here, delimited by ***)
+
+***
+
+(Final slide)
+
+****
+---style.css---
+(CSS content here)
+---script.js---
+(Any JavaScript content here, if needed)
 ---end---`
   }
 }
@@ -264,7 +313,8 @@ class Agents {
 
   availablePrompts = {
     website: SimpleCreationPrompt,
-    blog: BlogCreationPrompt
+    blog: BlogCreationPrompt,
+    slideshow: SlideshowCreationPrompt
   }
 
   async createFolderNameAndFilesFromPrompt(userPrompt, existingNames, agentName, promptTemplate = "website") {
