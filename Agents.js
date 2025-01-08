@@ -2,6 +2,7 @@ const { Anthropic } = require("@anthropic-ai/sdk")
 const fs = require("fs")
 const path = require("path")
 const OpenAI = require("openai")
+const { Particle } = require("scrollsdk/products/Particle.js")
 
 class AbstractPrompt {
   constructor(userPrompt, existingNames, agent) {
@@ -169,6 +170,8 @@ class Agents {
   constructor(hubFolder) {
     this.hubFolder = hubFolder
     this.agents = {}
+    const keyPath = path.join(hubFolder, `keys.txt`)
+    this.keyFile = fs.existsSync(keyPath) ? Particle.fromDisk(keyPath) : new Particle()
     this.availableAgents.forEach(agent => this.loadAgent(agent))
   }
 
@@ -176,12 +179,13 @@ class Agents {
 
   loadAgent(name) {
     const { hubFolder } = this
-    const keyPath = path.join(hubFolder, `${name}.txt`)
-    if (!fs.existsSync(keyPath)) {
+    const apiKey = this.keyFile.get(name)
+    if (!apiKey) {
       console.log(`No ${name} API key found. Skipping ${name} agent`)
       return
+    } else {
+      console.log(`${name} agent loaded.`)
     }
-    const apiKey = fs.readFileSync(keyPath, "utf8").trim()
     const agentConstructor = AgentClasses[name]
     this.agents[name] = new agentConstructor(apiKey, hubFolder)
   }
