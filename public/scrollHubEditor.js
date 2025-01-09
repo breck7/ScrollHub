@@ -357,6 +357,7 @@ class EditorApp {
   }
 
   showError(message) {
+    clearInterval(this.spinnerInterval)
     this.showSpinner(message, ` style="color:red;"`)
   }
 
@@ -412,17 +413,21 @@ class EditorApp {
     if (!response.ok) {
       console.error(message)
       this.showError(message.message?.split(".")[0] || "Error building folder.")
+      return false
     } else if (message.includes("SyntaxError")) {
       this.showError("There may have been an error building your site. Please check console logs.")
       console.error(message)
+      return false
     }
 
     console.log(`'${folderName}' built`)
+    return true
   }
 
   async buildFolderAndRefreshCommand() {
     this.showSpinnerWithStopwatch("Building")
-    await this.buildFolderCommand()
+    const result = await this.buildFolderCommand()
+    if (!result) return false
     await this.refreshFileListCommand()
     this.hideSpinner()
   }
