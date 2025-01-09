@@ -411,7 +411,7 @@ class EditorApp {
     const message = await response.text()
     if (!response.ok) {
       console.error(message)
-      this.showError(message.message.split(".")[0])
+      this.showError(message.message?.split(".")[0] || "Error building folder.")
     } else if (message.includes("SyntaxError")) {
       this.showError("There may have been an error building your site. Please check console logs.")
       console.error(message)
