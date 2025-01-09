@@ -740,7 +740,11 @@ If you'd like to create this folder, visit our main site to get started.
         // Create the folder with generated files
         await this.createFolderFromFiles(folderName, files)
 
-        await this.buildFolder(folderName)
+        try {
+          await this.buildFolder(folderName)
+        } catch (err) {
+          console.error(err)
+        }
 
         // Add to story and redirect
         this.addStory(req, `created ${folderName} from prompt using ${agent}`)
