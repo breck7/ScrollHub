@@ -456,7 +456,7 @@ If you'd like to create this folder, visit our main site to get started.
   }
 
   init404Routes() {
-    const { app, rootFolder, hubFolder } = this
+    const { app, rootFolder, publicFolder } = this
     //The 404 Route (ALWAYS Keep this as the last route)
     app.get("*", async (req, res) => {
       const folderName = this.getFolderName(req)
@@ -469,7 +469,7 @@ If you'd like to create this folder, visit our main site to get started.
           res.status(404).sendFile(notFoundPage)
         })
         .catch(() => {
-          res.status(404).sendFile(path.join(hubFolder, "404.html"))
+          res.status(404).sendFile(path.join(publicFolder, "404.html"))
         })
     })
   }
