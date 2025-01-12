@@ -1799,7 +1799,7 @@ scrollVersionLink`
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
     this.certCache = new Map()
-    const crtInHubFolder = await fsp.readdir(hubFolder).find(f => f.endsWith(".crt"))
+    const crtInHubFolder = (await fsp.readdir(hubFolder)).find(f => f.endsWith(".crt"))
     if (crtInHubFolder) {
       const hostname = crtInHubFolder.substr(1).replace(/\.crt$/, "")
       this.loadCert(path.join(hubFolder, crtInHubFolder), hostname)
