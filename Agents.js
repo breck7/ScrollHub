@@ -407,11 +407,10 @@ class DeepSeek extends AbstractAgent {
 const AgentClasses = { claude: Claude, deepseek: DeepSeek, openai: OpenAIAgent }
 
 class Agents {
-  constructor(hubFolder) {
-    this.hubFolder = hubFolder
+  constructor(hub) {
+    this.hubFolder = hub.hubFolder
+    this.config = hub.config
     this.agents = {}
-    const keyPath = path.join(hubFolder, `keys.txt`)
-    this.keyFile = fs.existsSync(keyPath) ? Particle.fromDisk(keyPath) : new Particle()
     this.availableAgents.forEach(agent => this.loadAgent(agent))
   }
 
@@ -419,7 +418,7 @@ class Agents {
 
   loadAgent(name) {
     const { hubFolder } = this
-    const apiKey = this.keyFile.get(name)
+    const apiKey = this.config.get(name)
     if (!apiKey) {
       console.log(`No ${name} API key found. Skipping ${name} agent`)
       return

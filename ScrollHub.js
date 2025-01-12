@@ -196,7 +196,6 @@ class ScrollHub {
     this.hubFolder = hubFolder
     this.publicFolder = path.join(hubFolder, "public")
     this.trashFolder = path.join(hubFolder, "trash")
-    this.certsFolder = path.join(hubFolder, "certs")
     this.globalLogFile = path.join(hubFolder, ".log.txt")
     this.slowLogFile = path.join(hubFolder, ".slow.txt")
     this.storyLogFile = path.join(hubFolder, ".writes.txt")
@@ -205,6 +204,8 @@ class ScrollHub {
     this.folderIndex = new FolderIndex(this)
     this.trafficMonitor = new TrafficMonitor(this.globalLogFile, this.hubFolder)
     this.version = packageJson.version
+    const configPath = path.join(hubFolder, `config.scroll`)
+    this.config = fs.existsSync(configPath) ? Particle.fromDisk(configPath) : new Particle()
   }
 
   startAll() {
@@ -722,7 +723,7 @@ If you'd like to create this folder, visit our main site to get started.
   initAIRoutes() {
     const { app, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
-    const agents = new Agents(this.hubFolder)
+    const agents = new Agents(this)
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
       try {
         const prompt = req.body.prompt
@@ -761,9 +762,13 @@ If you'd like to create this folder, visit our main site to get started.
     // by default assume root server has ssl certs
     if (!folderName.includes(".")) return true
     // Now we see if the custom domain has one
-    const certPath = path.join(this.certsFolder, `${folderName}.crt`)
+    const certPath = this.makeCertPath(folderName)
     const hasSslCert = await exists(certPath)
     return hasSslCert
+  }
+
+  makeCertPath(folderName) {
+    return path.join(this.rootFolder, folderName, `.${folderName}.crt`)
   }
 
   initFileRoutes() {
@@ -1547,10 +1552,9 @@ If you'd like to create this folder, visit our main site to get started.
   }
 
   ensureInstalled() {
-    const { hubFolder, rootFolder, trashFolder, certsFolder, publicFolder } = this
+    const { hubFolder, rootFolder, trashFolder, publicFolder } = this
     if (!fs.existsSync(hubFolder)) fs.mkdirSync(hubFolder)
     if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
-    if (!fs.existsSync(certsFolder)) fs.mkdirSync(certsFolder)
     if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
     if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder)
     // copy public folder
@@ -1762,12 +1766,8 @@ scrollVersionLink`
     return { folderName }
   }
 
-  loadCertAndKey(hostname) {
-    const { certCache, pendingCerts, certsFolder } = this
-    if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
-
-    const certPath = path.join(certsFolder, `${hostname}.crt`)
-    const keyPath = path.join(certsFolder, `${hostname}.key`)
+  loadCert(certPath, hostname) {
+    const keyPath = certPath.replace(/\.crt$/, ".key")
 
     // Check if both cert and key files exist
     if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
@@ -1777,26 +1777,40 @@ scrollVersionLink`
       }
       certCache.set(hostname, sslOptions) // Cache the cert and key
       return sslOptions
-    } else {
-      if (pendingCerts[hostname]) return
-      this.makeCert(hostname)
-      throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
     }
+    return false
+  }
+
+  loadCertAndKey(hostname) {
+    const { certCache, pendingCerts } = this
+    if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
+
+    const loadedCert = this.loadCert(this.makeCertPath(hostname), hostname)
+    if (loadedCert) return loadedCert
+    if (pendingCerts[hostname]) return
+    this.makeCert(hostname)
+    throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
   }
 
   async startHttpsServer() {
-    const { app, certsFolder } = this
+    const { app, hubFolder } = this
     const tls = require("tls")
     const { CertificateMaker } = require("./CertificateMaker.js")
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
     this.certCache = new Map()
+    const crtInHubFolder = await fsp.readdir(hubFolder).find(f => f.endsWith(".crt"))
+    if (crtInHubFolder) {
+      const hostname = crtInHubFolder.substr(1).replace(/\.crt$/, "")
+      this.loadCert(path.join(hubFolder, crtInHubFolder), hostname)
+    }
+
     const pendingCerts = {}
     this.pendingCerts = pendingCerts
     this.makeCert = async domain => {
       pendingCerts[domain] = true
       const email = domain + "@hub.scroll.pub"
-      await certMaker.makeCertificate(domain, email, certsFolder)
+      await certMaker.makeCertificate(domain, email, path.join(this.rootFolder, folderName))
     }
 
     const that = this

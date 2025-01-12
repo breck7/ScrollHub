@@ -18,6 +18,25 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.77.0 1/12/2025
+🎉 eliminated certs folder. Now store certs in their respective folders.
+⚠️ BREAKING: .hub/keys.txt is now .hub/config.scroll
+⚠️ BREAKING: put your root crt/key pair in the .hub folder for root SSL
+⚠️ BREAKING: use the migration script below, otherwise all certs will be regenerated.
+codeWithHeader migrateCerts.sh
+ #!/bin/bash
+ cd /root/.hub/certs
+ # Iterate over all .crt files (we could use .key too, pattern will match pairs)
+ for cert in *.crt; do
+     # Skip if no matches found
+     [[ -f "$cert" ]] || continue
+     # Get the base name without extension (e.g., xiuzhen1.scroll.pub)
+     base="${cert%.crt}"
+     # Copy both cert and key with leading dot
+     cp "$cert" "/root/$base/.$cert"
+     cp "$base.key" "/root/$base/.$base.key"
+ done
+
 📦 0.76.0 1/12/2025
 🎉 add list and kill commands for easier sysadmin
 🎉 various improvements, new prompts, and fixes
