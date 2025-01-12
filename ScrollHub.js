@@ -1775,7 +1775,7 @@ scrollVersionLink`
         cert: fs.readFileSync(certPath, "utf8"),
         key: fs.readFileSync(keyPath, "utf8")
       }
-      certCache.set(hostname, sslOptions) // Cache the cert and key
+      this.certCache.set(hostname, sslOptions) // Cache the cert and key
       return sslOptions
     }
     return false
