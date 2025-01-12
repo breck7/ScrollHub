@@ -18,6 +18,11 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.76.0 1/12/2025
+🎉 add list and kill commands for easier sysadmin
+🎉 various improvements, new prompts, and fixes
+🏥 various fixes
+
 📦 0.75.0 1/7/2025
 🎉 show file history command
 🏥 fix rehighlighting bug with remote imports

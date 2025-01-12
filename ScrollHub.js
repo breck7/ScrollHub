@@ -208,6 +208,7 @@ class ScrollHub {
   }
 
   startAll() {
+    process.title = process.title + " - ScrollHubProcess"
     this.startTime = Date.now()
     this.ensureInstalled()
     this.ensureTemplatesInstalled()
