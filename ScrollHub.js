@@ -210,7 +210,9 @@ class ScrollHub {
   }
 
   startAll() {
-    process.title = process.title + " - ScrollHubProcess"
+    const { rootFolder } = this
+    const lastFolder = rootFolder.split("/").pop()
+    process.title = process.title + ` ScrollHub ${lastFolder}`
     this.startTime = Date.now()
     this.ensureInstalled()
     this.ensureTemplatesInstalled()

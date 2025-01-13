@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.80.0 1/13/2025
+🎉 show hidden files toggle
+
 📦 0.79.0 1/13/2025
 🎉 wildcard cert support
 🎉 new /stamp route and command in editor

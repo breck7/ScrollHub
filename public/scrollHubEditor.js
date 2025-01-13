@@ -318,7 +318,7 @@ class EditorApp {
     this.updateEditorMode(this.getEditorMode(fileName))
     this.updatePreviewIFrame()
 
-    if (!this.files) await this.refreshFileListCommand()
+    if (!this.allFiles) await this.refreshFileListCommand()
     else this.renderFileList()
 
     if (this.isModalOpen && this._openModal === "metrics") this.openMetricsCommand()
@@ -586,6 +586,7 @@ command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
 command+3 toggleMetricsCommand Editor
+command+shift+h showHiddenFilesCommand Editor
 command+1 previousFileCommand Navigation
 command+2 nextFileCommand Navigation
 command+/ toggleHelpCommand Hidden
@@ -606,6 +607,12 @@ nokey1 showWelcomeMessageCommand Help`
     const newTheme = this.theme === "light" ? "dark" : "light"
     document.documentElement.setAttribute("data-theme", newTheme)
     localStorage.setItem("editorTheme", newTheme)
+  }
+
+  showHiddenFilesCommand() {
+    this.showHiddenFiles = !this.showHiddenFiles
+    delete this._files
+    this.renderFileList()
   }
 
   bindKeyboardShortcuts() {
@@ -946,6 +953,20 @@ Follow me on X or GitHub
 
   useSsl = window.location.protocol === "https:"
 
+  showHiddenFiles = false
+  get files() {
+    if (this._files) return this._files
+    const { allFiles, showHiddenFiles } = this
+    const filtered = {}
+    Object.keys(allFiles).forEach(key => {
+      const value = allFiles[key]
+      if (showHiddenFiles || value.tracked || !key.startsWith(".")) filtered[key] = value
+    })
+
+    this._files = filtered
+    return this._files
+  }
+
   async refreshFileListCommand() {
     const { folderName } = this
     try {
@@ -953,15 +974,9 @@ Follow me on X or GitHub
       if (!response.ok) throw new Error(await response.text())
       const allData = await response.json()
       const allFiles = allData.files
+      delete this._files
+      this.allFiles = allFiles
       this.useSsl = allData.hasSslCert
-
-      const filtered = {}
-      Object.keys(allFiles).forEach(key => {
-        const value = allFiles[key]
-        if (value.tracked || !key.startsWith(".")) filtered[key] = value
-      })
-
-      this.files = filtered
       this.renderFileList()
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)

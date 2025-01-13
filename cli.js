@@ -23,7 +23,7 @@ class ScrollHubCLI extends SimpleCLI {
   getRunningScrollHubs() {
     try {
       // Get detailed process info including CPU and memory
-      const command = "ps aux | grep '[S]crollHubProcess' | awk '{printf \"%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s %s %s\\n\", $2, $3, $4, $5, $6, $9, $11, $12, $13}'"
+      const command = "ps aux | grep '[S]crollHub' | awk '{printf \"%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s %s %s\\n\", $2, $3, $4, $5, $6, $9, $11, $12, $13}'"
       const output = child_process.execSync(command, { encoding: "utf-8" }).trim()
 
       if (!output) return []
