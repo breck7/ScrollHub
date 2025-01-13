@@ -764,7 +764,7 @@ If you'd like to create this folder, visit our main site to get started.
     // Now we see if the custom domain has one
     const certPath = this.makeCertPath(folderName)
     const hasSslCert = await exists(certPath)
-    return hasSslCert ? hasSslCert : this.getMatchingWildcardCert(hostname)
+    return hasSslCert ? hasSslCert : this.getMatchingWildcardCert(folderName)
   }
 
   makeCertPath(folderName) {
