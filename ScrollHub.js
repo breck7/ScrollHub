@@ -1782,14 +1782,39 @@ scrollVersionLink`
   }
 
   loadCertAndKey(hostname) {
-    const { certCache, pendingCerts } = this
+    const { certCache, pendingCerts, wildCardCerts } = this
     if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
 
     const loadedCert = this.loadCert(this.makeCertPath(hostname), hostname)
     if (loadedCert) return loadedCert
+
+    // Check for matching wildcard certificate
+    for (const wild of wildCardCerts) {
+      if (wild.regex.test(hostname)) return wild.cert
+    }
+
     if (pendingCerts[hostname]) return
     this.makeCert(hostname)
     throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
+  }
+
+  async loadWildCardCerts() {
+    const wildcardConfig = this.config.get("wildcard")
+    if (!wildcardConfig) return
+    const [pattern, certFile, keyFile] = wildcardConfig.split(" ")
+
+    const sslOptions = {
+      cert: fs.readFileSync(certFile, "utf8"),
+      key: fs.readFileSync(keyFile, "utf8")
+    }
+    // Convert wildcard pattern to regex
+    // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
+    const regexPattern = pattern
+      .replace(/\./g, "\\.") // Escape dots
+      .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
+    const regex = new RegExp(`^${regexPattern}$`)
+
+    this.wildCardCerts.push({ regex, pattern, cert })
   }
 
   async startHttpsServer() {
@@ -1799,6 +1824,9 @@ scrollVersionLink`
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
     this.certCache = new Map()
+    this.wildCardCerts = []
+    await this.loadWildCardCerts()
+
     const crtInHubFolder = (await fsp.readdir(hubFolder)).find(f => f.endsWith(".crt"))
     if (crtInHubFolder) {
       const hostname = crtInHubFolder.substr(1).replace(/\.crt$/, "")
