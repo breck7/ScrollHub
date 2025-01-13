@@ -581,6 +581,7 @@ ctrl+n createFileCommand File
 command+p formatFileCommand File
 command+h showFileHistoryCommand File
 command+b buildFolderAndRefreshCommand Folder
+nokey2 exportForPromptCommand Folder
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
@@ -672,6 +673,10 @@ nokey1 showWelcomeMessageCommand Help`
         await this.handleImageUrl(url, filename)
       }
     }
+  }
+
+  async exportForPromptCommand(event) {
+    this.openIframeModal("/stamp?folderName=" + this.folderName, event)
   }
 
   async showWelcomeMessageCommand(event) {
@@ -864,8 +869,11 @@ Follow me on X or GitHub
     setTimeout(() => this.hideSpinner(), 3000)
   }
 
-  openIframeModal(event) {
-    const url = event.currentTarget.href
+  openIframeModalFromClick(event) {
+    this.openIframeModal(event.currentTarget.href, event)
+  }
+
+  openIframeModal(url, event) {
     const { folderName } = this
     const modalContent = `
         <iframe 
@@ -873,7 +881,6 @@ Follow me on X or GitHub
           style="width: 100%; height: 80vh; border: none;"
         ></iframe>
   `
-
     this.openModal(modalContent, url, event)
   }
 
@@ -881,7 +888,7 @@ Follow me on X or GitHub
   updateFooterLinks() {
     const { folderName } = this
     document.getElementById("folderLinks").innerHTML =
-      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModal(event); return false; }">traffic</a> · <a class="folderActionLink" href="/commits.htm?folderName=${folderName}&count=10" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModal(event); return false; }">revisions</a> · <a class="folderActionLink" href="#" onclick="window.app.copyClone()">clone</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModalFromClick(event); return false; }">traffic</a> · <a class="folderActionLink" href="/commits.htm?folderName=${folderName}&count=10" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModalFromClick(event); return false; }">revisions</a> · <a class="folderActionLink" href="#" onclick="window.app.copyClone()">clone</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
   }
 
   async renameFolder() {

@@ -772,6 +772,86 @@ If you'd like to create this folder, visit our main site to get started.
     return path.join(this.rootFolder, folderName, `.${folderName}.crt`)
   }
 
+  initStampRoute() {
+    const { app, rootFolder, folderCache } = this
+
+    // Text file extensions - only include actual text formats
+    const textExtensions = new Set("scroll parsers txt html htm rb php md perl py mjs css json csv tsv psv ssv js".split(" "))
+
+    const isTextFile = filepath => {
+      const ext = path.extname(filepath).toLowerCase().slice(1)
+      return textExtensions.has(ext)
+    }
+
+    async function makeStamp(dir) {
+      let stamp = "stamp\n"
+
+      const handleFile = async (indentation, relativePath, itemPath) => {
+        if (!isTextFile(itemPath)) return
+        stamp += `${indentation}${relativePath}\n`
+        const content = await fsp.readFile(itemPath, "utf8")
+        stamp += `${indentation} ${content.replace(/\n/g, `\n${indentation} `)}\n`
+      }
+
+      let gitTrackedFiles
+
+      async function processDirectory(currentPath, depth) {
+        const items = await fsp.readdir(currentPath)
+
+        for (const item of items) {
+          const itemPath = path.join(currentPath, item)
+          const relativePath = path.relative(dir, itemPath)
+
+          if (!gitTrackedFiles.has(relativePath)) continue
+
+          const stats = await fsp.stat(itemPath)
+          const indentation = " ".repeat(depth)
+
+          if (stats.isDirectory()) {
+            stamp += `${indentation}${relativePath}/\n`
+            await processDirectory(itemPath, depth + 1)
+          } else if (stats.isFile()) {
+            await handleFile(indentation, relativePath, itemPath)
+          }
+        }
+      }
+
+      const stats = await fsp.stat(dir)
+      if (stats.isDirectory()) {
+        // Get list of git-tracked files
+        const { stdout } = await execAsync("git ls-files", { cwd: dir })
+        gitTrackedFiles = new Set(stdout.split("\n").filter(Boolean))
+        await processDirectory(dir, 1)
+      } else {
+        await handleFile(" ", dir, dir)
+      }
+
+      return stamp.trim()
+    }
+
+    app.get("/stamp", async (req, res) => {
+      const folderName = this.getFolderName(req)
+      const { rootFolder, folderCache } = this
+
+      // Check if folder exists
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+      const folderPath = path.join(rootFolder, folderName)
+
+      try {
+        // Generate the stamp
+        const stamp = await makeStamp(folderPath)
+
+        // Set content type and send response
+        res.setHeader("Content-Type", "text/plain; charset=utf-8")
+        res.send(stamp)
+      } catch (error) {
+        console.error("Error generating stamp:", error)
+        res.status(500).send(`Error generating stamp: ${error.toString().replace(/</g, "&lt;")}`)
+      }
+    })
+  }
+
   initFileRoutes() {
     const { app, rootFolder, folderCache } = this
     const checkWritePermissions = this.checkWritePermissions.bind(this)
@@ -814,6 +894,8 @@ If you'd like to create this folder, visit our main site to get started.
       const files = await this.getFileList(folderName)
       res.send(new Particle(files).asCsv)
     })
+
+    this.initStampRoute()
 
     app.get("/readFile.htm", async (req, res) => {
       const filePath = path.join(rootFolder, decodeURIComponent(req.query.filePath))
@@ -1683,7 +1765,7 @@ scrollVersionLink`
     res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
   }
 
-  reservedExtensions = "scroll parsers txt html htm rb php perl py mjs css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
+  reservedExtensions = "scroll parsers txt html htm md rb php perl py mjs css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
 
   isValidFolderName(name) {
     if (name.length < 2) return false
