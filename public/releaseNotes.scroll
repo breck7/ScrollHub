@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.78.0 1/12/2025
+🎉 better new site landing experience
+🎉 upgrade scroll
+
 📦 0.77.0 1/12/2025
 🎉 eliminated certs folder. Now store certs in their respective folders.
 ⚠️ BREAKING: .hub/keys.txt is now .hub/config.scroll

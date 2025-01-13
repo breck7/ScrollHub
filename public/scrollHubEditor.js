@@ -679,8 +679,13 @@ nokey1 showWelcomeMessageCommand Help`
 
 # Welcome to ScrollHub!
 
+center
 ${this.folderName} is live!
- link ${this.permalink} ${this.folderName}
+<div class="iframeHolder2"><iframe src="${this.permalink}" class="visitIframe"></iframe></div>
+
+center
+Visit now
+ link ${this.permalink}
   target preview
  class newSiteLink
 
@@ -823,7 +828,7 @@ Follow me on X or GitHub
 
   updatePreviewIFrame() {
     const { rootUrl, folderName } = this
-    this.previewIFrame = document.getElementById("previewIFrame")
+    this.previewIFrame = document.querySelector(".previewIFrame")
     this.previewIFrame.src = this.permalink
 
     this.updateVisitLink()

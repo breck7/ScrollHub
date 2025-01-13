@@ -102,7 +102,8 @@ body {
   background: var(--modal-color) !important;
 }
 
-#previewIFrame {
+.previewIFrame,
+.visitIframe {
   height: 900px;
   width: 600px;
   border: 0;
@@ -110,11 +111,8 @@ body {
   transform-origin: 0 0;
 }
 
-#folderName {
-  outline: none;
-}
-
-.iframeHolder {
+.iframeHolder,
+.iframeHolder2 {
   width: 200px;
   height: 125px;
   box-shadow: 2px 2px 2px 2px var(--iframe-shadow);
@@ -123,6 +121,20 @@ body {
   display: inline-block;
   position: relative;
   overflow: hidden;
+}
+
+.visitIframe {
+  height: 1800px;
+  width: 1200px;
+}
+
+.iframeHolder2 {
+  width: 400px;
+  height: 250px;
+}
+
+#folderName {
+  outline: none;
 }
 
 #fileList {
@@ -344,9 +356,12 @@ textarea {
 .newSiteLink a {
   background: var(--primary-color);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 8px 16px;
+  margin: 10px;
   min-width: 24px;
   text-align: center;
+  display: inline-block;
+  text-decoration: none;
   font-family: monospace;
   color: var(--kbd-text);
   transition: background 0.2s;

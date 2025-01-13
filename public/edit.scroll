@@ -12,7 +12,7 @@ libs.js
 <div id="spinner"></div>
 <form id="editForm">
 <div>
- <div class="iframeHolder"><iframe id="previewIFrame"></iframe></div>
+ <div class="iframeHolder"><iframe class="previewIFrame"></iframe></div>
  <div id="fileList"></div>
  <div><a class="createFileButton" onclick="app.createFileCommand()">+</a><input id="fileFilter" placeholder="Search"/></div>
 </div>
