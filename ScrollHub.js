@@ -191,6 +191,7 @@ class ScrollHub {
     this.port = 80
     this.maxUploadSize = 100 * 1000 * 1024
     this.hostname = os.hostname()
+    this.wildCardCerts = []
     this.rootFolder = dir
     const hubFolder = path.join(dir, ".hub")
     this.hubFolder = hubFolder
@@ -1830,7 +1831,6 @@ scrollVersionLink`
     const certMaker = new CertificateMaker(app).setupChallengeHandler()
 
     this.certCache = new Map()
-    this.wildCardCerts = []
     await this.loadWildCardCerts()
 
     const crtInHubFolder = (await fsp.readdir(hubFolder)).find(f => f.endsWith(".crt"))
