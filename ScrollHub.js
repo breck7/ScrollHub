@@ -1928,7 +1928,7 @@ scrollVersionLink`
     this.makeCert = async domain => {
       pendingCerts[domain] = true
       const email = domain + "@hub.scroll.pub"
-      await certMaker.makeCertificate(domain, email, path.join(this.rootFolder, folderName))
+      await certMaker.makeCertificate(domain, email, path.join(this.rootFolder, domain))
     }
 
     const that = this
