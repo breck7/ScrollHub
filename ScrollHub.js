@@ -764,7 +764,7 @@ If you'd like to create this folder, visit our main site to get started.
     // Now we see if the custom domain has one
     const certPath = this.makeCertPath(folderName)
     const hasSslCert = await exists(certPath)
-    return hasSslCert
+    return hasSslCert ? hasSslCert : this.getMatchingWildcardCert(hostname)
   }
 
   makeCertPath(folderName) {
@@ -1781,6 +1781,14 @@ scrollVersionLink`
     return false
   }
 
+  getMatchingWildcardCert(hostname) {
+    const { wildCardCerts } = this
+    // Check for matching wildcard certificate
+    for (const wild of wildCardCerts) {
+      if (wild.regex.test(hostname)) return wild.cert
+    }
+  }
+
   loadCertAndKey(hostname) {
     const { certCache, pendingCerts, wildCardCerts } = this
     if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
@@ -1788,10 +1796,8 @@ scrollVersionLink`
     const loadedCert = this.loadCert(this.makeCertPath(hostname), hostname)
     if (loadedCert) return loadedCert
 
-    // Check for matching wildcard certificate
-    for (const wild of wildCardCerts) {
-      if (wild.regex.test(hostname)) return wild.cert
-    }
+    const wild = this.getMatchingWildcardCert(hostname)
+    if (wild) return wild
 
     if (pendingCerts[hostname]) return
     this.makeCert(hostname)
@@ -1814,7 +1820,7 @@ scrollVersionLink`
       .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
     const regex = new RegExp(`^${regexPattern}$`)
 
-    this.wildCardCerts.push({ regex, pattern, cert })
+    this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
   }
 
   async startHttpsServer() {
