@@ -22,6 +22,11 @@ Optional steps:
 # Helpful Dev Environment Aliases
 codeFromFile .bash_aliases.sh
 
+# Wildcard SSL certs
+code
+ sudo certbot certonly --manual --preferred-challenges dns -d example.com -d "*.example.com"
+ dig _acme-challenge.example.com TXT
+
 tor.scroll
 
 # Git Troubleshooting
