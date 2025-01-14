@@ -1,6 +1,6 @@
 <div id="spinner"></div>
 <form method="post" action="createFolder.htm" id="createForm">
-<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Create</button>
+<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Create blank folder</button>
 <div id="errorMessage"></div>
 inlineJs create.js
 </form>

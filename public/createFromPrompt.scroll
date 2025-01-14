@@ -2,7 +2,7 @@
 <form method="post" action="createFromPrompt.htm" id="createForm">
 <input type="hidden" name="agent" value="AGENT">
 <input type="hidden" name="template" value="TEMPLATE">
-<input type="text" id="folderName" name="prompt" placeholder="Describe the TEMPLATE you want"><button class="scrollButton createButton">Create with AGENT</button>
+<input type="text" id="folderName" name="prompt" placeholder="Describe the TEMPLATE you want"><button class="scrollButton createButton">Create TEMPLATE</button>
 <div id="errorMessage"></div>
 inlineJs create.js
 </form>
