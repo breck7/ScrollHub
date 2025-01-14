@@ -10,7 +10,7 @@ class FolderPrompt {
     this.existingNames = existingFolderNames
     this.agent = agent
     this.what = whatKind
-    this.domainSuffix = domainSuffix
+    this.domainSuffix = "." + domainSuffix.replace(/^\./, "")
     this.systemPrompt = this.makePrompt(userPrompt, domainSuffix)
   }
   setResponse(response) {
@@ -19,7 +19,6 @@ class FolderPrompt {
   }
 
   makePrompt(userPrompt, domainSuffix) {
-    domainSuffix = "." + domainSuffix.replace(/^\./, "")
     const domainExpression = `(domain${domainSuffix} here)`
     const domainPrompt = `First suggest a short, memorable domain name ending in ${domainSuffix} that represents this website. Then provide the website files. Use this exact format:
 
@@ -62,17 +61,16 @@ ${domainExpression}`
 
     if (!suggestedDomain) suggestedDomain = "error"
 
-    // Ensure the suggested domain ends with .scroll.pub
-    if (!suggestedDomain.endsWith(".scroll.pub")) {
-      suggestedDomain = suggestedDomain.replace(/\.scroll\.pub.*$/, "") + ".scroll.pub"
-    }
+    const { domainSuffix } = this
+    // Ensure the suggested domain ends with domainSuffix
+    if (!suggestedDomain.endsWith(domainSuffix)) suggestedDomain = suggestedDomain.replace(domainSuffix, "") + domainSuffix
 
     // If domain is taken, add numbers until we find a free one
     let finalDomain = suggestedDomain
     let counter = 1
     while (this.existingNames.includes(finalDomain)) {
-      const baseName = suggestedDomain.replace(".scroll.pub", "")
-      finalDomain = `${baseName}${counter}.scroll.pub`
+      const baseName = suggestedDomain.replace(domainSuffix, "")
+      finalDomain = `${baseName}${counter}${domainSuffix}`
       counter++
     }
 
