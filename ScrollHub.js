@@ -1876,7 +1876,7 @@ scrollVersionLink`
   }
 
   loadCertAndKey(hostname) {
-    const { certCache, pendingCerts, wildCardCerts } = this
+    const { certCache, pendingCerts } = this
     if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
 
     const loadedCert = this.loadCert(this.makeCertPath(hostname), hostname)
@@ -1891,22 +1891,23 @@ scrollVersionLink`
   }
 
   async loadWildCardCerts() {
-    const wildcardConfig = this.config.get("wildcard")
-    if (!wildcardConfig) return
-    const [pattern, certFile, keyFile] = wildcardConfig.split(" ")
+    const wildcards = this.config.getParticles("wildcard")
+    if (!wildcards.length) return
+    wildcards.forEach(wildcardConfig => {
+      const [_, pattern, certFile, keyFile] = wildcardConfig.atoms
+      const sslOptions = {
+        cert: fs.readFileSync(certFile, "utf8"),
+        key: fs.readFileSync(keyFile, "utf8")
+      }
+      // Convert wildcard pattern to regex
+      // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
+      const regexPattern = pattern
+        .replace(/\./g, "\\.") // Escape dots
+        .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
+      const regex = new RegExp(`^${regexPattern}$`)
 
-    const sslOptions = {
-      cert: fs.readFileSync(certFile, "utf8"),
-      key: fs.readFileSync(keyFile, "utf8")
-    }
-    // Convert wildcard pattern to regex
-    // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
-    const regexPattern = pattern
-      .replace(/\./g, "\\.") // Escape dots
-      .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
-    const regex = new RegExp(`^${regexPattern}$`)
-
-    this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
+      this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
+    })
   }
 
   async startHttpsServer() {
