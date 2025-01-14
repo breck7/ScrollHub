@@ -732,13 +732,14 @@ If you'd like to create this folder, visit our main site to get started.
         const prompt = req.body.prompt
         const agent = (req.body.agent || "claude").toLowerCase()
         const template = req.body.template
+        const domainSuffix = req.body.tld || "scroll.pub"
         if (!prompt) return res.status(400).send("Prompt is required")
 
         // Get existing names for domain uniqueness check
         const existingNames = Object.keys(this.folderCache)
 
         // Generate website content from prompt
-        const response = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames, agent, template)
+        const response = await agents.createFolderNameAndFilesFromPrompt(prompt, existingNames, agent, template, domainSuffix)
         const { folderName, files } = response.parsedResponse
         files["prompt.json"] = JSON.stringify(response.completion, null, 2)
 

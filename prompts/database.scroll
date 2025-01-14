@@ -62,10 +62,7 @@ Requirements:
 - Do not put a copyright symbol or all rights reserved in the footer.
 - Make it beautiful. Dazzling. Advanced used of CSS.
 
-First suggest a short, memorable domain name ending in .scroll.pub that represents this website. Then provide the website files. Use this exact format:
-
----domain---
-(domain.scroll.pub here)
+DOMAIN_PROMPT
 ---measures.parsers---
 (put measures here)
 ---concepts.scroll---
@@ -84,7 +81,7 @@ buildHtml
 homeButton
 metaTags
 editButton
-editBaseUrl /edit.html?folderName=(domain.scroll.pub here)&fileName=
+editBaseUrl /edit.html?folderName=DOMAIN_EXPRESSION&fileName=
 metaTags
 style.css
 script.js

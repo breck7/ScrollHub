@@ -5,16 +5,31 @@ const OpenAI = require("openai")
 const { Particle } = require("scrollsdk/products/Particle.js")
 
 class FolderPrompt {
-  constructor(userPrompt, existingFolderNames, agent, whatKind) {
+  constructor(userPrompt, existingFolderNames, agent, whatKind, domainSuffix) {
     this.userPrompt = userPrompt
     this.existingNames = existingFolderNames
     this.agent = agent
     this.what = whatKind
-    this.systemPrompt = fs.readFileSync(path.join(__dirname, "prompts", whatKind + ".scroll"), "utf8").replace("USER_PROMPT", userPrompt)
+    this.domainSuffix = domainSuffix
+    this.systemPrompt = this.makePrompt(userPrompt, domainSuffix)
   }
   setResponse(response) {
     this.response = response
     return this
+  }
+
+  makePrompt(userPrompt, domainSuffix) {
+    domainSuffix = "." + domainSuffix.replace(/^\./, "")
+    const domainExpression = `(domain${domainSuffix} here)`
+    const domainPrompt = `First suggest a short, memorable domain name ending in ${domainSuffix} that represents this website. Then provide the website files. Use this exact format:
+
+---domain---
+${domainExpression}`
+    let basePrompt = fs.readFileSync(path.join(__dirname, "prompts", this.what + ".scroll"), "utf8")
+    basePrompt = basePrompt.replace("USER_PROMPT", userPrompt)
+    basePrompt = basePrompt.replace("DOMAIN_PROMPT", domainPrompt)
+    basePrompt = basePrompt.replace("DOMAIN_EXPRESSION", domainSuffix)
+    return basePrompt
   }
 
   setDebugLog(completion) {
@@ -157,9 +172,9 @@ class Agents {
     return Object.values(this.agents)
   }
 
-  async createFolderNameAndFilesFromPrompt(userPrompt, existingNames, agentName, promptTemplate = "website") {
+  async createFolderNameAndFilesFromPrompt(userPrompt, existingNames, agentName, promptTemplate, domainSuffix) {
     const agent = this.agents[agentName] || this.allAgents[0]
-    const prompt = new FolderPrompt(userPrompt, existingNames, agent, promptTemplate)
+    const prompt = new FolderPrompt(userPrompt, existingNames, agent, promptTemplate, domainSuffix)
     if (!agent) throw new Error(`Agent ${agentName} not found. Is API key set?`)
     await agent.do(prompt)
     return prompt
