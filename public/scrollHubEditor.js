@@ -455,6 +455,7 @@ class EditorApp {
 
   _modalContent
   openModal(content, modalName, event) {
+    document.querySelector("#theModal").classList.remove("scrollModalFit")
     this._openModal = modalName
     if (!this._modalContent) this._modalContent = document.querySelector("#theModal").innerHTML
     document.querySelector("#theModal").innerHTML = this._modalContent + content
@@ -696,24 +697,26 @@ ${this.folderName} is live!
 <div class="iframeHolder2"><iframe src="${this.permalink}" class="visitIframe"></iframe></div>
 
 center
-Visit now
+Visit ${this.folderName}
  link ${this.permalink}
   target preview
  class newSiteLink
 
-Scroll and ScrollHub are tools to help you refine and publish your best ideas.
+We make Scroll and ScrollHub to help you refine and publish your best ideas.
 
-Email me (breck@scroll.pub) with any requests or feedback.
-
--Breck
-Follow me on X or GitHub
+I'd love to hear your requests and feedback! Contact me on X, GitHub, or email.
  https://x.com/breckyunits X
   target _blank
+ email breck@scroll.pub email
+  target _blank
  https://github.com/breck7 GitHub
-  target _blank`
+  target _blank
+
+-Breck`
 
     const html = await this.fusionEditor.scrollToHtml(content)
     this.openModal(html, "welcome", event)
+    document.querySelector("#theModal").classList.add("scrollModalFit")
   }
 
   async showFileHistoryCommand(event) {

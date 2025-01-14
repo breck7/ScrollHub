@@ -102,6 +102,13 @@ body {
   background: var(--modal-color) !important;
 }
 
+.scrollModalFit {
+  left: calc((100% - 600px) / 2) !important;
+  right: calc((100% - 600px) / 2) !important;
+  bottom: unset !important;
+  width: 600px;
+}
+
 .previewIFrame,
 .visitIframe {
   height: 900px;

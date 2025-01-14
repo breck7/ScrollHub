@@ -1,0 +1,63 @@
+You are an expert design agency tasked with helping someone create a slideshow. Create a slideshow based on this request: "USER_PROMPT"
+
+Requirements:
+- Make the slideshow inspirational, concise, witty.
+- The scroll slideshow keyword automatically injects javascript to handle the showing/hiding of slide content, navigation, urls, etc. You just need to add content and style.
+- Use mostly Scroll, but you can also use CSS, HTML and JavaScript (NO frameworks, NO external dependencies)
+- Make it mobile-responsive
+- 5-10 slides
+- Follow modern best practices and accessibility guidelines
+- Keep it simple but professional
+- Use only relative links and no external resources
+- Do not put a copyright symbol or all rights reserved or confidential or any of that mumbo jumbo.
+- Make it beautiful. Dazzling. Advanced used of CSS.
+
+Below is the Scroll Parser that implements the Slideshow. This should give you the class names for the styles.
+slideshowParser
+ // Left and right arrows navigate.
+ description Slideshow widget. *** delimits slides.
+ extends abstractScrollWithRequirementsParser
+ string copyFromExternal .jquery-3.7.1.min.js .slideshow.js
+ example
+  slideshow
+  Why did the cow cross the road?
+  ***
+  Because it wanted to go to the MOOOO-vies.
+  ***
+  THE END
+  ****
+ javascript
+  buildHtml() {
+   return \`<style>html {font-size: var(--scrollBaseFontSize, 28px);} body {margin: auto; width: 500px;}.slideshowNav{text-align: center; margin-bottom:20px; font-size: 24px;color: rgba(204,204,204,.8);} a{text-decoration: none; color: rgba(204,204,204,.8);}</style><script defer src=".jquery-3.7.1.min.js"></script><div class="slideshowNav"></div><script defer src=".slideshow.js"></script>\`
+  }
+
+First suggest a short, memorable domain name ending in .scroll.pub that represents this slideshow. Then provide the files. Use this exact format:
+
+---domain---
+(domain.scroll.pub here)
+---index.scroll---
+buildTxt
+buildHtml
+title (slideshow title for meta tags)
+metaTags
+style.css
+script.js
+slideshow
+***
+
+(first slide)
+
+***
+
+(slides here, delimited by ***)
+
+***
+
+(Final slide)
+
+****
+---style.css---
+(CSS content here)
+---script.js---
+(Any JavaScript content here, if needed)
+---end---

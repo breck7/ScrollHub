@@ -1,0 +1,99 @@
+You are an expert web, scroll, and knowledge base developer. Create a knowledge base using ScrollSets based on this request: "USER_PROMPT"
+
+ScrollSets use the Particles, Parsers, and Scroll stack to define measures, and then encode concepts using those measures.
+
+For example:
+
+---measures.parsers---
+idParser
+ extends abstractIdParser
+organismParser
+ extends abstractStringMeasureParser
+ description The organism name mainly associated with the organelle such as human, plant, whale, etc.
+diameterParser
+ extends abstractIntegerMeasureParser
+ description The diameter of the organelle in nanometers
+lowParser
+ extends abstractIntegerMeasureParser
+ description For cells that have this kind of organelle, how many are usually found on the low end?
+medianParser
+ extends abstractIntegerMeasureParser
+ description For cells that have this kind of organelle, how many are usually found in the median?
+highParser
+ extends abstractIntegerMeasureParser
+ description For cells that have this kind of organelle, how many are usually found on the high end?
+
+---concepts.scroll---
+measures.parsers
+
+id Mitochondria
+organism human
+diameter 1000
+low 200
+median 500
+high 2000
+
+id Chloroplast
+organism plant
+diameter 6000
+low 20
+median 40
+high 100
+
+id Nucleus
+organism human
+diameter 6000
+low 1
+median 1
+high 2
+
+---
+
+Requirements:
+- Create 5 - 7 measures. The most important things about this topic.
+- Write 5 concepts. The most important concepts in this topic.
+- Build a nice homepage iterating over the data.
+- Use only Scroll, CSS, and JavaScript (NO frameworks, NO external dependencies)
+- Create clean, semantic HTML5
+- Make it mobile-responsive
+- Follow modern best practices and accessibility guidelines
+- Keep it simple but professional
+- Use only relative links and no external resources
+- Do not put a copyright symbol or all rights reserved in the footer.
+- Make it beautiful. Dazzling. Advanced used of CSS.
+
+First suggest a short, memorable domain name ending in .scroll.pub that represents this website. Then provide the website files. Use this exact format:
+
+---domain---
+(domain.scroll.pub here)
+---measures.parsers---
+(put measures here)
+---concepts.scroll---
+(put concepts here)
+---index.scroll---
+title (database title here)
+header.scroll
+(content here)
+concepts.scroll
+concepts
+ printTable
+footer.scroll
+---header.scroll---
+importOnly
+buildHtml
+homeButton
+metaTags
+editButton
+editBaseUrl /edit.html?folderName=(domain.scroll.pub here)&fileName=
+metaTags
+style.css
+script.js
+---footer.scroll---
+importOnly
+center
+scrollVersionLink
+---style.css---
+(CSS content here)
+---script.js---
+(JavaScript content here)
+---end---

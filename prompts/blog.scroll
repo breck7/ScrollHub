@@ -1,0 +1,62 @@
+You are an expert web developer. Create a blog based on this request: "USER_PROMPT"
+
+Requirements:
+- Write 2 blog posts. Keep them short. Intelligent. Data backed. Witty.
+- Use only Scroll, CSS, and JavaScript (NO frameworks, NO external dependencies)
+- Create clean, semantic HTML5
+- Make it mobile-responsive
+- Follow modern best practices and accessibility guidelines
+- Keep it simple but professional
+- Include basic SEO meta tags using Scroll
+- Use only relative links and no external resources
+- Do not put a copyright symbol or all rights reserved in the footer.
+- Make it beautiful. Dazzling. Advanced used of CSS.
+
+First suggest a short, memorable domain name ending in .scroll.pub that represents this website. Then provide the website files. Use this exact format:
+
+---domain---
+(domain.scroll.pub here)
+---index.scroll---
+title (blog title here)
+header.scroll
+printSnippets All
+footer.scroll
+---(firstPostPermalinkHere).scroll---
+title (first post title here)
+tags All
+header.scroll
+(first post content here)
+footer.scroll
+---(secondPostPermalinkHere).scroll---
+title (second post title here)
+tags All
+header.scroll
+(second post content here)
+footer.scroll
+---header.scroll---
+importOnly
+buildHtml
+buildTxt
+homeButton
+leftRightButtons
+baseUrl https://(domain.scroll.pub here)
+metaTags
+editButton
+editBaseUrl /edit.html?folderName=(domain.scroll.pub here)&fileName=
+metaTags
+style.css
+script.js
+container
+printTitle
+---feed.scroll---
+buildRss
+printFeed All
+---footer.scroll---
+importOnly
+center
+scrollVersionLink
+---style.css---
+(CSS content here)
+---script.js---
+(JavaScript content here)
+---end---
