@@ -1,0 +1,36 @@
+css
+        select {
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            appearance: none;
+            cursor: pointer;
+            color: rgba(144, 144, 144, 0.8);
+            margin-right: 10px;
+        }
+        select:focus {
+            outline: none;
+        }
+        /* Hide default arrow in IE */
+        select::-ms-expand {
+            display: none;
+        }
+        .promptSettings {
+            position: fixed;
+            bottom: 10px;
+            right: 5px;
+            font-size: 12px;
+        }
+
+<div class="promptSettings">
+        <select>
+            <option value="claude">Claude</option>
+            <option value="deepseek">Deepseek</option>
+        </select>
+        <select>
+            <option value="scroll.pub">Scroll.pub</option>
+            <option value="powerhouse.wiki">Powerhouse.wiki</option>
+        </select>
+</div>
+
+inlineJs promptSettings.js

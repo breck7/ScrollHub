@@ -2,6 +2,7 @@
 <form method="post" action="createFromPrompt.htm" id="createForm">
 <input type="hidden" name="agent" value="AGENT">
 <input type="hidden" name="template" value="TEMPLATE">
+<input type="hidden" name="tld" value="TLD">
 <input type="text" id="folderName" name="prompt" placeholder="Describe the TEMPLATE you want"><button class="scrollButton createButton">Create TEMPLATE</button>
 <div id="errorMessage"></div>
 inlineJs create.js
@@ -12,9 +13,21 @@ inlineJs create.js
     <div class="spinner"></div>
     <p>Creating your TEMPLATE...</p>
     <p>This takes between 30 and 60 seconds.</p>
-    <p>While you wait, say hi on <a href="https://x.com/breckyunits" target="_blank">X</a></p>
+    <p>While you wait, say hi on <a style="color:blue;" href="https://x.com/breckyunits" target="_blank">X</a></p>
   </div>
  </div>
+
+
+script
+ {const template = new URLSearchParams(window.location.search).get('template');
+   if (template) {
+     document.querySelector('[name="template"]').value = template;
+     document.querySelector('.createButton').textContent = `Create ${template}`;
+     document.querySelector('#folderName').placeholder = `Describe the ${template} you want`;
+     document.querySelector('.modal-content p').textContent = `Creating your ${template}...`;
+   }
+ }
+
 css
  .modal {
    position: fixed;
@@ -55,4 +68,6 @@ script
    document.getElementById('loadingModal').style.display = 'flex';
    return true;
  };
- 
+
+
+promptSettings.scroll

@@ -1,8 +1,8 @@
 center
 Website &nbsp; Blog &nbsp; Slideshow &nbsp; Database &nbsp; Blank
- claude.html Website
- deepseekBlog.html Blog
- claudeSlideshow.html Slideshow
- claudeDatabase.html Database
+ ai.html?template=website Website
+ ai.html?template=blog Blog
+ ai.html?template=slideshow Slideshow
+ ai.html?template=database Database
  blank.html Blank
  

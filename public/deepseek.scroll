@@ -1,5 +1,0 @@
-indexTop.scroll
-replace AGENT DeepSeek
-replace TEMPLATE website
-createFromPrompt.scroll
-indexBottom.scroll

@@ -1,1 +1,6 @@
-claude.scroll
+indexTop.scroll
+replace AGENT Claude
+replace TEMPLATE website
+replace TLD scroll.pub
+createFromPrompt.scroll
+indexBottom.scroll

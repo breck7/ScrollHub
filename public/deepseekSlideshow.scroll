@@ -1,5 +1,0 @@
-indexTop.scroll
-replace AGENT DeepSeek
-replace TEMPLATE slideshow
-createFromPrompt.scroll
-indexBottom.scroll

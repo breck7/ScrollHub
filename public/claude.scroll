@@ -1,5 +1,0 @@
-indexTop.scroll
-replace AGENT Claude
-replace TEMPLATE website
-createFromPrompt.scroll
-indexBottom.scroll
