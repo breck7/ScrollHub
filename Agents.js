@@ -27,7 +27,7 @@ ${domainExpression}`
     let basePrompt = fs.readFileSync(path.join(__dirname, "prompts", this.what + ".scroll"), "utf8")
     basePrompt = basePrompt.replaceAll("USER_PROMPT", userPrompt)
     basePrompt = basePrompt.replaceAll("DOMAIN_PROMPT", domainPrompt)
-    basePrompt = basePrompt.replaceAll("DOMAIN_EXPRESSION", domainSuffix)
+    basePrompt = basePrompt.replaceAll("DOMAIN_EXPRESSION", domainExpression)
     return basePrompt
   }
 
