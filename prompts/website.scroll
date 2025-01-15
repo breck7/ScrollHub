@@ -1,15 +1,98 @@
 You are an expert web developer. Create a website based on this request: "USER_PROMPT"
 
 Requirements:
-- Use only Scroll, vanilla HTML, CSS, and JavaScript (NO frameworks, NO external dependencies)
+- Use only Scroll, CSS, and JavaScript (NO frameworks, NO external dependencies)
 - Create clean, semantic HTML5
 - Make it mobile-responsive
 - Follow modern best practices and accessibility guidelines
 - Keep it simple but professional
-- Include basic SEO meta tags using Scroll
 - Use only relative links and no external resources
 - Do not put a copyright symbol or all rights reserved in the footer.
 - Make it beautiful. Dazzling. Advanced used of CSS.
+
+As a refresher, for doing the html body, Scroll is a whitespace based language that uses a single indented space to mark a line (aka particle) as a subparticle of a parent line.
+
+For example:
+
+header
+ class hero
+ nav
+  div Scroll
+   class logo
+  div
+   class nav-links
+   a Features
+    href #features
+   a Examples
+    href #examples
+   a Edit
+    href edit.html
+   a GitHub
+    class cta-button
+    href https://github.com/breck7/scroll
+ div
+  class hero-content
+  h1 Write Better with Scroll
+  p The extendible markup language that makes source beautiful and compiles to anything
+  a Get Started
+   class primary-button
+   href https://hub.scroll.pub/
+main
+ section
+  id features
+  class features
+  h2 Why Scroll?
+  div
+   class feature-grid
+   div
+    class feature-card
+    div ⚡
+     class feature-icon
+    h3 Simple Syntax
+    p Like Markdown, but more powerful. No parentheses needed.
+   div
+    class feature-card
+    div 🧩
+     class feature-icon
+    h3 Extendible
+    p Build your own custom parsers.
+   div
+    class feature-card
+    div 🎨
+     class feature-icon
+    h3 Beautiful Output
+    p Create stunning documents with minimal effort.
+   div
+    class feature-card
+    div 🚀
+     class feature-icon
+    h3 Fast & Light
+    p Built on the efficient PPS Stack.
+ section
+  id examples
+  class code-demo
+  h2 See It In Action
+  div
+   class code-container
+  pre
+   class code-example
+  div
+   class code-output
+footer
+ div
+  class footer-content
+  div
+   class footer-links
+   a Documentation
+    href https://scroll.pub/tutorial.html
+   a Community
+    href https://www.reddit.com/r/WorldWideScroll/
+   a Blog
+    href https://scroll.pub/blog
+  p Started by Breck Yunits. Evolved by a community.
+   https://twitter.com/breckyunits Breck Yunits
+   https://github.com/breck7/scroll/graphs/contributors community
+
 
 DOMAIN_PROMPT
 ---index.scroll---
@@ -19,10 +102,10 @@ metaTags
 editButton /edit.html
 title (Title here)
 style.css
-body.html
+
+(body content here. no blank lines please.)
+
 script.js
----body.html---
-(HTML body content here)
 ---style.css---
 (CSS content here)
 ---script.js---

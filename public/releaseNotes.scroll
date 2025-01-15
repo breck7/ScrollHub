@@ -18,6 +18,14 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.81.0 1/14/2025
+🎉 support for unlimited wildcard SSLs
+🎉 refactor of AI prompts
+🎉 AI prompt template set via query string
+🎉 AI prompt settings - adjust model and tld and save to local storage
+🎉 upgraded Scroll
+🎉 welcome message improvements
+
 📦 0.80.0 1/13/2025
 🎉 show hidden files toggle
 

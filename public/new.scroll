@@ -27,7 +27,7 @@ ScrollHub is your web app backend using the *New File API*.
  
  New file content goes here.
  </textarea>
-button Publish
+scrollButton Publish
 </form>
 
 buildHtml

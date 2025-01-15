@@ -118,7 +118,7 @@ container
 Real time view
  /globe.html?folderName=${folderName}
 
-button Refresh
+scrollButton Refresh
  link /summarizeRequests.htm?folderName=${folderName}
  post
   // Anything

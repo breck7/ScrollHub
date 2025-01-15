@@ -8,7 +8,7 @@ container
 Real time view
  /globe.html
 
-button Refresh
+scrollButton Refresh
  link /summarizeRequests.htm
  post
   // Anything
