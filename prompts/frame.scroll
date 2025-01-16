@@ -114,9 +114,12 @@ metaTags
 meta
  name viewport
  content width=device-width, initial-scale=1.0
-meta
- name fc:frame
- content {\"version\":\"vNext\",\"image\":{\"src\":\"FRAME_IMAGE_URL\",\"aspectRatio\":\"1.91:1\"},\"buttons\":[{\"label\":\"SHOOT! 🏀\",\"action\":\"post\"}]}"
+
+replaceNodejs
+ module.exports = {JSONCONTENTS: JSON.stringify(JSON.parse(require("fs").readFileSync("meta.json")))}
+
+<meta name="fc:frame" content='JSONCONTENTS' />
+
 meta
  name fc:frame:image
  content FRAME_IMAGE_URL
@@ -258,10 +261,26 @@ document.addEventListener('DOMContentLoaded', initializeFrame);
       "action": "post"
     }
   ],
-  "postUrl": "https://DOMAIN_EXPRESSION/api/frame"
+  "postUrl": "https://DOMAIN_EXPRESSION/api"
 }
 
----api/frame.js---
+---meta.json---
+{
+  "version": "next",
+  "imageUrl": "FRAME_IMAGE_URL",
+  "button": {
+    "title": "Launch (something)",
+    "action": {
+      "type": "launch_frame",
+      "name": "(Frame Name)",
+      "url": "FRAME_URL",
+      "splashImageUrl": "FRAME_SPLASH_IMAGE",
+      "splashBackgroundColor": "FRAME_BG_COLOR"
+    }
+  }
+}
+
+---api.js---
 // Frame API handler
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
