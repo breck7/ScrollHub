@@ -39,53 +39,75 @@ class CreateFromZipper {
     if (files.length > 0) this.uploadFiles(files)
   }
 
-  showSpinner(message, style) {
+  showSpinner(message, style = "") {
     document.querySelector("#spinner").innerHTML = `<span${style}>${message}</span>`
     document.querySelector("#spinner").style.display = "block"
   }
+
   hideSpinner() {
     document.querySelector("#spinner").style.display = "none"
   }
 
-  // New method to handle multiple file uploads
-  uploadFiles(files) {
+  async uploadFiles(files) {
     this.showSpinner("Uploading...")
-    const uploadPromises = Array.from(files).map(file => this.uploadFile(file))
 
-    Promise.all(uploadPromises)
-      .then(() => {
-        console.log("All files uploaded successfully")
-        this.hideSpinner()
-      })
-      .catch(error => {
-        console.error("Error uploading files:", error)
-        // todo: show error to user
-        alert("Error uploading files:" + error)
-      })
+    try {
+      // Check if it's a single zip file
+      if (files.length === 1 && files[0].name.toLowerCase().endsWith(".zip")) {
+        await this.uploadZipFile(files[0])
+      } else {
+        // Handle multiple files or single non-zip file
+        await this.uploadMultipleFiles(files)
+      }
+
+      this.hideSpinner()
+    } catch (error) {
+      console.error("Error uploading files:", error)
+      alert("Error uploading files: " + error)
+      this.hideSpinner()
+    }
   }
 
-  // Modified uploadFile method to return a Promise
-  async uploadFile(file) {
+  async uploadZipFile(file) {
     const formData = new FormData()
     formData.append("zipFile", file)
 
-    try {
-      const response = await fetch("/createFolderFromZip.htm", {
-        method: "POST",
-        body: formData
-      })
+    const response = await fetch("/createFolderFromZip.htm", {
+      method: "POST",
+      body: formData
+    })
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(errorText || "Network response was not ok")
-      }
-
-      const data = await response.text()
-      window.location = `/edit.html?folderName=${data}&command=showWelcomeMessageCommand`
-    } catch (error) {
-      console.error("Error uploading file:", error.message)
-      throw error // Re-throw the error if you want calling code to handle it
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || "Network response was not ok")
     }
+
+    const data = await response.text()
+    window.location = `/edit.html?folderName=${data}&command=showWelcomeMessageCommand`
+  }
+
+  async uploadMultipleFiles(files) {
+    const formData = new FormData()
+
+    // Append all files to the form data
+    Array.from(files).forEach(file => {
+      // Use the full path if available (for folders), otherwise just the file name
+      const filePath = file.webkitRelativePath || file.name
+      formData.append("files[]", file, filePath)
+    })
+
+    const response = await fetch("/createFolderFromFiles.htm", {
+      method: "POST",
+      body: formData
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(errorText || "Network response was not ok")
+    }
+
+    const data = await response.text()
+    window.location = `/edit.html?folderName=${data}&command=showWelcomeMessageCommand`
   }
 }
 

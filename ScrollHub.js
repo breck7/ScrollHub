@@ -1018,6 +1018,51 @@ If you'd like to create this folder, visit our main site to get started.
       }
     })
 
+    app.post("/createFolderFromFiles.htm", checkWritePermissions, async (req, res) => {
+      if (!req.files || !req.files["files[]"]) return res.status(400).send("No files were uploaded.")
+
+      try {
+        // Generate a unique folder name
+        const folderName = await this.findAvailableFolderName()
+        const folderPath = path.join(this.rootFolder, folderName)
+
+        // Create the folder
+        await fsp.mkdir(folderPath, { recursive: true })
+
+        // Handle multiple files
+        const uploadedFiles = Array.isArray(req.files["files[]"]) ? req.files["files[]"] : [req.files["files[]"]]
+
+        // Process each file
+        for (const file of uploadedFiles) {
+          const filePath = path.join(folderPath, file.name)
+
+          // Create necessary subdirectories
+          await fsp.mkdir(path.dirname(filePath), { recursive: true })
+
+          // Move the file to its destination
+          await file.mv(filePath)
+        }
+
+        // Initialize git repository
+        await execAsync("git init", { cwd: folderPath })
+        await execAsync("git add .", { cwd: folderPath })
+        await execAsync('git commit -m "Initial commit from uploaded files"', { cwd: folderPath })
+
+        // Add to story and update caches
+        this.addStory(req, `created ${folderName} from uploaded files`)
+        await this.updateFolderAndBuildList(folderName)
+
+        // Build the folder
+        await this.buildFolder(folderName)
+
+        // Send the folder name back
+        res.send(folderName)
+      } catch (error) {
+        console.error(`Error creating folder from files:`, error)
+        res.status(500).send(`An error occurred while creating folder from files: ${error.toString().replace(/</g, "&lt;")}`)
+      }
+    })
+
     // In the initFileRoutes method, add this new route:
     app.post("/createFolderFromZip.htm", checkWritePermissions, async (req, res) => {
       if (!req.files || !req.files.zipFile) return res.status(400).send("No zip file was uploaded.")
@@ -1264,6 +1309,17 @@ If you'd like to create this folder, visit our main site to get started.
         }
       }
     })
+  }
+
+  async findAvailableFolderName(prefix = "files") {
+    const { folderCache } = this
+    let counter = 1
+    let folderName
+    do {
+      folderName = `${prefix}${counter}`
+      counter++
+    } while (folderCache[folderName])
+    return folderName
   }
 
   initCommandRoutes() {
