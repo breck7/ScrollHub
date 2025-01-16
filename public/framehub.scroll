@@ -1,0 +1,74 @@
+buildHtml
+title FrameHub: the fastest way to launch frames
+
+baseUrl http://framehub.pro/
+openGraphImage framehub.png
+editButton https://github.com/breck7/framehub
+editBaseUrl https://github.com/breck7/framehub/blob/main
+
+
+metaTags
+inlineCss .gazette.css .scroll.css scrollHubStyle.css
+css html[data-theme=dark], html[data-theme=dark] * { color-scheme: dark; }
+css .thin {font-weight: 100;}
+
+# *Frame*Hub
+ style font-size: 320%; font-weight:200;
+## The _fastest_ way to launch frames
+
+br 2
+
+css
+ :root {
+     --primary-color: #1e1e2e;
+     --secondary-color: #353348;
+     --accent-color: #6b5bc4;
+     --scrollColorLink: white;
+     --scrollPrimaryRgb: 104,77,179;
+ }
+ * {
+     margin: 0;
+     padding: 0;
+     box-sizing: border-box;
+     z-index: 1;
+ }
+ body {
+     min-height: 100vh;
+     background: radial-gradient(circle at center, var(--secondary-color), var(--primary-color));
+     font-family: system-ui, -apple-system, sans-serif;
+     color: white;
+     position: relative;
+ }
+ #nodesCanvas {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     z-index: -1;
+ }
+<canvas id="nodesCanvas"></canvas>
+// nodes.js
+
+
+replace AGENT Claude
+replace TEMPLATE frame
+replace TLD framehub.pro
+createFromPrompt.scroll
+
+//
+ br 2
+ center
+ foldersPublished.html
+
+br 2
+
+center
+Built by Breck
+ class greyText
+ https://warpcast.com/breck
+
+//
+ https://github.com/breck7/week-1
+ https://github.com/weeklyhackathon/week-1
+ https://warpcast.com/~/developers/frames

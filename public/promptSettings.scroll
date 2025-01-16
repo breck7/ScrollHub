@@ -22,6 +22,7 @@ css
             font-size: 12px;
         }
 
+// Todo: generate these options dynamically on server
 <div class="promptSettings">
         <select>
             <option value="claude">Claude</option>
@@ -30,6 +31,7 @@ css
         <select>
             <option value="scroll.pub">Scroll.pub</option>
             <option value="powerhouse.wiki">Powerhouse.wiki</option>
+            <option value="framehub.pro">FrameHub.pro</option>
         </select>
 </div>
 

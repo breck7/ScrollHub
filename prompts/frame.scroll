@@ -1,0 +1,297 @@
+You are an expert web and Warpcast/Farcaster developer. Create a WarpCast v2 Frame based on this request: "USER_PROMPT"
+
+Requirements:
+- Use Farcaster Frames v2
+- Use only Scroll, CSS, and JavaScript (NO frameworks, NO external dependencies)
+- Create clean, semantic HTML5
+- Make it mobile-responsive
+- Follow modern best practices and accessibility guidelines
+- Keep it simple but professional
+- Use only relative links and no external resources
+- Do not put a copyright symbol or all rights reserved in the footer.
+- Make it beautiful. Dazzling. Advanced used of CSS.
+
+The Frames v2 docs are here: https://framesv2.com/
+The Frames v2 dev tools are here: https://warpcast.com/~/developers/frames
+
+As a refresher, for doing the html body, Scroll is a whitespace based language that uses a single indented space to mark a line (aka particle) as a subparticle of a parent line.
+
+For example:
+
+header
+ class hero
+ nav
+  div Scroll
+   class logo
+  div
+   class nav-links
+   a Features
+    href #features
+   a Examples
+    href #examples
+   a Edit
+    href edit.html
+   a GitHub
+    class cta-button
+    href https://github.com/breck7/scroll
+ div
+  class hero-content
+  h1 Write Better with Scroll
+  p The extendible markup language that makes source beautiful and compiles to anything
+  a Get Started
+   class primary-button
+   href https://hub.scroll.pub/
+main
+ section
+  id features
+  class features
+  h2 Why Scroll?
+  div
+   class feature-grid
+   div
+    class feature-card
+    div ⚡
+     class feature-icon
+    h3 Simple Syntax
+    p Like Markdown, but more powerful. No parentheses needed.
+   div
+    class feature-card
+    div 🧩
+     class feature-icon
+    h3 Extendible
+    p Build your own custom parsers.
+   div
+    class feature-card
+    div 🎨
+     class feature-icon
+    h3 Beautiful Output
+    p Create stunning documents with minimal effort.
+   div
+    class feature-card
+    div 🚀
+     class feature-icon
+    h3 Fast & Light
+    p Built on the efficient PPS Stack.
+ section
+  id examples
+  class code-demo
+  h2 See It In Action
+  div
+   class code-container
+  pre
+   class code-example
+  div
+   class code-output
+footer
+ div
+  class footer-content
+  div
+   class footer-links
+   a Documentation
+    href https://scroll.pub/tutorial.html
+   a Community
+    href https://www.reddit.com/r/WorldWideScroll/
+   a Blog
+    href https://scroll.pub/blog
+  p Started by Breck Yunits. Evolved by a community.
+   https://twitter.com/breckyunits Breck Yunits
+   https://github.com/breck7/scroll/graphs/contributors community
+
+
+DOMAIN_PROMPT
+---index.scroll---
+buildHtml
+baseUrl https://DOMAIN_EXPRESSION
+import head.scroll
+title FRAME_TITLE
+description FRAME_DESCRIPTION
+style.css
+frame.scroll
+script.js
+
+---head.scroll---
+metaTags
+meta
+ name viewport
+ content width=device-width, initial-scale=1.0
+meta
+ name fc:frame
+ content {\"version\":\"vNext\",\"image\":{\"src\":\"FRAME_IMAGE_URL\",\"aspectRatio\":\"1.91:1\"},\"buttons\":[{\"label\":\"SHOOT! 🏀\",\"action\":\"post\"}]}"
+meta
+ name fc:frame:image
+ content FRAME_IMAGE_URL
+meta
+ name fc:frame:post_url
+ content https://DOMAIN_EXPRESSION/api/frame
+
+---frame.scroll---
+main
+ class frameContainer
+ div
+  class frameContent
+  h1 FRAME_TITLE
+   class frameTitle
+  div
+   class frameActionArea
+   button Start
+    class frameButton
+    data-action post
+
+---style.css---
+:root {
+  --frame-bg: #1c1c1c;
+  --frame-text: #ffffff;
+  --frame-accent: #5277FF;
+  --frame-radius: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--frame-bg);
+  color: var(--frame-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.frameContainer {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.frameContent {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--frame-radius);
+  padding: 24px;
+  backdrop-filter: blur(10px);
+}
+
+.frameTitle {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.frameActionArea {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.frameButton {
+  background: var(--frame-accent);
+  color: var(--frame-text);
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--frame-radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.frameButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(82, 119, 255, 0.25);
+}
+
+@media (max-width: 480px) {
+  .frameContainer {
+    padding: 16px;
+  }
+  
+  .frameTitle {
+    font-size: 20px;
+  }
+}
+
+---script.js---
+// Initialize Frame SDK
+const initializeFrame = async () => {
+  try {
+    // Initialize Frame context
+    const frameContext = await window.frames.getContext();
+    console.log('Frame context:', frameContext);
+
+    // Handle button clicks
+    document.querySelector('.frameButton').addEventListener('click', async () => {
+      try {
+        await window.frames.postMessage({
+          action: 'post'
+        });
+      } catch (error) {
+        console.error('Frame action error:', error);
+      }
+    });
+
+    // Signal frame is ready
+    await window.frames.ready();
+  } catch (error) {
+    console.error('Frame initialization error:', error);
+  }
+};
+
+// Start Frame when DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeFrame);
+
+---manifest.json---
+{
+  "version": "vNext",
+  "name": "FRAME_TITLE",
+  "description": "FRAME_DESCRIPTION",
+  "image": {
+    "src": "FRAME_IMAGE_URL",
+    "aspectRatio": "1.91:1"
+  },
+  "buttons": [
+    {
+      "label": "START",
+      "action": "post"
+    }
+  ],
+  "postUrl": "https://DOMAIN_EXPRESSION/api/frame"
+}
+
+---api/frame.js---
+// Frame API handler
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    // Handle Frame interaction
+    const frameData = req.body;
+    
+    // Process frame action here
+    
+    // Return next frame state
+    return res.status(200).json({
+      version: 'vNext',
+      image: {
+        src: 'FRAME_IMAGE_URL',
+        aspectRatio: '1.91:1'
+      },
+      buttons: [
+        {
+          label: 'CONTINUE',
+          action: 'post'
+        }
+      ]
+    });
+  } catch (error) {
+    console.error('Frame API error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+---end---
