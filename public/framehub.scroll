@@ -6,6 +6,7 @@ openGraphImage framehub.png
 editButton https://github.com/breck7/framehub
 editBaseUrl https://github.com/breck7/framehub/blob/main
 
+<meta name="fc:frame" content='{"version":"next","imageUrl":"https://hub.scroll.pub/framehub.png","button":{"title":"Create Frame","action":{"type":"launch_frame","name":"Create frame","url":"https://framehub.pro","splashImageUrl":"https://hub.scroll.pub/framehub.png","splashBackgroundColor":"#FFFFFF"}}}' />
 
 metaTags
 inlineCss .gazette.css .scroll.css scrollHubStyle.css
