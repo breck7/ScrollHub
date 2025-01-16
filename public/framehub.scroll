@@ -54,6 +54,8 @@ css
 replace AGENT Claude
 replace TEMPLATE frame
 replace TLD framehub.pro
+replace WELCOME_MESSAGE framehub
+replace SOCIAL_LINK <a style="color:blue;" href="https://warpcast.com/breck" target="_blank">Warpcast</a>
 createFromPrompt.scroll
 
 //

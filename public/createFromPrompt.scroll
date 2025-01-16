@@ -3,6 +3,7 @@
 <input type="hidden" name="agent" value="AGENT">
 <input type="hidden" name="template" value="TEMPLATE">
 <input type="hidden" name="tld" value="TLD">
+<input type="hidden" name="welcomeMessage" value="WELCOME_MESSAGE">
 <input type="text" id="folderName" name="prompt" placeholder="Describe the TEMPLATE you want"><button class="scrollButton createButton">Create TEMPLATE</button>
 <div id="errorMessage"></div>
 inlineJs create.js
@@ -13,7 +14,7 @@ inlineJs create.js
     <div class="spinner"></div>
     <p>Creating your TEMPLATE...</p>
     <p>This takes between 30 and 60 seconds.</p>
-    <p>While you wait, say hi on <a style="color:blue;" href="https://x.com/breckyunits" target="_blank">X</a></p>
+    <p>While you wait, say hi on SOCIAL_LINK</p>
   </div>
  </div>
 

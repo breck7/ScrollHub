@@ -732,6 +732,7 @@ If you'd like to create this folder, visit our main site to get started.
         const prompt = req.body.prompt
         const agent = (req.body.agent || "claude").toLowerCase()
         const template = req.body.template
+        const welcomeMessage = req.body.welcomeMessage || "scrollhub"
         const domainSuffix = req.body.tld || "scroll.pub"
         if (!prompt) return res.status(400).send("Prompt is required")
 
@@ -754,7 +755,7 @@ If you'd like to create this folder, visit our main site to get started.
 
         // Add to story and redirect
         this.addStory(req, `created ${folderName} from prompt using ${agent}`)
-        res.redirect(`/edit.html?folderName=${folderName}&command=showWelcomeMessageCommand`)
+        res.redirect(`/edit.html?folderName=${folderName}&command=showWelcomeMessageCommand&welcomeMessage=${welcomeMessage}`)
       } catch (error) {
         console.error("Error creating from prompt:", error)
         res.status(500).send("Failed to create website from prompt: " + error.message)

@@ -688,7 +688,7 @@ nokey1 showWelcomeMessageCommand Help`
   }
 
   async showWelcomeMessageCommand(event) {
-    const content = `container 600px
+    let content = `container 600px
 
 # Welcome to ScrollHub!
 
@@ -713,6 +713,26 @@ I'd love to hear your requests and feedback! Contact me on X, GitHub, or email.
   target _blank
 
 -Breck`
+    if (new URL(window.location).searchParams.get("welcomeMessage") === "framehub") {
+      content = `container 600px
+
+# Welcome to FrameHub!
+
+center
+${this.folderName} is live!
+<div class="iframeHolder2"><iframe src="${this.permalink}" class="visitIframe"></iframe></div>
+
+center
+Visit ${this.folderName}
+ link ${this.permalink}
+  target preview
+ class newSiteLink
+
+I'd love to hear your requests and feedback! Find me on Warpcast.
+ https://warpcast.com/breck Find me on Warpcast
+
+-Breck`
+    }
 
     const html = await this.fusionEditor.scrollToHtml(content)
     this.openModal(html, "welcome", event)
