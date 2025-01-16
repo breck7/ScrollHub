@@ -4,7 +4,8 @@ class Node {
     this.y = y
     this.vx = ((Math.random() > 0.5 ? 1 : -1) * Math.log10(folderData.revisions)) / 10
     this.vy = ((Math.random() > 0.5 ? 1 : -1) * Math.log10(folderData.revisions)) / 10
-    this.radius = Math.min(folderData.revisions, 1)
+    //this.radius = Math.min(folderData.revisions, 1)
+    this.radius = Math.max(Math.log2(folderData.revisions), 3)
     this.folder = folderData.folder
     this.folderLink = folderData.folderLink
     this.created = new Date(folderData.created)

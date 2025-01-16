@@ -3,4 +3,5 @@ replace AGENT Claude
 replace TEMPLATE website
 replace TLD scroll.pub
 createFromPrompt.scroll
+promptSettings.scroll
 indexBottom.scroll

@@ -1,4 +1,3 @@
-// <canvas id="nodesCanvas"></canvas>
 css
  :root {
      --primary-color: #1a2b4d;
@@ -27,4 +26,5 @@ css
      height: 100%;
      z-index: -1;
  }
+// <canvas id="nodesCanvas"></canvas>
 // nodes.js

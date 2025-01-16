@@ -68,6 +68,3 @@ script
    document.getElementById('loadingModal').style.display = 'flex';
    return true;
  };
-
-
-promptSettings.scroll
