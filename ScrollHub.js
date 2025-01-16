@@ -1616,7 +1616,7 @@ If you'd like to create this folder, visit our main site to get started.
   }
 
   shouldFormat(filePath) {
-    const prettierExtensions = [".js", ".html", ".css"]
+    const prettierExtensions = [".js", ".html", ".css", ".json", ".htm", ".mjs"]
     const scrollExtensions = [".scroll", ".parsers"]
     return prettierExtensions.some(ext => filePath.endsWith(ext)) || scrollExtensions.some(ext => filePath.endsWith(ext))
   }
