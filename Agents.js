@@ -5,9 +5,9 @@ const OpenAI = require("openai")
 const { Particle } = require("scrollsdk/products/Particle.js")
 
 class FolderPrompt {
-  constructor(userPrompt, existingFolderNames, agent, whatKind, domainSuffix) {
+  constructor(userPrompt, existingFolders, agent, whatKind, domainSuffix) {
     this.userPrompt = userPrompt
-    this.existingNames = existingFolderNames
+    this.existingFolders = existingFolders
     this.agent = agent
     this.what = whatKind
     this.domainSuffix = "." + domainSuffix.replace(/^\./, "")
@@ -68,7 +68,7 @@ ${domainExpression}`
     // If domain is taken, add numbers until we find a free one
     let finalDomain = suggestedDomain
     let counter = 1
-    while (this.existingNames.includes(finalDomain)) {
+    while (this.existingFolders.[finalDomain]) {
       const baseName = suggestedDomain.replace(domainSuffix, "")
       finalDomain = `${baseName}${counter}${domainSuffix}`
       counter++
@@ -170,19 +170,19 @@ class Agents {
     return Object.values(this.agents)
   }
 
-  async createFolderNameAndFilesFromPrompt(userPrompt, existingNames, agentName, promptTemplate, domainSuffix) {
+  async createFolderNameAndFilesFromPrompt(userPrompt, existingFolders, agentName, promptTemplate, domainSuffix) {
     const agent = this.agents[agentName] || this.allAgents[0]
-    const prompt = new FolderPrompt(userPrompt, existingNames, agent, promptTemplate, domainSuffix)
+    const prompt = new FolderPrompt(userPrompt, existingFolders, agent, promptTemplate, domainSuffix)
     if (!agent) throw new Error(`Agent ${agentName} not found. Is API key set?`)
     await agent.do(prompt)
     return prompt
   }
 
   // todo: wire this up
-  async createMultipleFoldersFromPrompt(userPrompt, existingNames) {
+  async createMultipleFoldersFromPrompt(userPrompt, existingFolders) {
     return await Promise.all(
       this.allAgents.map(async agent => {
-        const prompt = new SimpleCreationPrompt(userPrompt, existingNames)
+        const prompt = new SimpleCreationPrompt(userPrompt, existingFolders)
         await agent.do(prompt)
         return prompt
       })
