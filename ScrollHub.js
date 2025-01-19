@@ -1703,7 +1703,7 @@ If you'd like to create this folder, visit our main site to get started.
 
   ensureTemplatesInstalled() {
     const { rootFolder } = this
-    const templatesFolder = path.join(__dirname, "templates")
+    const templatesFolder = path.join(__dirname, "public", "templates")
     const templateDirs = fs.readdirSync(templatesFolder)
     const standardGitIgnore = fs.readFileSync(path.join(templatesFolder, "blank_template", ".gitignore"), "utf8")
 

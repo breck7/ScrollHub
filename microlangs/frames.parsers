@@ -1,0 +1,131 @@
+// Frame Parser and its components
+frameParser
+ description Create a Farcaster Frame
+ inScope frameVersionParser frameImageParser frameButtonParser frameHeaderParser frameSplashParser frameNameParser frameUrlParser frameWebhookParser frameBackgroundParser frameButtonTitleParser frameIconParser frameNotificationsParser frameHeightParser frameWidthParser frameStyleParser
+ extends abstractScrollParser
+ cue frame
+ example
+  frame
+   version next
+   name Example Frame
+   image https://example.com/image.png
+   button Click me!
+   url https://example.com/frame
+   splash https://example.com/splash.png
+   background #eeeee4
+   notifications true
+   webhook https://example.com/webhook
+ javascript
+  buildHtml() {
+   // Convert frame settings into required meta tags
+   const frameEmbed = {
+    version: this.get("version") || "next",
+    imageUrl: this.get("image"),
+    button: {
+     title: this.get("button") || this.get("buttonTitle"),
+     action: {
+      type: "launch_frame",
+      name: this.get("name"),
+      url: this.get("url"),
+      splashImageUrl: this.get("splash"),
+      splashBackgroundColor: this.get("background")
+     }
+    }
+   }
+   return `
+    <!-- Farcaster Frame Meta Tags -->
+    <meta name="fc:frame" content='${JSON.stringify(frameEmbed)}' />
+    <meta name="fc:frame:image" content="${this.get("image")}" />
+    <meta name="fc:frame:button:1" content="${this.get("button")}" />
+    `
+  }
+
+frameVersionParser
+ extends abstractScrollParser
+ cue version
+ atoms cueAtom stringAtom
+ description Set the frame version
+
+frameNameParser
+ extends abstractScrollParser  
+ cue name
+ atoms cueAtom stringAtom
+ description Set the frame name
+
+frameImageParser
+ extends abstractScrollParser
+ cue image
+ atoms cueAtom urlAtom
+ description Set the frame image URL
+
+frameButtonParser
+ extends abstractScrollParser
+ cue button
+ atoms cueAtom stringAtom
+ description Set the button text
+
+frameUrlParser
+ extends abstractScrollParser
+ cue url  
+ atoms cueAtom urlAtom
+ description Set the frame action URL
+
+frameHeaderParser
+ extends abstractScrollParser
+ cue header
+ atoms cueAtom stringAtom
+ description Set the frame header text
+
+frameSplashParser
+ extends abstractScrollParser
+ cue splash
+ atoms cueAtom urlAtom
+ description Set the splash screen image URL
+
+frameBackgroundParser
+ extends abstractScrollParser
+ cue background
+ atoms cueAtom colorAtom
+ description Set the splash background color
+
+frameButtonTitleParser
+ extends abstractScrollParser
+ cue buttonTitle
+ atoms cueAtom stringAtom
+ description Set the button title
+
+frameIconParser
+ extends abstractScrollParser
+ cue icon
+ atoms cueAtom urlAtom
+ description Set the frame icon URL
+
+frameNotificationsParser
+ extends abstractScrollParser
+ cue notifications
+ atoms cueAtom booleanAtom
+ description Enable/disable frame notifications
+
+frameWebhookParser
+ extends abstractScrollParser
+ cue webhook
+ atoms cueAtom urlAtom
+ description Set the webhook URL for notifications
+
+frameHeightParser
+ extends abstractScrollParser
+ cue height
+ atoms cueAtom integerAtom
+ description Set frame height in pixels
+
+frameWidthParser
+ extends abstractScrollParser
+ cue width
+ atoms cueAtom integerAtom
+ description Set frame width in pixels
+
+frameStyleParser
+ extends abstractScrollParser
+ cue style
+ atoms cueAtom cssAnyAtom
+ description Add custom CSS styles
