@@ -68,7 +68,7 @@ ${domainExpression}`
     // If domain is taken, add numbers until we find a free one
     let finalDomain = suggestedDomain
     let counter = 1
-    while (this.existingFolders.[finalDomain]) {
+    while (this.existingFolders[finalDomain]) {
       const baseName = suggestedDomain.replace(domainSuffix, "")
       finalDomain = `${baseName}${counter}${domainSuffix}`
       counter++
