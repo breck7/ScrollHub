@@ -1,0 +1,44 @@
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #f5f5f5;
+}
+.container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+button {
+  background: #0070f3;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px;
+}
+button:hover {
+  background: #0051b3;
+}
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+.status {
+  margin: 20px 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: #e2e8f0;
+}
+pre {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+}

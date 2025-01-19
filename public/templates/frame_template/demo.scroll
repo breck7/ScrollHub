@@ -1,0 +1,34 @@
+buildHtml
+style.css
+jframe.parsers
+title Simple Farcaster Frames v2 Demo
+jframeMetaTags
+
+div
+ class container
+ h1 Farcaster Frames v2 Demo
+ div Waiting for frame to load...
+  id status
+  class status
+ div
+  button Show Context
+   id contextBtn
+   onclick app.getContext()
+   disabled
+  button Open URL
+   id urlBtn
+   onclick app.openUrl()
+   disabled
+  button Close Frame
+   id closeBtn
+   onclick app.closeFrame()
+   disabled
+  button Test Primary Button
+   id testBtn
+   onclick app.testPrimaryButton()
+   disabled
+ div
+  id contextData
+
+https://jframe.breckyunits.com/jframe.js
+frame.js
