@@ -1940,8 +1940,13 @@ scrollVersionLink`
     if (wild) return wild
 
     if (pendingCerts[hostname]) return
-    this.makeCert(hostname)
-    throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
+
+    if (this.folderCache[hostname]) {
+      this.makeCert(hostname)
+      throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
+    } else {
+      throw new Error(`${hostname} requested but no matching folder found.`)
+    }
   }
 
   async loadWildCardCerts() {
