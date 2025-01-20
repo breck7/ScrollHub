@@ -1992,17 +1992,11 @@ scrollVersionLink`
     const httpsServer = https.createServer(
       {
         SNICallback: (hostname, cb) => {
-          const lowercaseHostname = hostname.toLowerCase()
-
-          // First check if this is a valid folder/hostname we're serving
-          if (!that.folderCache[lowercaseHostname]) console.error(`Rejected certificate request for unknown hostname: ${lowercaseHostname}`)
-          return cb(new Error("Unknown hostname"))
-
           try {
-            const sslOptions = that.loadCertAndKey(lowercaseHostname)
+            const sslOptions = that.loadCertAndKey(hostname.toLowerCase())
             cb(null, tls.createSecureContext(sslOptions))
           } catch (err) {
-            console.error(`No cert found for ${lowercaseHostname}: ${err.message}`)
+            console.error(`No cert found for ${hostname}: ${err.message}`)
             cb(err)
           }
         }
