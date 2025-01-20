@@ -27,6 +27,7 @@ css
         <select>
             <option value="claude">Claude</option>
             <option value="deepseek">Deepseek</option>
+            <option value="deepseekreasoner">DSReasoner</option>
         </select>
         <select>
             <option value="scroll.pub">Scroll.pub</option>

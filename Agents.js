@@ -117,8 +117,6 @@ class Claude extends AbstractAgent {
   }
 }
 
-class OpenAIAgent extends AbstractAgent {}
-
 class DeepSeek extends AbstractAgent {
   get client() {
     if (!this._client)
@@ -128,12 +126,13 @@ class DeepSeek extends AbstractAgent {
       })
     return this._client
   }
+  model = "deepseek-chat"
   name = "DeepSeek"
   async do(prompt) {
     console.log("Sending prompt to deepseek")
     const completion = await this.client.chat.completions.create({
       messages: [{ role: "system", content: prompt.systemPrompt }],
-      model: "deepseek-chat"
+      model: this.model
     })
     const response = completion.choices[0].message.content
     prompt.setDebugLog(completion)
@@ -141,7 +140,10 @@ class DeepSeek extends AbstractAgent {
   }
 }
 
-const AgentClasses = { claude: Claude, deepseek: DeepSeek, openai: OpenAIAgent }
+class DeepSeekReasoner extends DeepSeek {
+  model = "deepseek-reasoner"
+  name = "DeepSeekReasoner"
+}
 
 class Agents {
   constructor(hub) {
@@ -162,8 +164,12 @@ class Agents {
     } else {
       console.log(`${name} agent loaded.`)
     }
-    const agentConstructor = AgentClasses[name]
-    this.agents[name] = new agentConstructor(apiKey, hubFolder)
+    const AgentClasses = { claude: [Claude], deepseek: [DeepSeek, DeepSeekReasoner] }
+    const agentConstructors = AgentClasses[name]
+    agentConstructors.forEach(con => {
+      const agent = new con(apiKey, hubFolder)
+      return (this.agents[agent.name] = agent)
+    })
   }
 
   get allAgents() {
