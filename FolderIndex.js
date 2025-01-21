@@ -1,7 +1,6 @@
 const path = require("path")
 const { spawn } = require("child_process")
 const fsp = require("fs").promises
-const AnsiToHtml = require("ansi-to-html")
 
 class FolderIndex {
   constructor(scrollHub) {
@@ -181,9 +180,9 @@ class FolderIndex {
         return []
       }
 
-      // Get detailed commit information with a specific format
+      // Get detailed commit information with a custom format that's easier to parse
       const logOutput = await new Promise((resolve, reject) => {
-        const gitLogProcess = spawn("git", ["log", `-${count}`, "--color=always", "--date=iso", "--format=commit %H%nAuthor: %an <%ae>%nDate: %ad%nSubject: %s%n%n%b%n", "-p"], { cwd: folderPath })
+        const gitLogProcess = spawn("git", ["log", `-${count}`, "--color=always", "--date=iso", "--format=COMMIT_START%n%H%n%an%n%ae%n%ad%n%B%nCOMMIT_DIFF_START%n", "-p"], { cwd: folderPath })
 
         let output = ""
         gitLogProcess.stdout.on("data", data => {
@@ -201,28 +200,29 @@ class FolderIndex {
 
       // Parse the git log output into structured data
       const commits = []
-      const commitChunks = logOutput.split(/(?=commit [0-9a-f]{40}\n)/)
+      const commitChunks = logOutput.split("COMMIT_START\n").filter(Boolean)
 
       for (const chunk of commitChunks) {
-        if (!chunk.trim()) continue
+        const [commitInfo, ...diffParts] = chunk.split("COMMIT_DIFF_START\n")
+        const [hash, name, email, date, ...messageLines] = commitInfo.split("\n")
 
-        const commitMatch = chunk.match(/commit (\w+)\n/)
-        const authorMatch = chunk.match(/Author: ([^<]+)<([^>]+)>/)
-        const dateMatch = chunk.match(/Date:\s+(.+)\n/)
-        const messageMatch = chunk.match(/\n\n\s+(.+?)\n/)
-        const diffContent = chunk.split(/\n\n/)[2] || ""
-
-        if (commitMatch && authorMatch && dateMatch) {
-          commits.push({
-            id: commitMatch[1],
-            name: authorMatch[1].trim(),
-            email: authorMatch[2].trim(),
-            time: new Date(dateMatch[1]),
-            message: messageMatch ? messageMatch[1].trim() : "",
-            diff: diffContent,
-            rawOutput: chunk // Keep raw output for HTML generation
-          })
+        // Remove any trailing empty lines from the message
+        while (messageLines.length > 0 && messageLines[messageLines.length - 1].trim() === "") {
+          messageLines.pop()
         }
+
+        // Join the message lines back together to preserve formatting
+        const message = messageLines.join("\n").trim()
+        const diff = diffParts.join("COMMIT_DIFF_START\n") // Restore any split diff parts
+
+        commits.push({
+          id: hash,
+          name: name.trim(),
+          email: email.trim(),
+          time: new Date(date),
+          message,
+          diff
+        })
       }
 
       return commits
@@ -232,18 +232,154 @@ class FolderIndex {
     }
   }
 
+  formatTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+    const months = Math.floor(days / 30)
+    const years = Math.floor(months / 12)
+
+    if (years > 0) return `${years} ${years === 1 ? "year" : "years"} ago`
+    if (months > 0) return `${months} ${months === 1 ? "month" : "months"} ago`
+    if (days > 0) return `${days} ${days === 1 ? "day" : "days"} ago`
+    if (hours > 0) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`
+    if (minutes > 0) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`
+    return `${seconds} ${seconds === 1 ? "second" : "seconds"} ago`
+  }
+
+  stripAnsi(text) {
+    // Remove ANSI escape codes
+    return text
+      .replace(/\u001b\[\d+m/g, "")
+      .replace(/\u001b\[m/g, "")
+      .replace(/\[\d+m/g, "")
+      .replace(/\[m/g, "")
+  }
+
+  parseDiff(diffText) {
+    const files = []
+    let currentFile = null
+
+    // Clean the diff text of ANSI codes first
+    const cleanDiff = this.stripAnsi(diffText)
+    const lines = cleanDiff.split("\n")
+
+    for (const line of lines) {
+      const cleanLine = line.trim()
+      if (!cleanLine) continue
+
+      if (cleanLine.startsWith("diff --git")) {
+        if (currentFile) files.push(currentFile)
+        const fileMatch = cleanLine.match(/b\/(.*?)(\s+|$)/)
+        const filename = fileMatch ? fileMatch[1] : "unknown file"
+        currentFile = { filename, changes: [] }
+      } else if (cleanLine.startsWith("+++") || cleanLine.startsWith("---") || cleanLine.startsWith("index")) {
+        continue // Skip these technical git lines
+      } else if (cleanLine.startsWith("+") && !cleanLine.startsWith("+++")) {
+        currentFile?.changes.push({ type: "addition", content: cleanLine.substring(1) })
+      } else if (cleanLine.startsWith("-") && !cleanLine.startsWith("---")) {
+        currentFile?.changes.push({ type: "deletion", content: cleanLine.substring(1) })
+      } else if (cleanLine.startsWith("@@")) {
+        const match = cleanLine.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@(.*)/)
+        if (match) {
+          const contextInfo = match[3].trim()
+          currentFile?.changes.push({
+            type: "info",
+            content: contextInfo ? `Changed around line ${match[2]}: ${contextInfo}` : `Changed around line ${match[2]}`
+          })
+        }
+      }
+    }
+    if (currentFile) files.push(currentFile)
+    return files
+  }
+
+  commitToHtml(commit, folderName) {
+    const timeAgo = this.formatTimeAgo(commit.time)
+    const files = this.parseDiff(commit.diff)
+
+    let html = `
+      <div class="commit">
+        <div class="commit-header">
+          <div class="commit-author">
+            <img src="https://www.gravatar.com/avatar/${commit.email
+              .trim()
+              .toLowerCase()
+              .split("")
+              .reduce((hash, char) => {
+                const chr = char.charCodeAt(0)
+                return ((hash << 5) - hash + chr) >>> 0
+              }, 0)}?s=40&d=identicon" alt="${commit.name}" class="avatar">
+            <div class="author-info">
+              <div class="author-name">${commit.name}</div>
+              <div class="commit-time">${timeAgo}</div>
+            </div>
+          </div>
+          <div class="commit-actions">
+            <form method="POST" action="/revert.htm/${folderName}">
+              <input type="hidden" name="hash" value="${commit.id}">
+              <button type="submit" class="restore-button" onclick="return confirm('Are you sure you want to restore this version? This will undo all changes made after this point.')">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3L4 7L8 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M4 7H12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Restore this version
+              </button>
+            </form>
+          </div>
+        </div>
+        
+        <div class="commit-message">${commit.message}</div>
+        
+        <div class="commit-details">
+    `
+
+    for (const file of files) {
+      html += `
+        <div class="file-change">
+          <div class="filename">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 14V2C3 1.44772 3.44772 1 4 1H9.17157C9.43679 1 9.69114 1.10536 9.87868 1.29289L12.7071 4.12132C12.8946 4.30886 13 4.56321 13 4.82843V14C13 14.5523 12.5523 15 12 15H4C3.44772 15 3 14.5523 3 14Z" stroke="currentColor"/>
+            </svg>
+            ${file.filename}
+          </div>
+          <div class="changes">
+      `
+
+      for (const change of file.changes) {
+        if (change.type === "info") {
+          html += `<div class="change-info">${change.content}</div>`
+        } else if (change.type === "addition") {
+          html += `<div class="line addition">+ ${change.content}</div>`
+        } else if (change.type === "deletion") {
+          html += `<div class="line deletion">- ${change.content}</div>`
+        }
+      }
+
+      html += `
+          </div>
+        </div>
+      `
+    }
+
+    html += `
+        </div>
+      </div>
+    `
+
+    return html
+  }
+
   async sendCommits(folderName, count, res) {
     try {
       const commits = await this.getCommits(folderName, count)
 
       if (commits.length === 0) {
-        res.status(200).send(`No commits available for ${folderName}.`)
+        res.status(200).send(`No changes have been made to ${folderName} yet.`)
         return
       }
 
-      const convert = new AnsiToHtml({ escapeXML: true })
-
-      // Send HTML header
       res.setHeader("Content-Type", "text/html; charset=utf-8")
       res.write(`
 <!DOCTYPE html>
@@ -251,42 +387,209 @@ class FolderIndex {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Last ${count} Commits for ${folderName}</title>
+  <title>Changes to ${folderName}</title>
   <style>
-    body { font-family: monospace; white-space: pre-wrap; word-wrap: break-word; padding: 5px; }
-    h2 { color: #333; }
-    .aCommit {background-color: rgba(238, 238, 238, 0.8); padding: 8px; border-radius: 3px; margin-bottom: 10px;}
-    .commit { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px; }
-    .commit-message { font-weight: bold; color: #005cc5; }
-    input[type="submit"] { font-size: 0.8em; padding: 2px 5px; margin-left: 10px; }
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #24292f;
+      --color-border: #d0d7de;
+      --color-addition-bg: #e6ffec;
+      --color-deletion-bg: #ffebe9;
+      --color-info-bg: #f6f8fa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #0d1117;
+        --color-text: #c9d1d9;
+        --color-border: #30363d;
+        --color-addition-bg: #0f2f1a;
+        --color-deletion-bg: #2d1214;
+        --color-info-bg: #161b22;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      color: var(--color-text);
+      background: var(--color-bg);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .header h1 a{
+      color: var(--color-text);
+      text-decoration-color: transparent;
+    }
+
+    .header h1 a:hover{
+      color: var(--color-text);
+      text-decoration-color: var(--color-text);
+    }
+
+    .commit {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .commit-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .commit-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .author-name {
+      font-weight: 600;
+    }
+
+    .commit-time {
+      color: #57606a;
+      font-size: 12px;
+    }
+
+    .restore-button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg);
+      color: var(--color-text);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .restore-button:hover {
+      background: var(--color-info-bg);
+    }
+
+    .commit-message {
+      padding: 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .commit-details {
+      padding: 16px;
+    }
+
+    .file-change {
+      margin-bottom: 24px;
+    }
+
+    .file-change:last-child {
+      margin-bottom: 0;
+    }
+
+    .filename {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .changes {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .line {
+      padding: 4px 8px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .addition {
+      background: var(--color-addition-bg);
+    }
+
+    .deletion {
+      background: var(--color-deletion-bg);
+    }
+
+    .change-info {
+      padding: 4px 8px;
+      background: var(--color-info-bg);
+      color: #57606a;
+      font-size: 12px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    @media (max-width: 600px) {
+      .commit-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .restore-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="header">
+      <h1><a href="commits.htm?folderName=${folderName}&count=100">Changes to ${folderName}</a></h1>
+    </div>
 `)
 
-      // Process each commit
       for (const commit of commits) {
-        let output = commit.rawOutput
-        // Convert ANSI color codes to HTML
-        output = convert.toHtml(output)
-        // Add restore version button
-        output = output.replace(/(commit\s)([0-9a-f]{40})/, (match, prefix, hash) => {
-          return `<div class="aCommit">
-${prefix}${hash}
-<form method="POST" action="/revert.htm/${folderName}" style="display:inline;">
-  <input type="hidden" name="hash" value="${hash}">
-  <input type="submit" value="Restore this version" onclick="return confirm('Restore this version?');">
-</form>`
-        })
-        res.write(output + "</div>\n")
+        res.write(this.commitToHtml(commit, folderName))
       }
 
-      res.end("</body></html>")
+      res.end(`
+  </div>
+</body>
+</html>`)
     } catch (error) {
       console.error(`Error in sendCommits: ${error.message}`)
-      res.status(500).send("An error occurred while fetching the git log")
+      res.status(500).send("Sorry, we couldn't load the change history right now. Please try again.")
     }
   }
 }
-
 module.exports = { FolderIndex }
