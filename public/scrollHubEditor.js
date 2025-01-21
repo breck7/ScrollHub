@@ -611,9 +611,31 @@ nokey1 showWelcomeMessageCommand Help`
   }
 
   showHiddenFilesCommand() {
-    this.showHiddenFiles = !this.showHiddenFiles
+    this.setFromLocalOrMemory("showHiddenFiles", !this.showHiddenFiles)
     delete this._files
     this.renderFileList()
+  }
+
+  get showHiddenFiles() {
+    return this.getFromLocalOrMemory("showHiddenFiles") === "true"
+  }
+
+  setFromLocalOrMemory(key, value) {
+    try {
+      localStorage.setItem(key, value)
+    } catch (err) {
+      this[key] = value
+      console.error(err)
+    }
+  }
+
+  getFromLocalOrMemory(key) {
+    try {
+      return localStorage.getItem(key)
+    } catch (err) {
+      console.error(err)
+      return this[key]
+    }
   }
 
   bindKeyboardShortcuts() {
@@ -976,7 +998,6 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 
   useSsl = window.location.protocol === "https:"
 
-  showHiddenFiles = false
   get files() {
     if (this._files) return this._files
     const { allFiles, showHiddenFiles } = this
