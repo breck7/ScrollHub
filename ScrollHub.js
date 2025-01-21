@@ -640,6 +640,7 @@ If you'd like to create this folder, visit our main site to get started.
       const folderName = this.getFolderName(req)
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
       const commits = await folderIndex.getCommits(folderName, req.query.count || 10)
+      res.send(JSON.stringify(commits, undefined, 2))
     })
 
     app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
