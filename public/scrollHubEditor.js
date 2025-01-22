@@ -309,13 +309,24 @@ class EditorApp {
     const { folderName } = this
     this.fileName = fileName
     const filePath = `${folderName}/${fileName}`
-    const response = await fetch(`/readFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
-    const content = await response.text()
 
-    this.setFileContent(content)
+    // Update UI state for binary files
+    if (this.isBinaryFile(fileName)) {
+      this.setFileContent("Binary file not shown.")
+      this.codeMirrorInstance.setOption("readOnly", true)
+      this.updateUIForBinaryFile(true)
+    } else {
+      // Regular file handling
+      const response = await fetch(`/readFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(filePath)}`)
+      const content = await response.text()
+      this.setFileContent(content)
+      this.codeMirrorInstance.setOption("readOnly", false)
+      this.updateUIForBinaryFile(false)
+      await this.refreshParserCommand()
+      this.updateEditorMode(this.getEditorMode(fileName))
+    }
+
     this.setFileNameInUrl(fileName)
-    await this.refreshParserCommand()
-    this.updateEditorMode(this.getEditorMode(fileName))
     this.updatePreviewIFrame()
 
     if (!this.allFiles) await this.refreshFileListCommand()
@@ -342,6 +353,42 @@ class EditorApp {
     if (path.length === 1) return dir + primaryOutputFile
     path.pop()
     return dir + path.join("/") + "/" + primaryOutputFile
+  }
+
+  // Add a method to check if a file is binary
+  isBinaryFile(fileName) {
+    const binaryExtensions = new Set(
+      "ds_store thumbs.db desktop.ini pdf png jpg jpeg gif webp bmp tiff ico svg eps raw cr2 nef heic doc docx xls xlsx ppt pptx odt ods odp pages numbers key zip tar gz 7z rar bz2 dmg iso tgz exe dll so dylib bin app msi deb rpm mp3 wav ogg mp4 avi mov wmv flv mkv".split(
+        " "
+      )
+    )
+    const extension = fileName.split(".").pop().toLowerCase()
+    return binaryExtensions.has(extension)
+  }
+
+  updateUIForBinaryFile(isBinary) {
+    // Get UI elements
+    const saveButton = document.querySelector('[onclick*="saveAndPublishCommand"]')
+    const formatButton = document.querySelector('[onclick*="formatFileCommand"]')
+
+    if (saveButton) {
+      saveButton.style.display = isBinary ? "none" : "inline-block"
+    }
+    if (formatButton) {
+      formatButton.style.display = isBinary ? "none" : "inline-block"
+    }
+
+    // Update editor styling for binary files
+    const editorElement = this.codeMirrorInstance.getWrapperElement()
+    if (isBinary) {
+      editorElement.classList.add("binary-file")
+      this.codeMirrorInstance.setOption("lineNumbers", false)
+      this.codeMirrorInstance.refresh()
+    } else {
+      editorElement.classList.remove("binary-file")
+      this.codeMirrorInstance.setOption("lineNumbers", this.showLineNumbers)
+      this.codeMirrorInstance.refresh()
+    }
   }
 
   showSpinner(message, style) {
