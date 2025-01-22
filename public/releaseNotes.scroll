@@ -18,6 +18,19 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.82.0 1/21/2025
+🎉 ability to set Git author
+🎉 upgraded Scroll
+🎉 better diff UI
+🎉 persist hidden files setting
+🎉 add deepseek reasoner model
+🎉 better prompt logging
+🎉 prettier format json
+🎉 create folder by just uploading files
+🏥 dont attempt to make ssl certs for non-existant folders
+🏥 fix commits.json route
+🏥 fix mjs file serving
+
 📦 0.81.0 1/14/2025
 🎉 support for unlimited wildcard SSLs
 🎉 refactor of AI prompts
