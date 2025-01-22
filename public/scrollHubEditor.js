@@ -406,8 +406,7 @@ class EditorApp {
       console.error(message)
       return false
     }
-
-    console.log(`'${this.folderName}' built`)
+    console.log(`'${this.folderName}' built in ${message}ms`)
     return true
   }
 

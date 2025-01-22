@@ -1342,15 +1342,19 @@ If you'd like to create this folder, visit our main site to get started.
       await this.runScrollCommand(req, res, "test")
     })
 
-    app.get("/build/:folderName", checkWritePermissions, async (req, res) => {
-      await this.runScrollCommand(req, res, "build")
-      this.updateFolderAndBuildList(this.getFolderName(req))
-    })
+    const buildFolder = async (req, res) => {
+      const now = Date.now()
+      const folderName = this.getFolderName(req)
+      if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
+      await this.buildFolder(folderName)
+      res.send((Date.now() - now).toString())
+      this.updateFolderAndBuildList(folderName)
+    }
 
-    app.post("/build.htm", checkWritePermissions, async (req, res) => {
-      await this.runScrollCommand(req, res, "build")
-      this.updateFolderAndBuildList(this.getFolderName(req))
-    })
+    app.get("/build/:folderName", checkWritePermissions, buildFolder)
+    app.post("/build.htm", checkWritePermissions, buildFolder)
+
+    app.get("/building.htm", async (req, res) => res.send(JSON.stringify(this.buildRequests)))
 
     app.get("/format/:folderName", checkWritePermissions, async (req, res) => {
       await this.runScrollCommand(req, res, "format")
@@ -1750,9 +1754,10 @@ If you'd like to create this folder, visit our main site to get started.
       this.buildRequests[folderName]++
       return
     }
+    // todo: keep some folders in memory
     await execAsync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
     const buildAgain = this.buildRequests[folderName] > 1
-    this.buildRequests[folderName] = 0
+    delete this.buildRequests[folderName]
     if (buildAgain) return this.buildFolder(folderName)
   }
 
