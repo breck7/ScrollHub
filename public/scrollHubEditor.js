@@ -861,10 +861,18 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
     return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, protocol)
   }
 
+  get isPreviewableFile() {
+    if (!this.fileName) return false
+    const previewableExtensions = "html htm scroll parsers md txt css svg png jpg jpeg gif webp pdf".split(" ")
+    return previewableExtensions.some(ext => this.fileName.toLowerCase().endsWith(ext))
+  }
+
   updatePreviewIFrame() {
     const { rootUrl, folderName } = this
     this.previewIFrame = document.querySelector(".previewIFrame")
-    this.previewIFrame.src = this.permalink
+
+    if (this.isPreviewableFile) this.previewIFrame.src = this.permalink
+    else this.previewIFrame.src = "about:blank"
 
     this.updateVisitLink()
     document.title = `Editing ${folderName}`
