@@ -302,7 +302,7 @@ class EditorApp {
 
   async openFolder(folderName) {
     this.folderName = folderName
-    this.updateFooterLinks()
+    await this.updateFooterLinks()
   }
 
   async openFile(fileName) {
@@ -379,18 +379,11 @@ class EditorApp {
   }
 
   async writeFile(spinnerText, content, fileName) {
-    const { folderName } = this
+    const { folderName, author } = this
     const filePath = `${folderName}/${fileName}`
     this.showSpinner(spinnerText)
-    const formData = new FormData()
-    formData.append("filePath", filePath)
-    formData.append("folderName", folderName)
-    formData.append("content", content)
     try {
-      const response = await fetch("/writeFile.htm", {
-        method: "POST",
-        body: formData
-      })
+      const response = await this.postData("/writeFile.htm", { filePath, content })
       this.hideSpinner()
       await this.refreshFileListCommand()
       if (this.fileName !== fileName) this.openFile(fileName)
@@ -402,13 +395,7 @@ class EditorApp {
   }
 
   async buildFolderCommand() {
-    const formData = new FormData()
-    const { folderName } = this
-    formData.append("folderName", folderName)
-    const response = await fetch("/build.htm", {
-      method: "POST",
-      body: formData
-    })
+    const response = await this.postData("/build.htm")
     const message = await response.text()
     if (!response.ok) {
       console.error(message)
@@ -420,7 +407,7 @@ class EditorApp {
       return false
     }
 
-    console.log(`'${folderName}' built`)
+    console.log(`'${this.folderName}' built`)
     return true
   }
 
@@ -847,16 +834,8 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 
   // Modified uploadFile method to return a Promise
   async uploadFile(file) {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("folderName", this.folderName)
-
     try {
-      const response = await fetch("/uploadFile.htm", {
-        method: "POST",
-        body: formData
-      })
-
+      const response = await this.postData("/uploadFile.htm", { file })
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(errorText || "Network response was not ok")
@@ -936,24 +915,78 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
     this.openModal(modalContent, url, event)
   }
 
-  // Update the updateFooterLinks method to use the new modal
-  updateFooterLinks() {
+  async updateFooterLinks() {
     const { folderName } = this
-    document.getElementById("folderLinks").innerHTML =
-      `<a class="folderActionLink" href="/globe.html?folderName=${folderName}" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModalFromClick(event); return false; }">traffic</a> · <a class="folderActionLink" href="/commits.htm?folderName=${folderName}&count=30" onclick="if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModalFromClick(event); return false; }">revisions</a> · <a class="folderActionLink" href="#" onclick="window.app.copyClone()">clone</a> · <a class="folderActionLink" href="${folderName}.zip">download</a> · <a class="folderActionLink" href="#" onclick="window.app.duplicate()">duplicate</a> · <a href="#" class="folderActionLink" onclick="window.app.renameFolder()">move</a> · <a href="#" class="folderActionLink" onclick="window.app.deleteFolder()">delete</a>`
+    const code = `a traffic
+ class folderActionLink
+ href /globe.html?folderName=${folderName}
+ onclick if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModalFromClick(event); return false; }
+span ·
+a revisions
+ class folderActionLink
+ href /commits.htm?folderName=${folderName}&count=30
+ onclick if (!event.ctrlKey && !event.metaKey) { window.app.openIframeModalFromClick(event); return false; }
+span ·
+a clone
+ class folderActionLink
+ href #
+ onclick window.app.copyClone()
+span ·
+a download
+ class folderActionLink
+ href ${folderName}.zip
+span ·
+a duplicate
+ class folderActionLink
+ href #
+ onclick window.app.duplicate()
+span ·
+a move
+ href #
+ class folderActionLink
+ onclick window.app.renameFolder()
+span ·
+a delete
+ href #
+ class folderActionLink
+ onclick window.app.deleteFolder()
+span ·
+a ${this.authorDisplayName}
+ href #
+ class folderActionLink
+ linkify false
+ onclick window.app.loginCommand()`
+    const html = await this.fusionEditor.scrollToHtml(code)
+    document.getElementById("folderLinks").innerHTML = html
+  }
+
+  get author() {
+    return localStorage.getItem("author")
+  }
+
+  get authorDisplayName() {
+    const { author } = this
+    if (!author) return "anon"
+    return author.split("<")[1].split(">")[0]
+  }
+
+  async loginCommand() {
+    const { author } = this
+    const defaultAuthor = "Anon <anon@scroll.pub>"
+    const newAuthorName = prompt(`Your name and email:`, author || defaultAuthor)
+    if (newAuthorName === "" || newAuthorName === defaultAuthor) {
+      localStorage.removeItem("author", undefined)
+    } else if (newAuthorName && newAuthorName.match(/^[^<>]+\s<[^<>@\s]+@[^<>@\s]+>$/)) {
+      localStorage.setItem("author", newAuthorName)
+    }
+
+    await this.updateFooterLinks()
   }
 
   async renameFolder() {
     const newFolderName = prompt(`Rename ${this.folderName} to:`)
     if (!newFolderName) return
-    const response = await fetch("/mv.htm", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: `oldFolderName=${this.folderName}&newFolderName=${newFolderName}`
-    })
-
+    const response = await this.postData("/mv.htm", { oldFolderName: this.folderName, newFolderName })
     const result = await response.text()
     window.location.href = `/edit.html?folderName=${newFolderName}`
   }
@@ -964,14 +997,7 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
     if (userInput !== this.folderName) return
 
     try {
-      const response = await fetch("/trashFolder.htm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: `folderName=${encodeURIComponent(this.folderName)}`
-      })
-
+      const response = await this.postData("/trashFolder.htm")
       const data = await response.text()
       console.log(data)
       window.location.href = "/" // Redirect to home page after deletion
@@ -982,14 +1008,7 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 
   async duplicate() {
     this.showSpinner("Copying folder...")
-    const response = await fetch("/cloneFolder.htm", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: `folderName=${this.folderName}&redirect=false`
-    })
-
+    const response = await this.postData("/cloneFolder.htm", { redirect: "false" })
     const result = await response.text()
     this.hideSpinner()
     console.log(result)
@@ -1085,18 +1104,26 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
     }
   }
 
+  async postData(url, params = {}) {
+    const { folderName, author } = this
+    const formData = new FormData()
+    formData.append("folderName", folderName)
+    if (author) formData.append("author", author)
+    Object.keys(params).forEach(key => {
+      formData.append(key, params[key])
+    })
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData
+    })
+    return response
+  }
+
   async performFileRename(oldFileName, newFileName) {
     const { folderName } = this
     try {
       this.showSpinner("Renaming..")
-      const response = await fetch("/renameFile.htm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: `folderName=${encodeURIComponent(folderName)}&oldFileName=${encodeURIComponent(oldFileName)}&newFileName=${encodeURIComponent(newFileName)}`
-      })
-
+      const response = await this.postData("/renameFile.htm", { oldFileName, newFileName })
       if (!response.ok) throw new Error(await response.text())
 
       this.hideSpinner()
@@ -1170,10 +1197,7 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 
     if (!userInput || userInput !== fileName) return
     this.showSpinner("Deleting...")
-    const response = await fetch(`/deleteFile.htm?folderName=${folderName}&filePath=${encodeURIComponent(fileName)}`, {
-      method: "POST"
-    })
-
+    const response = await this.postData("/deleteFile.htm", { filePath: fileName })
     const data = await response.text()
     await this.refreshFileListCommand()
     await this.autoOpen()

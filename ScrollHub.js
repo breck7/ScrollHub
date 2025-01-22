@@ -654,9 +654,7 @@ If you'd like to create this folder, visit our main site to get started.
 
       try {
         // Perform the revert
-        const clientIp = req.ip || req.connection.remoteAddress
-        const hostname = req.hostname?.toLowerCase()
-        await execAsync(`git checkout ${targetHash} . && git add . && git commit --author="${clientIp} <${clientIp}@${hostname}>" -m "Reverted to ${targetHash}" --allow-empty`, { cwd: folderPath })
+        await execAsync(`git checkout ${targetHash} . && git add . && git commit ${this.getCommitAuthor(req)} -m "Reverted to ${targetHash}" --allow-empty`, { cwd: folderPath })
 
         this.addStory(req, `reverted ${folderName}`)
 
@@ -669,6 +667,17 @@ If you'd like to create this folder, visit our main site to get started.
         res.status(500).send(`An error occurred while reverting the repository:\n ${error.toString().replace(/</g, "&lt;")}`)
       }
     })
+  }
+
+  getCommitAuthor(req) {
+    let author = ""
+    if (req.body.author?.match(/^[^<>]+\s<[^<>@\s]+@[^<>@\s]+>$/)) author = req.body.author
+    else {
+      const clientIp = req.ip || req.connection.remoteAddress
+      const hostname = req.hostname?.toLowerCase()
+      const author = `${clientIp} <${clientIp}@${hostname}>`
+    }
+    return `--author="${author}"`
   }
 
   getCloneName(folderName) {
@@ -1158,9 +1167,7 @@ If you'd like to create this folder, visit our main site to get started.
         }
 
         // Run git commands
-        const clientIp = req.ip || req.connection.remoteAddress
-        const hostname = req.hostname?.toLowerCase()
-        await execAsync(`git add "${fileName}"; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Inserted particles into ${fileName}'`, { cwd: folderPath })
+        await execAsync(`git add "${fileName}"; git commit ${this.getCommitAuthor(req)} -m 'Inserted particles into ${fileName}'`, { cwd: folderPath })
 
         this.addStory(req, `inserted particles into ${folderPath}/${fileName}`)
         this.buildFolder(folderName)
@@ -1178,7 +1185,7 @@ If you'd like to create this folder, visit our main site to get started.
 
     app.post("/deleteFile.htm", checkWritePermissions, async (req, res) => {
       const folderName = this.getFolderName(req)
-      const filePath = path.join(rootFolder, folderName, decodeURIComponent(req.query.filePath))
+      const filePath = path.join(rootFolder, folderName, req.body.filePath)
 
       if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
@@ -1190,7 +1197,7 @@ If you'd like to create this folder, visit our main site to get started.
         const folderPath = path.dirname(filePath)
 
         await fsp.unlink(filePath)
-        await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}'`, { cwd: folderPath })
+        await execAsync(`git rm ${fileName}; git commit -m 'Deleted ${fileName}' ${this.getCommitAuthor(req)}`, { cwd: folderPath })
 
         res.send("File deleted successfully")
         this.addStory(req, `deleted ${fileName} in ${folderName}`)
@@ -1245,9 +1252,7 @@ If you'd like to create this folder, visit our main site to get started.
         await fsp.access(oldFilePath)
 
         // Run git commands
-        const clientIp = req.ip || req.connection.remoteAddress
-        const hostname = req.hostname?.toLowerCase()
-        await execAsync(`git mv ${oldFileName} ${newFileName}; git commit --author="${clientIp} <${clientIp}@${hostname}>" -m 'Renamed ${oldFileName} to ${newFileName}'`, { cwd: folderPath })
+        await execAsync(`git mv ${oldFileName} ${newFileName}; git commit ${this.getCommitAuthor(req)} -m 'Renamed ${oldFileName} to ${newFileName}'`, { cwd: folderPath })
         this.addStory(req, `renamed ${oldFileName} to ${newFileName} in ${folderName}`)
         res.send("File renamed successfully")
         this.updateFolderAndBuildList(folderName)
@@ -1653,9 +1658,7 @@ If you'd like to create this folder, visit our main site to get started.
 
     // Commit file
     try {
-      const clientIp = req.ip || req.connection.remoteAddress
-      const hostname = req.hostname?.toLowerCase()
-      const author = `${clientIp} <${clientIp}@${hostname}>`
+      const author = this.getCommitAuthor(req)
       const folderPath = path.join(rootFolder, folderName)
       const relativePath = filePath.replace(folderPath, "").substr(1)
       await this.gitCommitFile(folderPath, relativePath, author, action)
@@ -1681,7 +1684,7 @@ If you'd like to create this folder, visit our main site to get started.
   }
 
   async gitCommitFile(folderPath, relativePath, author, action = "updated") {
-    await execAsync(`git add -f ${relativePath}; git commit --author="${author}"  -m '${action} ${relativePath}'`, { cwd: folderPath })
+    await execAsync(`git add -f ${relativePath}; git commit ${author} -m '${action} ${relativePath}'`, { cwd: folderPath })
   }
 
   async addStory(req, message) {
