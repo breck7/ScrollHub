@@ -190,6 +190,10 @@ class ScrollHub {
     const app = this.app
     this.port = 80
     this.maxUploadSize = 100 * 1000 * 1024
+    this.requestsServed = 0
+    this.startCpuUsage = process.cpuUsage()
+    this.lastCpuUsage = this.startCpuUsage
+    this.lastCpuCheck = Date.now()
     this.hostname = os.hostname()
     this.wildCardCerts = []
     this.rootFolder = dir
@@ -511,6 +515,7 @@ If you'd like to create this folder, visit our main site to get started.
 
       res.on("finish", () => {
         this.logRequest(req, res)
+        this.requestsServed++
       })
       next()
     })
@@ -1315,6 +1320,22 @@ If you'd like to create this folder, visit our main site to get started.
     })
   }
 
+  getCpuUsagePercent() {
+    const currentCpuUsage = process.cpuUsage(this.lastCpuUsage)
+    const currentTime = Date.now()
+    const timeDiff = currentTime - this.lastCpuCheck
+
+    // Calculate CPU usage percentage
+    const totalTicks = (currentCpuUsage.user + currentCpuUsage.system) / 1000 // Convert to microseconds
+    const cpuPercent = (totalTicks / timeDiff) * 100
+
+    // Update tracking variables
+    this.lastCpuUsage = process.cpuUsage()
+    this.lastCpuCheck = currentTime
+
+    return Math.min(100, cpuPercent.toFixed(1))
+  }
+
   async findAvailableFolderName(prefix = "files") {
     const { folderCache } = this
     let counter = 1
@@ -1340,6 +1361,64 @@ If you'd like to create this folder, visit our main site to get started.
 
     app.get("/test/:folderName", checkWritePermissions, async (req, res) => {
       await this.runScrollCommand(req, res, "test")
+    })
+
+    // Add the status route (in initCommandRoutes or as a separate method)
+    app.get("/status.htm", async (req, res) => {
+      const uptime = Math.floor((Date.now() - this.startTime) / 1000)
+      const memUsage = process.memoryUsage()
+      const totalMem = os.totalmem()
+      const freeMem = os.freemem()
+      const cpuUsage = this.getCpuUsagePercent()
+      const loadAvg = os.loadavg()
+
+      const status = {
+        server: {
+          version: this.version,
+          uptime: {
+            seconds: uptime,
+            formatted: `${Math.floor(uptime / 86400)}d ${Math.floor((uptime % 86400) / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${uptime % 60}s`
+          },
+          startTime: new Date(this.startTime).toISOString(),
+          hostname: this.hostname,
+          platform: process.platform,
+          nodeVersion: process.version
+        },
+        performance: {
+          cpu: {
+            usage: `${cpuUsage}%`,
+            cores: os.cpus().length,
+            loadAverage: {
+              "1m": loadAvg[0].toFixed(2),
+              "5m": loadAvg[1].toFixed(2),
+              "15m": loadAvg[2].toFixed(2)
+            }
+          },
+          memory: {
+            total: `${(totalMem / 1024 / 1024 / 1024).toFixed(2)} GB`,
+            free: `${(freeMem / 1024 / 1024 / 1024).toFixed(2)} GB`,
+            used: `${((totalMem - freeMem) / 1024 / 1024 / 1024).toFixed(2)} GB`,
+            process: {
+              heapUsed: `${(memUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+              heapTotal: `${(memUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
+              rss: `${(memUsage.rss / 1024 / 1024).toFixed(2)} MB`
+            }
+          }
+        },
+        activity: {
+          requestsServed: this.requestsServed,
+          requestsPerSecond: (this.requestsServed / uptime).toFixed(2),
+          activeFolders: Object.keys(this.folderCache).length,
+          buildRequests: Object.keys(this.buildRequests).length,
+          sseClients: this.sseClients.size
+        }
+      }
+
+      const particle = new Particle(status)
+      particle.topDownArray.forEach(particle => particle.setCue("- " + particle.cue))
+      const html = await ScrollToHtml(particle.toString())
+
+      res.send(html)
     })
 
     const buildFolder = async (req, res) => {
