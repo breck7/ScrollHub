@@ -358,7 +358,7 @@ class EditorApp {
   // Add a method to check if a file is binary
   isBinaryFile(fileName) {
     const binaryExtensions = new Set(
-      "ds_store thumbs.db desktop.ini pdf png jpg jpeg gif webp bmp tiff ico svg eps raw cr2 nef heic doc docx xls xlsx ppt pptx odt ods odp pages numbers key zip tar gz 7z rar bz2 dmg iso tgz exe dll so dylib bin app msi deb rpm mp3 wav ogg mp4 avi mov wmv flv mkv".split(
+      "ds_store thumbs.db pdf png jpg jpeg gif webp bmp tiff ico eps raw cr2 nef heic doc docx xls xlsx ppt pptx odt ods odp pages numbers key zip tar gz 7z rar bz2 dmg iso tgz exe dll so dylib bin app msi deb rpm mp3 wav ogg mp4 avi mov wmv flv mkv".split(
         " "
       )
     )
