@@ -1885,7 +1885,7 @@ Download folders as JSON | CSV | TSV
  link folders.csv CSV
  link folders.tsv TSV
 
-table folders.csv
+folders.csv
  compose links <a href="edit.html?folderName={folder}">edit</a> · <a href="{folder}.zip">zip</a>
   select folder folderLink links revised hash files mb revisions
    compose hashLink commits.htm?folderName={folder}

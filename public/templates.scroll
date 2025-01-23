@@ -12,7 +12,7 @@ center
 createLinks.scroll
 
 center
-table folders.json
+folders.json
  where folder endsWith _template
   limit 0 100
    eval name "{folder}".split('_template')[0]
