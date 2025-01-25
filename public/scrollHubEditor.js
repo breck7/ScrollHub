@@ -613,7 +613,7 @@ class EditorApp {
 command+s saveAndPublishCommand File
 ctrl+n createFileCommand File
 command+p formatFileCommand File
-command+h showFileHistoryCommand File
+command+h showFileBlameCommand File
 command+b buildFolderAndRefreshCommand Folder
 nokey2 exportForPromptCommand Folder
 nokey4 testFolderCommand Folder
@@ -799,32 +799,32 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
     document.querySelector("#theModal").classList.add("scrollModalFit")
   }
 
-  async showFileHistoryCommand(event) {
+  async showFileBlameCommand(event) {
     if (!this.fileName) return
 
     try {
-      this.showSpinner("Loading file history...")
+      this.showSpinner("Loading file blame...")
       const response = await fetch(`/blame.htm?folderName=${this.folderName}&fileName=${encodeURIComponent(this.fileName)}`)
 
       if (!response.ok) {
-        throw new Error("Failed to fetch file history")
+        throw new Error("Failed to fetch file blame")
       }
 
-      const history = await response.text()
+      const blame = await response.text()
 
-      // Format the history data into HTML
+      // Format the blame data into HTML
       const formattedHistory = `
-        <div class="file-history">
-          <h3>File History: ${this.fileName}</h3>
-          <div class="history-content" style="white-space: pre-wrap; font-family: monospace; max-height: 70vh; overflow-y: auto;">${history}</div>
+        <div class="file-blame">
+          <h3>File Blame: ${this.fileName}</h3>
+          <div class="blame-content" style="white-space: pre; font-family: monospace; max-height: 70vh; overflow-y: auto;">${blame}</div>
         </div>
       `
 
-      this.openModal(formattedHistory, "history", event)
+      this.openModal(formattedHistory, "blame", event)
       this.hideSpinner()
     } catch (error) {
-      console.error("Error fetching file history:", error)
-      this.showError("Failed to load file history: " + error.message)
+      console.error("Error fetching file blame:", error)
+      this.showError("Failed to load file blame: " + error.message)
       setTimeout(() => this.hideSpinner(), 3000)
     }
   }
