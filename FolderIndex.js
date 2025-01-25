@@ -1,6 +1,7 @@
 const path = require("path")
 const { spawn } = require("child_process")
 const fsp = require("fs").promises
+const dns = require("dns").promises
 
 const cssStyles = `:root {
   --color-bg: #ffffff;
@@ -188,11 +189,23 @@ class FolderIndex {
     this.scrollHub = scrollHub
   }
 
+  async isFolderNameADomainWhosDnsIsPointingToThisServer(domain) {
+    if (this.scrollHub.isLocalHost) return false
+    try {
+      // Resolve domain
+      const addresses = await dns.resolve4(domain)
+      return addresses.some(address => this.scrollHub.serverIps.includes(address))
+    } catch (error) {
+      return false // Domain doesn't exist or other DNS error
+    }
+  }
+
   // todo: speed this up. throttle?
   async updateFolder(folder) {
     const { scrollHub } = this
     const { rootFolder } = scrollHub
     const fullPath = path.join(rootFolder, folder)
+    const currentEntry = scrollHub.folderCache[folder]
 
     // Get list of files tracked by git and their sizes
     let fileCount = 0
@@ -308,9 +321,14 @@ class FolderIndex {
       const hasSslCert = await scrollHub.doesHaveSslCert(folder)
       const folderLink = scrollHub.getBaseUrlForFolder(folder, scrollHub.hostname, hasSslCert ? "https:" : "http:", scrollHub.isLocalHost)
 
+      // Check DNS if folder is a domain
+      let dnsPointsHere = false
+      if (folder.includes(".") && currentEntry.dnsPointsHere === undefined) dnsPointsHere = await this.isFolderNameADomainWhosDnsIsPointingToThisServer(folder)
+
       const entry = {
         files,
         hasSslCert,
+        dnsPointsHere,
         scrollHubVersion: scrollHub.version,
         stats: {
           folder,

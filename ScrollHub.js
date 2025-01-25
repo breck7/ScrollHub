@@ -211,6 +211,10 @@ class ScrollHub {
     this.version = packageJson.version
     const configPath = path.join(hubFolder, `config.scroll`)
     this.config = fs.existsSync(configPath) ? Particle.fromDisk(configPath) : new Particle()
+    this.serverIps = Object.values(os.networkInterfaces())
+      .flat()
+      .map(iface => iface.address)
+      .filter(ip => !ip.includes("::")) // Filter IPv6
   }
 
   startAll() {
@@ -1379,16 +1383,18 @@ If you'd like to create this folder, visit our main site to get started.
       const freeMem = os.freemem()
       const cpuUsage = this.getCpuUsagePercent()
       const loadAvg = os.loadavg()
+      const { serverIps, version, startTime, hostname } = this
 
       const status = {
         server: {
-          version: this.version,
+          version,
+          serverIps,
           uptime: {
             seconds: uptime,
             formatted: `${Math.floor(uptime / 86400)}d ${Math.floor((uptime % 86400) / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${uptime % 60}s`
           },
-          startTime: new Date(this.startTime).toISOString(),
-          hostname: this.hostname,
+          startTime: new Date(startTime).toISOString(),
+          hostname,
           platform: process.platform,
           nodeVersion: process.version
         },
