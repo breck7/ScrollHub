@@ -1460,14 +1460,29 @@ If you'd like to create this folder, visit our main site to get started.
 
     if (!folderCache[folderName]) return res.status(404).send("Folder not found")
 
+    const folderPath = path.join(rootFolder, folderName)
+    res.setHeader("Content-Type", "text/plain")
+
     try {
-      const folderPath = path.join(rootFolder, folderName)
-      const { stdout } = await execAsync(command, { cwd: folderPath })
-      res.setHeader("Content-Type", "text/plain")
-      res.send(stdout.toString())
+      const child = spawn(command, [], {
+        shell: true,
+        cwd: folderPath
+      })
+
+      child.stdout.pipe(res)
+      child.stderr.pipe(res)
+
+      await new Promise((resolve, reject) => {
+        child.on("close", code => {
+          if (code === 0) resolve()
+          else reject(new Error(`Command failed with code ${code}`))
+        })
+        child.on("error", reject)
+      })
     } catch (error) {
       console.error(`Error running '${command}' in '${folderName}':`, error)
-      res.status(500).send(`An error occurred while running '${command}' in '${folderName}': ` + error.message)
+      // Don't try to send headers again, response stream is already piped
+      res.end(`\nError: ${error.message}`)
     }
   }
 
