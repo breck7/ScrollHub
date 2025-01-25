@@ -1441,6 +1441,10 @@ If you'd like to create this folder, visit our main site to get started.
       this.updateFolderAndBuildList(this.getFolderName(req))
     })
 
+    app.get("/list/:folderName", checkWritePermissions, async (req, res) => {
+      await this.runCommand(req, res, "scroll list")
+    })
+
     app.get("/status/:folderName", checkWritePermissions, async (req, res) => {
       await this.runCommand(req, res, "git status")
     })

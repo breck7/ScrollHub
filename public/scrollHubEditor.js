@@ -553,7 +553,7 @@ class EditorApp {
           .map(shortcut => {
             const command = shortcut.command
             const description = lodash.startCase(command.replace("Command", ""))
-            const keyStr = shortcut.key.startsWith("nokey") ? "&nbsp;" : shortcut.key.replace("command", "cmd")
+            const keyStr = shortcut.key.startsWith("nokey") ? "⚪️" : shortcut.key.replace("command", "cmd")
             return `
             <div class="shortcut" onclick="app.${command}(event)">
               <kbd>${keyStr}</kbd> <span>${description}</span>
@@ -617,6 +617,9 @@ command+h showFileBlameCommand File
 command+b buildFolderAndRefreshCommand Folder
 nokey2 exportForPromptCommand Folder
 nokey4 testFolderCommand Folder
+nokey6 formatFolderCommand Folder
+nokey5 listSubfoldersCommand Folder
+nokey7 showGitStatusCommand Folder
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
@@ -745,6 +748,18 @@ nokey1 showWelcomeMessageCommand Help`
 
   async testFolderCommand(event) {
     this.openIframeModal("/test/" + this.folderName, event)
+  }
+
+  async formatFolderCommand(event) {
+    this.openIframeModal("/format/" + this.folderName, event)
+  }
+
+  async listSubfoldersCommand(event) {
+    this.openIframeModal("/list/" + this.folderName, event)
+  }
+
+  async showGitStatusCommand(event) {
+    this.openIframeModal("/status/" + this.folderName, event)
   }
 
   async showWelcomeMessageCommand(event) {
