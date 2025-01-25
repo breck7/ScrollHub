@@ -616,6 +616,7 @@ command+p formatFileCommand File
 command+h showFileHistoryCommand File
 command+b buildFolderAndRefreshCommand Folder
 nokey2 exportForPromptCommand Folder
+nokey4 testFolderCommand Folder
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
@@ -740,6 +741,10 @@ nokey1 showWelcomeMessageCommand Help`
 
   async exportForPromptCommand(event) {
     this.openIframeModal("/stamp?folderName=" + this.folderName, event)
+  }
+
+  async testFolderCommand(event) {
+    this.openIframeModal("/test/" + this.folderName, event)
   }
 
   async showWelcomeMessageCommand(event) {
