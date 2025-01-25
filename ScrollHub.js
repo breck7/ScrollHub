@@ -1425,7 +1425,8 @@ If you'd like to create this folder, visit our main site to get started.
       const now = Date.now()
       const folderName = this.getFolderName(req)
       if (!this.folderCache[folderName]) return res.status(404).send("Folder not found")
-      await this.buildFolder(folderName)
+      const error = await this.buildFolder(folderName)
+      if (error) return res.status(500).send("Build failed with error" + error.message)
       res.send((Date.now() - now).toString())
       this.updateFolderAndBuildList(folderName)
     }
@@ -1849,10 +1850,17 @@ If you'd like to create this folder, visit our main site to get started.
       return
     }
     // todo: keep some folders in memory
-    await execAsync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
-    const buildAgain = this.buildRequests[folderName] > 1
-    delete this.buildRequests[folderName]
-    if (buildAgain) return this.buildFolder(folderName)
+    try {
+      await execAsync(`scroll list | scroll build`, { cwd: path.join(this.rootFolder, folderName) })
+      const buildAgain = this.buildRequests[folderName] > 1
+      delete this.buildRequests[folderName]
+      if (buildAgain) this.buildFolder(folderName)
+      return false
+    } catch (err) {
+      console.error(err)
+      delete this.buildRequests[folderName]
+      return err
+    }
   }
 
   buildFolderSync(folderName) {
