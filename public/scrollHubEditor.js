@@ -613,6 +613,7 @@ class EditorApp {
 command+s saveAndPublishCommand File
 ctrl+n createFileCommand File
 command+p formatFileCommand File
+command+h showFileHistoryCommand File
 command+h showFileBlameCommand File
 command+b buildFolderAndRefreshCommand Folder
 nokey2 exportForPromptCommand Folder
@@ -760,6 +761,10 @@ nokey1 showWelcomeMessageCommand Help`
 
   async showGitStatusCommand(event) {
     this.openIframeModal("/status/" + this.folderName, event)
+  }
+
+  async showFileHistoryCommand(event) {
+    this.openIframeModal(`fileHistory.htm?folderName=${this.folderName}&filePath=${this.fileName}`, event)
   }
 
   async showWelcomeMessageCommand(event) {

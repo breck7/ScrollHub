@@ -648,6 +648,14 @@ If you'd like to create this folder, visit our main site to get started.
       res.send(JSON.stringify(commits, undefined, 2))
     })
 
+    app.get("/fileHistory.htm", async (req, res) => {
+      const folderName = this.getFolderName(req)
+      const filePath = req.query.filePath
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+      if (!filePath) return res.status(400).send("File path is required")
+      await folderIndex.sendFileHistory(folderName, filePath, req.query.count || 100, res)
+    })
+
     app.post("/revert.htm/:folderName", checkWritePermissions, async (req, res) => {
       const folderName = req.params.folderName
       const targetHash = req.body.hash

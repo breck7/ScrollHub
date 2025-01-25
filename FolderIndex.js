@@ -2,6 +2,187 @@ const path = require("path")
 const { spawn } = require("child_process")
 const fsp = require("fs").promises
 
+const cssStyles = `:root {
+  --color-bg: #ffffff;
+  --color-text: #24292f;
+  --color-border: #d0d7de;
+  --color-addition-bg: #e6ffec;
+  --color-deletion-bg: #ffebe9;
+  --color-info-bg: #f6f8fa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0d1117;
+    --color-text: #c9d1d9;
+    --color-border: #30363d;
+    --color-addition-bg: #0f2f1a;
+    --color-deletion-bg: #2d1214;
+    --color-info-bg: #161b22;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.header h1 a{
+  color: var(--color-text);
+  text-decoration-color: transparent;
+}
+
+.header h1 a:hover{
+  color: var(--color-text);
+  text-decoration-color: var(--color-text);
+}
+
+.commit {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.commit-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.commit-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.author-name {
+  font-weight: 600;
+}
+
+.commit-time {
+  color: #57606a;
+  font-size: 12px;
+}
+
+.restore-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.restore-button:hover {
+  background: var(--color-info-bg);
+}
+
+.commit-message {
+  padding: 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.commit-details {
+  padding: 16px;
+}
+
+.file-change {
+  margin-bottom: 24px;
+}
+
+.file-change:last-child {
+  margin-bottom: 0;
+}
+
+.filename {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.changes {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.line {
+  padding: 4px 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.addition {
+  background: var(--color-addition-bg);
+}
+
+.deletion {
+  background: var(--color-deletion-bg);
+}
+
+.change-info {
+  padding: 4px 8px;
+  background: var(--color-info-bg);
+  color: #57606a;
+  font-size: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+@media (max-width: 600px) {
+  .commit-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .restore-button {
+    width: 100%;
+    justify-content: center;
+  }
+}`
+
 class FolderIndex {
   constructor(scrollHub) {
     this.scrollHub = scrollHub
@@ -371,6 +552,106 @@ class FolderIndex {
     return html
   }
 
+  // Add this method to the FolderIndex class
+  async getFileHistory(folderName, filePath, count) {
+    const { scrollHub } = this
+    const { rootFolder } = scrollHub
+    const fullFolderPath = path.join(rootFolder, folderName)
+
+    try {
+      // Get detailed commit information for the specific file
+      const logOutput = await new Promise((resolve, reject) => {
+        const gitLogProcess = spawn("git", ["log", `-${count}`, "--color=always", "--date=iso", "--format=COMMIT_START%n%H%n%an%n%ae%n%ad%n%B%nCOMMIT_DIFF_START%n", "-p", "--", filePath], { cwd: fullFolderPath })
+
+        let output = ""
+        gitLogProcess.stdout.on("data", data => {
+          output += data.toString()
+        })
+
+        gitLogProcess.on("close", code => {
+          if (code === 0) {
+            resolve(output)
+          } else {
+            reject(new Error("Failed to get commit information"))
+          }
+        })
+      })
+
+      // Parse the git log output using existing parsing logic
+      const commits = []
+      const commitChunks = logOutput.split("COMMIT_START\n").filter(Boolean)
+
+      for (const chunk of commitChunks) {
+        const [commitInfo, ...diffParts] = chunk.split("COMMIT_DIFF_START\n")
+        const [hash, name, email, date, ...messageLines] = commitInfo.split("\n")
+
+        while (messageLines.length > 0 && messageLines[messageLines.length - 1].trim() === "") {
+          messageLines.pop()
+        }
+
+        const message = messageLines.join("\n").trim()
+        const diff = diffParts.join("COMMIT_DIFF_START\n")
+
+        commits.push({
+          id: hash,
+          name: name.trim(),
+          email: email.trim(),
+          time: new Date(date),
+          message,
+          diff
+        })
+      }
+
+      return commits
+    } catch (error) {
+      console.error(`Error in getFileHistory: ${error.message}`)
+      throw error
+    }
+  }
+
+  // Add this method to the FolderIndex class
+  async sendFileHistory(folderName, filePath, count, res) {
+    try {
+      const commits = await this.getFileHistory(folderName, filePath, count)
+
+      if (commits.length === 0) {
+        res.status(200).send(`No changes have been made to ${filePath} yet.`)
+        return
+      }
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8")
+      res.write(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History of ${filePath}</title>
+  <style>
+    ${cssStyles}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><a href="fileHistory.htm?folderName=${folderName}&filePath=${filePath}&count=100">History of ${filePath}</a></h1>
+    </div>
+`)
+
+      for (const commit of commits) {
+        res.write(this.commitToHtml(commit, folderName))
+      }
+
+      res.end(`
+  </div>
+</body>
+</html>`)
+    } catch (error) {
+      console.error(`Error in sendFileHistory: ${error.message}`)
+      res.status(500).send("Sorry, we couldn't load the file history right now. Please try again.")
+    }
+  }
+
   async sendCommits(folderName, count, res) {
     try {
       const commits = await this.getCommits(folderName, count)
@@ -389,186 +670,7 @@ class FolderIndex {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Changes to ${folderName}</title>
   <style>
-    :root {
-      --color-bg: #ffffff;
-      --color-text: #24292f;
-      --color-border: #d0d7de;
-      --color-addition-bg: #e6ffec;
-      --color-deletion-bg: #ffebe9;
-      --color-info-bg: #f6f8fa;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --color-bg: #0d1117;
-        --color-text: #c9d1d9;
-        --color-border: #30363d;
-        --color-addition-bg: #0f2f1a;
-        --color-deletion-bg: #2d1214;
-        --color-info-bg: #161b22;
-      }
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      line-height: 1.5;
-      color: var(--color-text);
-      background: var(--color-bg);
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .header {
-      margin-bottom: 30px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .header h1 {
-      font-size: 24px;
-      margin: 0;
-    }
-
-    .header h1 a{
-      color: var(--color-text);
-      text-decoration-color: transparent;
-    }
-
-    .header h1 a:hover{
-      color: var(--color-text);
-      text-decoration-color: var(--color-text);
-    }
-
-    .commit {
-      background: var(--color-bg);
-      border: 1px solid var(--color-border);
-      border-radius: 6px;
-      margin-bottom: 24px;
-      overflow: hidden;
-    }
-
-    .commit-header {
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .commit-author {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-
-    .author-name {
-      font-weight: 600;
-    }
-
-    .commit-time {
-      color: #57606a;
-      font-size: 12px;
-    }
-
-    .restore-button {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--color-border);
-      background: var(--color-bg);
-      color: var(--color-text);
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.2s;
-    }
-
-    .restore-button:hover {
-      background: var(--color-info-bg);
-    }
-
-    .commit-message {
-      padding: 16px;
-      font-size: 14px;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .commit-details {
-      padding: 16px;
-    }
-
-    .file-change {
-      margin-bottom: 24px;
-    }
-
-    .file-change:last-child {
-      margin-bottom: 0;
-    }
-
-    .filename {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 12px;
-      margin-bottom: 8px;
-    }
-
-    .changes {
-      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 12px;
-      line-height: 1.5;
-      border: 1px solid var(--color-border);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .line {
-      padding: 4px 8px;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-
-    .addition {
-      background: var(--color-addition-bg);
-    }
-
-    .deletion {
-      background: var(--color-deletion-bg);
-    }
-
-    .change-info {
-      padding: 4px 8px;
-      background: var(--color-info-bg);
-      color: #57606a;
-      font-size: 12px;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    @media (max-width: 600px) {
-      .commit-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-      }
-
-      .restore-button {
-        width: 100%;
-        justify-content: center;
-      }
-    }
+    ${cssStyles}
   </style>
 </head>
 <body>
