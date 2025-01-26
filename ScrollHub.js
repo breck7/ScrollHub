@@ -214,6 +214,17 @@ class ScrollHub {
     this.config = fs.existsSync(configPath) ? Particle.fromDisk(configPath) : new Particle()
   }
 
+  async getServerPublicIpsFromDNS() {
+    try {
+      const resolver = new dns.Resolver()
+      resolver.setServers(["8.8.8.8"])
+      return await resolver.resolve4(this.hostname)
+    } catch (err) {
+      console.error(err)
+      return []
+    }
+  }
+
   async startAll() {
     const { rootFolder } = this
     const lastFolder = rootFolder.split("/").pop()
@@ -225,9 +236,9 @@ class ScrollHub {
       .map(iface => iface.address)
       .filter(ip => !ip.includes("::")) // Filter IPv6
 
-    const dnsIps = await this.fetchIpsForDomainFromDns(this.hostname)
-    console.log("Hostname IP lookup results: " + JSON.stringify(dnsIps))
-    this.serverIps = this.serverIps.concat(dnsIps)
+    const publicIps = await this.getServerPublicIpsFromDNS()
+    console.log("Public IPs from DNS: " + JSON.stringify(publicIps))
+    this.serverIps = this.serverIps.concat(publicIps)
 
     this.ensureInstalled()
     this.ensureTemplatesInstalled()
