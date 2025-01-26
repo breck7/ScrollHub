@@ -212,17 +212,23 @@ class ScrollHub {
     this.version = packageJson.version
     const configPath = path.join(hubFolder, `config.scroll`)
     this.config = fs.existsSync(configPath) ? Particle.fromDisk(configPath) : new Particle()
-    this.serverIps = Object.values(os.networkInterfaces())
-      .flat()
-      .map(iface => iface.address)
-      .filter(ip => !ip.includes("::")) // Filter IPv6
   }
 
-  startAll() {
+  async startAll() {
     const { rootFolder } = this
     const lastFolder = rootFolder.split("/").pop()
     process.title = process.title + ` ScrollHub ${lastFolder}`
     this.startTime = Date.now()
+
+    this.serverIps = Object.values(os.networkInterfaces())
+      .flat()
+      .map(iface => iface.address)
+      .filter(ip => !ip.includes("::")) // Filter IPv6
+
+    const dnsIps = await this.fetchIpsForDomainFromDns(this.hostname)
+    console.log("Hostname IP lookup results: " + JSON.stringify(dnsIps))
+    this.serverIps = this.serverIps.concat(dnsIps)
+
     this.ensureInstalled()
     this.ensureTemplatesInstalled()
     this.warmFolderCache()
