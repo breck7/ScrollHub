@@ -1119,8 +1119,8 @@ a ${this.authorDisplayName}
       delete this._files
       this.allFiles = allFiles
       this.useSsl = allData.hasSslCert
-      this.ips = allData.ips
-      this.serverIps = allData.serverIps
+      this.ips = allData.ips || []
+      this.serverIps = allData.serverIps || []
       this.usesCustomDomain = this.ips.some(ip => this.serverIps.includes(ip))
       this.renderFileList()
     } catch (error) {
