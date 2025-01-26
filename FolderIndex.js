@@ -306,7 +306,9 @@ class FolderIndex {
         })
       })
 
+      // Checks for specific and wild card certs
       const hasSslCert = await scrollHub.doesHaveSslCert(folder)
+      const loadedCert = this.scrollHub.getCert(this.scrollHub.makeCertPath(folder))
       const folderLink = scrollHub.getBaseUrlForFolder(folder, scrollHub.hostname, hasSslCert ? "https:" : "http:", scrollHub.isLocalHost)
 
       // Check DNS if folder is a domain
@@ -321,6 +323,7 @@ class FolderIndex {
       const entry = {
         files,
         hasSslCert,
+        loadedCert,
         ips,
         scrollHubVersion: scrollHub.version,
         stats: {

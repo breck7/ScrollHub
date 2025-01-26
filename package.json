@@ -31,6 +31,7 @@
     "ssh": "ssh root@hub.scroll.pub",
     "up": "npm install scroll-cli@latest; cp ~/tryscroll/dist/constants.js public/ide/parsers.js; cp ~/tryscroll/dist/libs.js public/ide/libs.js",
     "deploy": "git push github; git push gitlab; ssh root@hub.scroll.pub 'cd ScrollHub && npm run upgrade'",
+    "beta": "git push github; git push gitlab; ssh root@beta.scroll.pub 'cd ScrollHub && npm run upgrade'",
     "upgrade": "git pull && npm install . && npm install -g scroll-cli prettier && npm install -g . && pm2 restart server && npm run build"
   },
   "prettier": {
