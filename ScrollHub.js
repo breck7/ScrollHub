@@ -2072,7 +2072,7 @@ scrollVersionLink`
     return { folderName }
   }
 
-  loadCert(certPath, hostname) {
+  getCert(certPath, hostname) {
     const keyPath = certPath.replace(/\.crt$/, ".key")
 
     // Check if both cert and key files exist
@@ -2081,7 +2081,6 @@ scrollVersionLink`
         cert: fs.readFileSync(certPath, "utf8"),
         key: fs.readFileSync(keyPath, "utf8")
       }
-      this.certCache.set(hostname, sslOptions) // Cache the cert and key
       return sslOptions
     }
     return false
@@ -2096,17 +2095,14 @@ scrollVersionLink`
   }
 
   loadCertAndKey(hostname) {
-    const { certCache, pendingCerts } = this
+    const { certCache, pendingCerts, folderCache } = this
+    const entry = folderCache[hostname]
+    if (entry && entry.loadedCert) return entry.loadedCert
     if (certCache.has(hostname)) return certCache.get(hostname) // Return from cache if available
-
-    const loadedCert = this.loadCert(this.makeCertPath(hostname), hostname)
-    if (loadedCert) return loadedCert
-
+    // Todo: put matching wild in cache as well?
     const wild = this.getMatchingWildcardCert(hostname)
     if (wild) return wild
-
     if (pendingCerts[hostname]) return
-
     if (this.folderCache[hostname]) {
       this.makeCert(hostname)
       throw new Error(`SSL certificate or key not found for ${hostname}. Attempting to make cert.`)
@@ -2147,7 +2143,8 @@ scrollVersionLink`
     const crtInHubFolder = (await fsp.readdir(hubFolder)).find(f => f.endsWith(".crt"))
     if (crtInHubFolder) {
       const hostname = crtInHubFolder.substr(1).replace(/\.crt$/, "")
-      this.loadCert(path.join(hubFolder, crtInHubFolder), hostname)
+      const sslOptions = this.getCert(path.join(hubFolder, crtInHubFolder), hostname)
+      if (sslOptions) this.certCache.set(hostname, sslOptions)
     }
 
     const pendingCerts = {}
