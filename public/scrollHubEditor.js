@@ -1,7 +1,7 @@
-const getBaseUrlForFolder = (folderName, hostname, protocol) => {
+const getBaseUrlForFolder = (folderName, hostname, protocol, usesCustomDomain) => {
   if (hostname === "localhost" || hostname.startsWith("localhost:")) return `http://${hostname}/${folderName}`
 
-  if (!folderName.includes(".")) return protocol + "//" + hostname + "/" + folderName
+  if (!folderName.includes(".") || !usesCustomDomain) return protocol + "//" + hostname + "/" + folderName
 
   // now it might be a custom domain, serve it as if it is
   // of course, sometimes it would not be
@@ -930,7 +930,7 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 
   get rootUrl() {
     const protocol = this.useSsl ? window.location.protocol : "http:"
-    return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, protocol)
+    return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, protocol, this.usesCustomDomain)
   }
 
   get isPreviewableFile() {
