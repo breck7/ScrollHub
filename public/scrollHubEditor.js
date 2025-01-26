@@ -929,7 +929,8 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
   }
 
   get rootUrl() {
-    const protocol = this.useSsl ? window.location.protocol : "http:"
+    // If we are serving not from a custom domain or we are serving from a custom domain and it has SSL, use SSL.
+    const protocol = this.useSsl || !this.usesCustomDomain ? window.location.protocol : "http:"
     return getBaseUrlForFolder(this.folderName, this.hostnameWithPort, protocol, this.usesCustomDomain)
   }
 
