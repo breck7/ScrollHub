@@ -1119,7 +1119,9 @@ a ${this.authorDisplayName}
       delete this._files
       this.allFiles = allFiles
       this.useSsl = allData.hasSslCert
-      this.dnsPointsHere = allData.dnsPointsHere
+      this.ips = allData.ips
+      this.serverIps = allData.serverIps
+      this.usesCustomDomain = this.ips.some(ip => this.serverIps.includes(ip))
       this.renderFileList()
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)

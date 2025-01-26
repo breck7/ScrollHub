@@ -4,6 +4,7 @@ const fs = require("fs")
 const v8 = require("v8")
 const fsp = require("fs").promises
 const os = require("os")
+const dns = require("dns").promises
 const path = require("path")
 const util = require("util")
 const crypto = require("crypto")
@@ -911,7 +912,9 @@ If you'd like to create this folder, visit our main site to get started.
       const files = await this.getFileList(folderName)
       if (folderEntry.hasSslCert === undefined) folderEntry.hasSslCert = await this.doesHaveSslCert(folderName)
 
-      res.send(JSON.stringify({ files, hasSslCert: folderEntry.hasSslCert }, undefined, 2))
+      const { hasSslCert, ips } = folderEntry
+      const { serverIps } = this
+      res.send(JSON.stringify({ files, hasSslCert, ips, serverIps }, undefined, 2))
     })
 
     app.get("/ls.csv", async (req, res) => {
@@ -1348,6 +1351,14 @@ If you'd like to create this folder, visit our main site to get started.
     return Math.min(100, cpuPercent.toFixed(1))
   }
 
+  async fetchIpsForDomainFromDns(domain) {
+    try {
+      return await dns.resolve4(domain)
+    } catch (error) {
+      return [] // Domain doesn't exist or other DNS error
+    }
+  }
+
   async findAvailableFolderName(prefix = "files") {
     const { folderCache } = this
     let counter = 1
@@ -1369,6 +1380,15 @@ If you'd like to create this folder, visit our main site to get started.
 
     app.get("/edit", async (req, res) => {
       res.redirect("/edit.html")
+    })
+
+    app.get("/dns.htm", async (req, res) => {
+      const domain = req.query.domain
+      const ips = await this.fetchIpsForDomainFromDns(domain)
+      const html = await ScrollToHtml(`Server IPS: ${this.serverIps.join(" ")}
+
+IPS for *${domain}*: ${ips.join(" ")}`)
+      res.send(html)
     })
 
     app.get("/test/:folderName", checkWritePermissions, async (req, res) => {
