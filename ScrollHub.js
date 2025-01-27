@@ -42,6 +42,19 @@ const exists = async filePath => {
   return fileExists
 }
 
+const isGreaterOrEqualVersion = (version1, version2) => {
+  // console.log(isGreaterOrEqualVersion("0.5.1", "0.5.0")); // true
+  // console.log(isGreaterOrEqualVersion("0.5.0", "0.5.0")); // true
+  // console.log(isGreaterOrEqualVersion("0.4.9", "0.5.0")); // false
+  // console.log(isGreaterOrEqualVersion("1.0.0", "0.9.9")); // true
+  const [major1, minor1, patch1] = version1.split(".").map(Number)
+  const [major2, minor2, patch2] = version2.split(".").map(Number)
+
+  if (major1 !== major2) return major1 >= major2
+  if (minor1 !== minor2) return minor1 >= minor2
+  return patch1 >= patch2
+}
+
 const ScrollToHtml = async scrollCode => {
   const page = new ScrollFile(scrollCode)
   await page.fuse()
@@ -1691,9 +1704,11 @@ IPS for *${domain}*: ${ips.join(" ")}`)
     if (await exists(statsPath)) {
       const entry = await fsp.readFile(statsPath, "utf8")
       const parsed = JSON.parse(entry)
-      this.folderCache[folderName] = parsed
-      const cacheOkay = parsed.scrollHubVersion // if we change cache format in future, just check scrollHubVersion here
-      if (cacheOkay) return
+      // If we have a breaking version and need to redo cache, bump this.
+      if (isGreaterOrEqualVersion(parsed.scrollHubVersion, "0.84.0")) {
+        this.folderCache[folderName] = parsed
+        return
+      }
     }
     await this.folderIndex.updateFolder(folderName)
   }
