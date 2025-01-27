@@ -2015,6 +2015,9 @@ IPS for *${domain}*: ${ips.join(" ")}`)
 homeButton
 buildHtml
 metaTags
+meta
+ name format-detection
+ content telephone=no
 theme gazette
 title Folders
 
@@ -2040,10 +2043,6 @@ folders.csv
     orderBy -revised
      rename revised lastRevised
       printTable
-
-meta
- name format-detection
- content telephone=no
 
 endColumns
 tableSearch
