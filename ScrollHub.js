@@ -190,6 +190,26 @@ const sampleConfig = `// Sample config options below. Uncomment and fill out to 
 // claude [anthropic api key]
 // deepseek [deepseek api key]`
 
+// todo: improve Scroll to clean this up
+const sampleCreate = `div
+ class promptSettings
+ select
+  id aiModelSelect
+  option Claude
+   value claude
+  option Deepseek
+   value deepseek
+  option DSReasoner
+   value deepseekreasoner
+ select
+  id tldSelect
+  option Scroll.pub
+   value scroll.pub
+  option Powerhouse.wiki
+   value powerhouse.wiki
+  option FrameHub.pro
+   value framehub.pro`
+
 class ScrollHub {
   constructor(dir = path.join(os.homedir(), "folders")) {
     this.app = express()
@@ -1876,6 +1896,12 @@ IPS for *${domain}*: ${ips.join(" ")}`)
     if (!configExists) {
       fs.writeFileSync(this.configPath, sampleConfig, "utf8")
       execSync(`git add ${this.configPath}; git commit -m 'add config'`, { cwd: this.hubFolder })
+    }
+    const createOptions = path.join(this.hubFolder, "createOptions.scroll")
+    const createFile = await exists(this.createOptions)
+    if (!createFile) {
+      fs.writeFileSync(createOptions, sampleCreate, "utf8")
+      execSync(`git add ${createOptions}; git commit -m 'added create options'`, { cwd: this.hubFolder })
     }
   }
 

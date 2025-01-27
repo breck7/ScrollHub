@@ -23,17 +23,6 @@ css
         }
 
 // Todo: generate these options dynamically on server
-<div class="promptSettings">
-        <select>
-            <option value="claude">Claude</option>
-            <option value="deepseek">Deepseek</option>
-            <option value="deepseekreasoner">DSReasoner</option>
-        </select>
-        <select>
-            <option value="scroll.pub">Scroll.pub</option>
-            <option value="powerhouse.wiki">Powerhouse.wiki</option>
-            <option value="framehub.pro">FrameHub.pro</option>
-        </select>
-</div>
+../createOptions.scroll
 
 inlineJs promptSettings.js

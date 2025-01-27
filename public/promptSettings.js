@@ -1,8 +1,8 @@
 // Constants for localStorage keys and selectors
 const STORAGE_KEY = "promptSettings"
 const SELECTORS = {
-  agentSelect: ".promptSettings select:first-child",
-  tldSelect: ".promptSettings select:last-child",
+  agentSelect: "#aiModelSelect",
+  tldSelect: "#tldSelect",
   form: "#createForm",
   agentInput: 'input[name="agent"]',
   tldInput: 'input[name="tld"]'
