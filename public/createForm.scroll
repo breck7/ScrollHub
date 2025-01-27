@@ -1,6 +1,21 @@
-<div id="spinner"></div>
-<form method="post" action="createFolder.htm" id="createForm">
-<input type="text" id="folderName" name="folderName" placeholder="Folder name"><button class="scrollButton createButton">Create blank folder</button>
-<div id="errorMessage"></div>
+div
+ id spinner
+form
+ method post
+ action createFolder.htm
+ id createForm
+ input
+  type hidden
+  name source
+  value INDEX.HTML
+ input
+  type text
+  id folderName
+  name folderName
+  placeholder Folder name
+ button Create blank folder
+  class scrollButton createButton
+ div
+  id errorMessage
+
 inlineJs create.js
-</form>

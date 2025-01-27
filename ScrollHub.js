@@ -784,7 +784,7 @@ If you'd like to create this folder, visit our main site to get started.
   async handleCreateFolder(newFolderName, req, res) {
     try {
       const result = await this.createFolder(newFolderName)
-      if (result.errorMessage) return this.handleCreateError(res, result)
+      if (result.errorMessage) return this.handleCreateError(req, res, result)
       const { folderName } = result
       this.addStory(req, `created ${folderName}`)
       res.redirect(`/edit.html?folderName=${folderName}&command=showWelcomeMessageCommand`)
@@ -936,7 +936,7 @@ If you'd like to create this folder, visit our main site to get started.
         if (!sourceFolderName) return res.status(500).send("No folder name provided")
         const cloneName = this.getCloneName(sourceFolderName)
         const result = await this.createFolder(sourceFolderName + " " + cloneName)
-        if (result.errorMessage) return this.handleCreateError(res, result)
+        if (result.errorMessage) return this.handleCreateError(req, res, result)
         const { folderName } = result
         this.addStory(req, `cloned ${sourceFolderName} to ${cloneName}`)
         if (req.body.redirect === "false") return res.send(cloneName)
@@ -1897,11 +1897,11 @@ IPS for *${domain}*: ${ips.join(" ")}`)
       fs.writeFileSync(this.configPath, sampleConfig, "utf8")
       execSync(`git add ${this.configPath}; git commit -m 'add config'`, { cwd: this.hubFolder })
     }
-    const createOptions = path.join(this.hubFolder, "createOptions.scroll")
-    const createFile = await exists(this.createOptions)
-    if (!createFile) {
-      fs.writeFileSync(createOptions, sampleCreate, "utf8")
-      execSync(`git add ${createOptions}; git commit -m 'added create options'`, { cwd: this.hubFolder })
+    const createOptionsPath = path.join(this.hubFolder, "createOptions.scroll")
+    const createExists = await exists(createOptionsPath)
+    if (!createExists) {
+      fs.writeFileSync(createOptionsPath, sampleCreate, "utf8")
+      execSync(`git add ${createOptionsPath}; git commit -m 'added create options'`, { cwd: this.hubFolder })
     }
   }
 
@@ -2039,8 +2039,9 @@ scrollVersionLink`
     await execAsync(`scroll build`, { cwd: this.publicFolder })
   }
 
-  handleCreateError(res, params) {
-    res.redirect(`/index.html?${new URLSearchParams(params).toString()}`)
+  handleCreateError(req, res, params) {
+    const url = req.body.source?.includes(".html") ? req.body.source : "index.html"
+    res.redirect(`/${url}?${new URLSearchParams(params).toString()}`)
   }
 
   reservedExtensions = "scroll parsers txt html htm md rb php perl py mjs css json csv tsv psv ssv pdf js jpg jpeg png gif webp svg heic ico mp3 mp4 mov mkv ogg webm ogv woff2 woff ttf otf tiff tif bmp eps git".split(" ")
