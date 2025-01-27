@@ -185,6 +185,11 @@ const sanitizeFolderName = name => {
 
 const sanitizeFileName = name => name.replace(/[^a-zA-Z0-9._\-]/g, "")
 
+const sampleConfig = `// Sample config options below. Uncomment and fill out to use.
+// wildcard *.example.com /etc/letsencrypt/live/example.com/fullchain.pem /etc/letsencrypt/live/example.com/privkey.pem
+// claude [anthropic api key]
+// deepseek [deepseek api key]`
+
 class ScrollHub {
   constructor(dir = path.join(os.homedir(), "folders")) {
     this.app = express()
@@ -200,9 +205,10 @@ class ScrollHub {
     this.rootFolder = dir
     const hubFolder = path.join(dir, ".hub")
     this.hubFolder = hubFolder
+    this.configPath = path.join(hubFolder, `config.scroll`)
     this.publicFolder = path.join(hubFolder, "public")
     this.trashFolder = path.join(hubFolder, "trash")
-    this.globalLogFile = path.join(hubFolder, ".log.txt")
+    this.globalLogFile = path.join(hubFolder, ".global.log.txt")
     this.slowLogFile = path.join(hubFolder, ".slow.txt")
     this.storyLogFile = path.join(hubFolder, ".writes.txt")
     this.folderCache = {}
@@ -210,8 +216,6 @@ class ScrollHub {
     this.folderIndex = new FolderIndex(this)
     this.trafficMonitor = new TrafficMonitor(this.globalLogFile, this.hubFolder)
     this.version = packageJson.version
-    const configPath = path.join(hubFolder, `config.scroll`)
-    this.config = fs.existsSync(configPath) ? Particle.fromDisk(configPath) : new Particle()
   }
 
   async getServerPublicIpsFromDNS() {
@@ -231,6 +235,9 @@ class ScrollHub {
     process.title = process.title + ` ScrollHub ${lastFolder}`
     this.startTime = Date.now()
 
+    await this.ensureInstalled()
+    this.config = Particle.fromDisk(this.configPath)
+
     this.serverIps = Object.values(os.networkInterfaces())
       .flat()
       .map(iface => iface.address)
@@ -240,7 +247,6 @@ class ScrollHub {
     console.log("Public IPs from DNS: " + JSON.stringify(publicIps))
     this.serverIps = this.serverIps.concat(publicIps)
 
-    this.ensureInstalled()
     this.ensureTemplatesInstalled()
     this.warmFolderCache()
     this.initVandalProtection()
@@ -1630,16 +1636,13 @@ IPS for *${domain}*: ${ips.join(" ")}`)
 
   async isScrollFolder(folderName) {
     // We define a Scroll folder as one with at least 1 git commit.
-    if (folderName.startsWith(".")) return false
     const folderPath = path.join(this.rootFolder, folderName)
     try {
       if (await exists(this.getStatsPath(folderName))) return true
-      // Check if folder contains a .git directory
-      const gitPath = path.join(folderPath, ".git")
-      const stats = await fsp.stat(gitPath)
-      if (!stats.isDirectory()) return false
-
-      // Check if there's at least one commit
+      const hasGit = await this.hasGit(folderPath)
+      if (!hasGit) return false
+      // Check if there's at least one commit.
+      // todo: why at least 1 commit?
       const { stdout } = await execAsync("git rev-list --count HEAD", { cwd: folderPath })
       return parseInt(stdout.trim(), 10) > 0
     } catch (err) {}
@@ -1658,6 +1661,7 @@ IPS for *${domain}*: ${ips.join(" ")}`)
     }
     console.log(`Loading ${scrollFolders.length} folders.`)
     await Promise.all(scrollFolders.map(this.getFolderStats.bind(this)))
+    console.log(`${Object.keys(this.folderCache).length} folders loaded.`)
     await this.buildListFile()
     console.log(`Folder cache warmed. Time: ${(Date.now() - this.startTime) / 1000}s`)
   }
@@ -1671,7 +1675,7 @@ IPS for *${domain}*: ${ips.join(" ")}`)
       const cacheOkay = parsed.scrollHubVersion // if we change cache format in future, just check scrollHubVersion here
       if (cacheOkay) return
     }
-    this.folderIndex.updateFolder(folderName)
+    await this.folderIndex.updateFolder(folderName)
   }
 
   initVandalProtection() {
@@ -1849,14 +1853,39 @@ IPS for *${domain}*: ${ips.join(" ")}`)
     fs.appendFile(this.storyLogFile, storyEntry, err => (err ? console.error(err) : ""))
   }
 
-  ensureInstalled() {
+  async ensureInstalled() {
     const { hubFolder, rootFolder, trashFolder, publicFolder } = this
     if (!fs.existsSync(hubFolder)) fs.mkdirSync(hubFolder)
     if (!fs.existsSync(rootFolder)) fs.mkdirSync(rootFolder)
     if (!fs.existsSync(trashFolder)) fs.mkdirSync(trashFolder)
     if (!fs.existsSync(publicFolder)) fs.mkdirSync(publicFolder)
-    // copy public folder
+    // copy public folder. even if it exists, to overwrite it.
     execSync(`cp -R ${path.join(__dirname, "public")} ${this.hubFolder}`)
+    const hasGit = await this.hasGit(this.hubFolder)
+    if (!hasGit) {
+      const dotHubGitIgnorePath = path.join(this.hubFolder, ".gitignore")
+      fs.writeFileSync(
+        dotHubGitIgnorePath,
+        `public/*
+.*`,
+        "utf8"
+      )
+      execSync(`git init; git add .; git add -f ${dotHubGitIgnorePath}; git commit -m 'initial scrollhub start'`, { cwd: this.hubFolder })
+    }
+    const configExists = await exists(this.configPath)
+    if (!configExists) {
+      fs.writeFileSync(this.configPath, sampleConfig, "utf8")
+      execSync(`git add ${this.configPath}; git commit -m 'add config'`, { cwd: this.hubFolder })
+    }
+  }
+
+  async hasGit(folderPath) {
+    const gitPath = path.join(folderPath, ".git")
+    const pathExists = await exists(gitPath)
+    if (!pathExists) return false
+    const stats = await fsp.stat(gitPath)
+    if (!stats.isDirectory()) return false
+    return true
   }
 
   ensureTemplatesInstalled() {
