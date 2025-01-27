@@ -2041,6 +2041,10 @@ folders.csv
      rename revised lastRevised
       printTable
 
+meta
+ name format-detection
+ content telephone=no
+
 endColumns
 tableSearch
 scrollVersionLink`
