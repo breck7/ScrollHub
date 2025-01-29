@@ -196,7 +196,22 @@ const sanitizeFolderName = name => {
   return name.toLowerCase().replace(/[^a-z0-9._]/g, "")
 }
 
-const sanitizeFileName = name => name.replace(/[^a-zA-Z0-9._\-]/g, "")
+const sanitizeFileName = name => {
+  // Split path into components and filter out empty parts and parent directory attempts
+  const parts = name.split("/").filter(part => {
+    // Remove empty parts and any parts containing ".."
+    return part && !part.includes("..")
+  })
+
+  // Sanitize each remaining path component
+  const sanitizedParts = parts.map(part => part.replace(/[^a-zA-Z0-9._\-]/g, ""))
+
+  // If we end up with no valid parts, return empty string
+  if (sanitizedParts.length === 0) return ""
+
+  // Rejoin with forward slashes
+  return sanitizedParts.join("/")
+}
 
 const sampleConfig = `// Sample config options below. Uncomment and fill out to use.
 // wildcard *.example.com /etc/letsencrypt/live/example.com/fullchain.pem /etc/letsencrypt/live/example.com/privkey.pem
@@ -1216,8 +1231,6 @@ If you'd like to create this folder, visit our main site to get started.
       // Which file to insert data to
       const fileName = sanitizeFileName(req.query.fileName)
 
-      // Where to redirect after success
-      const redirectUrl = sanitizeFileName(req.query.redirect)
       const line = parseInt(req.query.line)
       let particles = req.body.particles
 
@@ -1247,7 +1260,7 @@ If you'd like to create this folder, visit our main site to get started.
 
         this.addStory(req, `inserted particles into ${folderPath}/${fileName}`)
         this.buildFolder(folderName)
-        res.redirect(redirectUrl)
+        res.redirect(req.query.redirect)
         this.updateFolderAndBuildList(folderName)
       } catch (error) {
         if (error.code === "ENOENT") {
