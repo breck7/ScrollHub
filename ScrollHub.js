@@ -1705,7 +1705,7 @@ IPS for *${domain}*: ${ips.join(" ")}`)
       const entry = await fsp.readFile(statsPath, "utf8")
       const parsed = JSON.parse(entry)
       // If we have a breaking version and need to redo cache, bump this.
-      if (isGreaterOrEqualVersion(parsed.scrollHubVersion, "0.84.0")) {
+      if (parsed.scrollHubVersion && isGreaterOrEqualVersion(parsed.scrollHubVersion, "0.84.0")) {
         this.folderCache[folderName] = parsed
         return
       }
