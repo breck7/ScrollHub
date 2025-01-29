@@ -219,11 +219,6 @@ class EditorApp {
     return this.codeMirrorInstance.getValue().replace(/\r/g, "")
   }
 
-  showError(message) {
-    console.error(message)
-    this.fileListEl.innerHTML = `<span style="color:red;">${message}</span>`
-  }
-
   get filePath() {
     return `${this.folderName}/${this.fileName}`
   }
@@ -403,9 +398,15 @@ class EditorApp {
     document.querySelector("#spinner").style.display = "block"
   }
 
+  silenceErrorsCommand() {
+    this.silenceErrors = true
+    this.hideSpinner()
+  }
+
   showError(message) {
     clearInterval(this.spinnerInterval)
-    this.showSpinner(message, ` style="color:red;"`)
+    if (this.silenceErrors) this.hideSpinner()
+    else this.showSpinner(message + ` <a onclick="app.silenceErrorsCommand()">[Silence]</a>`, ` style="color:red;"`)
   }
 
   hideSpinner() {
