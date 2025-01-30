@@ -18,6 +18,22 @@ const getCloneUrlForFolder = (folderName, hostname, protocol) => {
   return protocol + "//" + folderName + "/" + folderName + ".git"
 }
 
+const sortFns = {
+  defaultSort: filteredFiles => {
+    // Sort files: .scroll and .parsers first, then others
+    const scrollFiles = filteredFiles.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
+    return scrollFiles.concat(filteredFiles.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+  },
+  recentSort: filteredFiles => {
+    // Sort by most recently modified, most recent first
+    return lodash.orderBy(filteredFiles, file => new Date(app.files[file].mtime), "desc")
+  },
+  sizeSort: filteredFiles => {
+    // Sort by file size, largest first
+    return lodash.orderBy(filteredFiles, file => app.files[file].size, "desc")
+  }
+}
+
 // todo: before unload warn about unsaved changes
 class EditorApp {
   constructor() {
@@ -626,7 +642,8 @@ command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
 ctrl+p refreshParserCommand Editor
 command+3 toggleMetricsCommand Editor
-command+shift+h showHiddenFilesCommand Editor
+command+shift+h showHiddenFilesCommand Files
+nokey9 changeFileSortCommand Files
 command+1 previousFileCommand Navigation
 command+2 nextFileCommand Navigation
 command+/ toggleHelpCommand Hidden
@@ -657,6 +674,30 @@ nokey1 showWelcomeMessageCommand Help`
 
   get showHiddenFiles() {
     return this.getFromLocalOrMemory("showHiddenFiles") === "true"
+  }
+
+  changeFileSortCommand() {
+    const sortOptions = Object.keys(sortFns)
+    const currentIndex = sortOptions.indexOf(this.fileSort)
+    const nextIndex = (currentIndex + 1) % sortOptions.length
+    const newStrategy = sortOptions[nextIndex]
+
+    this.setFromLocalOrMemory("fileSort", newStrategy)
+    delete this._files
+    this.renderFileList()
+
+    // Show feedback to user about the current sort
+    const sortNames = {
+      defaultSort: "Default Sort (.scroll files first)",
+      recentSort: "Most Recently Modified",
+      sizeSort: "Largest Files First"
+    }
+    this.showSpinner(`Sorted by: ${sortNames[newStrategy]}`)
+    setTimeout(() => this.hideSpinner(), 2000)
+  }
+
+  get fileSort() {
+    return this.getFromLocalOrMemory("fileSort") || "defaultSort"
   }
 
   setFromLocalOrMemory(key, value) {
@@ -1145,10 +1186,8 @@ a ${this.authorDisplayName}
 
     // Filter files based on search input
     const filteredFiles = filenames.filter(file => file.toLowerCase().includes(filterValue))
-
-    // Sort files: .scroll and .parsers first, then others
-    const scrollFiles = filteredFiles.filter(file => file.endsWith(".scroll") || file.endsWith(".parsers"))
-    const sorted = scrollFiles.concat(filteredFiles.filter(file => !file.endsWith(".scroll") && !file.endsWith(".parsers")))
+    const sortStrategy = this.fileSort
+    const sorted = sortFns[sortStrategy](filteredFiles)
 
     const fileLinks = sorted.map(file => {
       const stats = files[file]
