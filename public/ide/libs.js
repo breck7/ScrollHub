@@ -15193,7 +15193,7 @@ var ParticlesConstants
 ;(function (ParticlesConstants) {
   ParticlesConstants["extends"] = "extends"
 })(ParticlesConstants || (ParticlesConstants = {}))
-class ParserCombinator {
+class ParserPool {
   constructor(catchAllParser, cueMap = {}, regexTests = undefined) {
     this._catchAllParser = catchAllParser
     this._cueMap = new Map(Object.entries(cueMap))
@@ -15215,13 +15215,13 @@ class ParserCombinator {
     }
     return obj
   }
-  _getParser(line, contextParticle, atomBreakSymbol = TN_WORD_BREAK_SYMBOL) {
+  _getMatchingParser(line, contextParticle, lineNumber, atomBreakSymbol = TN_WORD_BREAK_SYMBOL) {
     return this._getCueMap().get(this._getCue(line, atomBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
   }
   _getCatchAllParser(contextParticle) {
     if (this._catchAllParser) return this._catchAllParser
     const parent = contextParticle.parent
-    if (parent) return parent._getParser()._getCatchAllParser(parent)
+    if (parent) return parent._getParserPool()._getCatchAllParser(parent)
     return contextParticle.constructor
   }
   _getParserFromRegexTests(line) {
@@ -16511,6 +16511,7 @@ class Particle extends AbstractParticle {
   }
   _setSubparticles(content, circularCheckArray) {
     this._clearSubparticles()
+    // todo: is this correct? seems like `new Particle("").length` should be 1, not 0.
     if (!content) return this
     // set from string
     if (typeof content === "string") {
@@ -16563,7 +16564,7 @@ class Particle extends AbstractParticle {
     this._insertLineAndSubparticles(line, subparticles)
   }
   _insertLineAndSubparticles(line, subparticles, index = this.length) {
-    const parser = this._getParser()._getParser(line, this)
+    const parser = this._getParserPool()._getMatchingParser(line, this, index)
     const newParticle = new parser(subparticles, line, this)
     const adjustedIndex = index < 0 ? this.length + index : index
     this._getSubparticlesArray().splice(adjustedIndex, 0, newParticle)
@@ -16573,7 +16574,8 @@ class Particle extends AbstractParticle {
   }
   _insertLines(lines, index = this.length) {
     const parser = this.constructor
-    const newParticle = new parser(lines)
+    const newParticle = new parser()
+    if (typeof lines === "string") newParticle._appendSubparticlesFromString(lines)
     const adjustedIndex = index < 0 ? this.length + index : index
     this._getSubparticlesArray().splice(adjustedIndex, 0, ...newParticle.getSubparticles())
     if (this._cueIndex) this._makeCueIndex(adjustedIndex)
@@ -16602,9 +16604,10 @@ class Particle extends AbstractParticle {
       }
       const lineContent = line.substr(currentIndentCount)
       const parent = parentStack[parentStack.length - 1]
-      const parser = parent._getParser()._getParser(lineContent, parent)
+      const subparticles = parent._getSubparticlesArray()
+      const parser = parent._getParserPool()._getMatchingParser(lineContent, parent, subparticles.length)
       lastParticle = new parser(undefined, lineContent, parent)
-      parent._getSubparticlesArray().push(lastParticle)
+      subparticles.push(lastParticle)
     })
   }
   _getCueIndex() {
@@ -16764,12 +16767,12 @@ class Particle extends AbstractParticle {
   _getGrandParent() {
     return this.isRoot() || this.parent.isRoot() ? undefined : this.parent.parent
   }
-  _getParser() {
-    if (!Particle._parserCombinators.has(this.constructor)) Particle._parserCombinators.set(this.constructor, this.createParserCombinator())
-    return Particle._parserCombinators.get(this.constructor)
+  _getParserPool() {
+    if (!Particle._parserPools.has(this.constructor)) Particle._parserPools.set(this.constructor, this.createParserPool())
+    return Particle._parserPools.get(this.constructor)
   }
-  createParserCombinator() {
-    return new ParserCombinator(this.constructor)
+  createParserPool() {
+    return new ParserPool(this.constructor)
   }
   static _makeUniqueId() {
     if (this._uniqueId === undefined) this._uniqueId = 0
@@ -17737,8 +17740,8 @@ class Particle extends AbstractParticle {
     return particle
   }
 }
-Particle._parserCombinators = new Map()
-Particle.ParserCombinator = ParserCombinator
+Particle._parserPools = new Map()
+Particle.ParserPool = ParserPool
 Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 6.1,3,4.9,1.8,virginica
 5.6,2.7,4.2,1.3,versicolor
@@ -17750,7 +17753,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "100.3.0"
+Particle.getVersion = () => "101.1.1"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -18260,8 +18263,8 @@ class ParserBackedParticle extends Particle {
     this._cache_paintParticles = new Particle(this.toPaintParticles())
     this._cache_programAtomTypeStringMTime = particleMTime
   }
-  createParserCombinator() {
-    return this.isRoot() ? new Particle.ParserCombinator(BlobParser) : new Particle.ParserCombinator(this.parent._getParser()._getCatchAllParser(this.parent), {})
+  createParserPool() {
+    return this.isRoot() ? new Particle.ParserPool(BlobParser) : new Particle.ParserPool(this.parent._getParserPool()._getCatchAllParser(this.parent), {})
   }
   get parserId() {
     return this.definition.parserIdFromDefinition
@@ -18450,8 +18453,8 @@ ${indent}${closeSubparticlesString}`
   }
 }
 class BlobParser extends ParserBackedParticle {
-  createParserCombinator() {
-    return new Particle.ParserCombinator(BlobParser, {})
+  createParserPool() {
+    return new Particle.ParserPool(BlobParser, {})
   }
   getErrors() {
     return []
@@ -18459,8 +18462,8 @@ class BlobParser extends ParserBackedParticle {
 }
 // todo: can we remove this? hard to extend.
 class UnknownParserParticle extends ParserBackedParticle {
-  createParserCombinator() {
-    return new Particle.ParserCombinator(UnknownParserParticle, {})
+  createParserPool() {
+    return new Particle.ParserPool(UnknownParserParticle, {})
   }
   getErrors() {
     return [new UnknownParserError(this)]
@@ -18869,7 +18872,7 @@ class UnknownParserError extends AbstractParticleError {
   get message() {
     const particle = this.getParticle()
     const parentParticle = particle.parent
-    const options = parentParticle._getParser().getCueOptions()
+    const options = parentParticle._getParserPool().getCueOptions()
     return super.message + ` Invalid parser "${particle.cue}". Valid parsers are: ${Utils._listToEnglishText(options, 7)}.`
   }
   get atomSuggestion() {
@@ -19039,7 +19042,7 @@ class ParsersEnumTestParticle extends AbstractParsersAtomTestParser {
   }
 }
 class atomTypeDefinitionParser extends AbstractExtendibleParticle {
-  createParserCombinator() {
+  createParserPool() {
     const types = {}
     types[ParsersConstants.regex] = ParsersRegexTestParser
     types[ParsersConstants.reservedAtoms] = ParsersReservedAtomsTestParser
@@ -19052,7 +19055,7 @@ class atomTypeDefinitionParser extends AbstractExtendibleParticle {
     types[ParsersConstants.max] = Particle
     types[ParsersConstants.description] = Particle
     types[ParsersConstants.extends] = Particle
-    return new Particle.ParserCombinator(undefined, types)
+    return new Particle.ParserPool(undefined, types)
   }
   get id() {
     return this.getAtom(0)
@@ -19232,7 +19235,7 @@ class OmnifixAtomParser extends AbstractAtomParser {
 }
 class ParsersExampleParser extends Particle {}
 class ParsersCompilerParser extends Particle {
-  createParserCombinator() {
+  createParserPool() {
     const types = [
       ParsersConstantsCompiler.stringTemplate,
       ParsersConstantsCompiler.indentCharacter,
@@ -19245,7 +19248,7 @@ class ParsersCompilerParser extends Particle {
     types.forEach(type => {
       map[type] = Particle
     })
-    return new Particle.ParserCombinator(undefined, map)
+    return new Particle.ParserPool(undefined, map)
   }
 }
 class AbstractParserConstantParser extends Particle {
@@ -19283,7 +19286,7 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
     super(...arguments)
     this._isLooping = false
   }
-  createParserCombinator() {
+  createParserPool() {
     // todo: some of these should just be on nonRootParticles
     const types = [
       ParsersConstants.popularity,
@@ -19322,7 +19325,7 @@ class AbstractParserDefinitionParser extends AbstractExtendibleParticle {
     map[ParsersConstantsConstantTypes.float] = ParsersParserConstantFloat
     map[ParsersConstants.compilerParser] = ParsersCompilerParser
     map[ParsersConstants.example] = ParsersExampleParser
-    return new Particle.ParserCombinator(undefined, map, [{ regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser }])
+    return new Particle.ParserPool(undefined, map, [{ regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser }])
   }
   toTypeScriptInterface(used = new Set()) {
     let subparticlesInterfaces = []
@@ -19408,7 +19411,7 @@ ${properties.join("\n")}
   }
   // todo: remove
   get runTimeCuesInScope() {
-    return this._getParser().getCueOptions()
+    return this._getParserPool().getCueOptions()
   }
   _getMyAtomTypeDefs() {
     const requiredAtoms = this.get(ParsersConstants.atoms)
@@ -19521,7 +19524,7 @@ ${properties.join("\n")}
   get parserAsJavascript() {
     if (this._isBlobParser())
       // todo: do we need this?
-      return "createParserCombinator() { return new Particle.ParserCombinator(this._getBlobParserCatchAllParser())}"
+      return "createParserPool() { return new Particle.ParserPool(this._getBlobParserCatchAllParser())}"
     const parserInfo = this._createParserInfo(this._getMyInScopeParserIds())
     const myCueMap = parserInfo.cueMap
     const regexRules = parserInfo.regexTests
@@ -19531,7 +19534,7 @@ ${properties.join("\n")}
     const hasCues = cues.length
     const catchAllParser = this.catchAllParserToJavascript
     if (!hasCues && !catchAllParser && !regexRules.length) return ""
-    const cuesStr = hasCues ? `Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {` + cues.map(cue => `"${cue}" : ${myCueMap[cue].parserIdFromDefinition}`).join(",\n") + "})" : "undefined"
+    const cuesStr = hasCues ? `Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {` + cues.map(cue => `"${cue}" : ${myCueMap[cue].parserIdFromDefinition}`).join(",\n") + "})" : "undefined"
     const regexStr = regexRules.length
       ? `[${regexRules
           .map(rule => {
@@ -19541,8 +19544,8 @@ ${properties.join("\n")}
       : "undefined"
     const catchAllStr = catchAllParser ? catchAllParser : this._amIRoot() ? `this._getBlobParserCatchAllParser()` : "undefined"
     const scopedParserJavascript = this.myScopedParserDefinitions.map(def => def.asJavascriptClass).join("\n\n")
-    return `createParserCombinator() {${scopedParserJavascript}
-  return new Particle.ParserCombinator(${catchAllStr}, ${cuesStr}, ${regexStr})
+    return `createParserPool() {${scopedParserJavascript}
+  return new Particle.ParserPool(${catchAllStr}, ${cuesStr}, ${regexStr})
   }`
   }
   get myScopedParserDefinitions() {
@@ -19784,10 +19787,10 @@ class parserDefinitionParser extends AbstractParserDefinitionParser {}
 // HandParsersProgram is a constructor that takes a parsers file, and builds a new
 // constructor for new language that takes files in that language to execute, compile, etc.
 class HandParsersProgram extends AbstractParserDefinitionParser {
-  createParserCombinator() {
+  createParserPool() {
     const map = {}
     map[ParsersConstants.comment] = Particle
-    return new Particle.ParserCombinator(UnknownParserParticle, map, [
+    return new Particle.ParserPool(UnknownParserParticle, map, [
       { regex: HandParsersProgram.blankLineRegex, parser: Particle },
       { regex: HandParsersProgram.parserFullRegex, parser: parserDefinitionParser },
       { regex: HandParsersProgram.atomTypeFullRegex, parser: atomTypeDefinitionParser }
@@ -20288,8 +20291,8 @@ window.UnknownParsersProgram = UnknownParsersProgram
 
 {
   class parsersParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllErrorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), { "//": slashCommentParser }), [
+    createParserPool() {
+      return new Particle.ParserPool(catchAllErrorParser, Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), { "//": slashCommentParser }), [
         { regex: /^$/, parser: blankLineParser },
         { regex: /^[a-zA-Z0-9_]+Atom$/, parser: atomTypeDefinitionParser },
         { regex: /^[a-zA-Z0-9_]+Parser$/, parser: parserDefinitionParser }
@@ -20939,8 +20942,8 @@ extendsAtomTypeParser
   }
 
   class parsersStringParser extends abstractConstantParser {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllMultilineStringConstantParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(catchAllMultilineStringConstantParser, undefined, undefined)
     }
     get cueAtom() {
       return this.getAtom(0)
@@ -21004,10 +21007,10 @@ extendsAtomTypeParser
   }
 
   class parsersCompilerParser extends abstractParserRuleParser {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(
+    createParserPool() {
+      return new Particle.ParserPool(
         undefined,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {
           closeSubparticles: closeSubparticlesParser,
           indentCharacter: indentCharacterParser,
           catchAllAtomDelimiter: catchAllAtomDelimiterParser,
@@ -21036,8 +21039,8 @@ extendsAtomTypeParser
   }
 
   class parsersExampleParser extends abstractParserRuleParser {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllExampleLineParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(catchAllExampleLineParser, undefined, undefined)
     }
     get exampleAnyAtom() {
       return this.getAtomsFrom(0)
@@ -21069,8 +21072,8 @@ extendsAtomTypeParser
   }
 
   class parsersJavascriptParser extends abstractParserRuleParser {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllJavascriptCodeLineParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(catchAllJavascriptCodeLineParser, undefined, undefined)
     }
     format() {
       if (this.isNodeJs()) {
@@ -21162,8 +21165,8 @@ extendsAtomTypeParser
   }
 
   class catchAllExampleLineParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllExampleLineParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(catchAllExampleLineParser, undefined, undefined)
     }
     get exampleAnyAtom() {
       return this.getAtom(0)
@@ -21174,8 +21177,8 @@ extendsAtomTypeParser
   }
 
   class catchAllJavascriptCodeLineParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllJavascriptCodeLineParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(catchAllJavascriptCodeLineParser, undefined, undefined)
     }
     get javascriptCodeAtom() {
       return this.getAtomsFrom(0)
@@ -21183,8 +21186,8 @@ extendsAtomTypeParser
   }
 
   class catchAllMultilineStringConstantParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(catchAllMultilineStringConstantParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(catchAllMultilineStringConstantParser, undefined, undefined)
     }
     get stringAtom() {
       return this.getAtom(0)
@@ -21195,10 +21198,10 @@ extendsAtomTypeParser
   }
 
   class atomTypeDefinitionParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(
+    createParserPool() {
+      return new Particle.ParserPool(
         undefined,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {
           description: atomTypeDescriptionParser,
           enumFromAtomTypes: enumFromAtomTypesParser,
           enum: parsersEnumParser,
@@ -21283,10 +21286,10 @@ extendsAtomTypeParser
   }
 
   class parserDefinitionParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(
+    createParserPool() {
+      return new Particle.ParserPool(
         catchAllErrorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {
           boolean: parsersBooleanParser,
           float: parsersFloatParser,
           int: parsersIntParser,
@@ -21353,8 +21356,8 @@ extendsAtomTypeParser
   }
 
   class slashCommentParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(commentLineParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(commentLineParser, undefined, undefined)
     }
     get commentAtom() {
       return this.getAtomsFrom(0)
@@ -22046,12 +22049,13 @@ class Fusion {
     // If its a parsers file, it will have no content, just parsers (and maybe imports).
     // The parsers will already have been processed. We can skip them
     const stripParsers = absoluteFilePathOrUrl.endsWith(PARSERS_EXTENSION)
-    const processedCode = stripParsers
+    let processedCode = stripParsers
       ? code
           .split("\n")
           .filter(line => importRegex.test(line))
           .join("\n")
       : code
+    const lineCount = processedCode.split("\n").length
     const filepathsWithParserDefinitions = []
     if (await this._doesFileHaveParsersDefinitions(absoluteFilePathOrUrl)) {
       filepathsWithParserDefinitions.push(absoluteFilePathOrUrl)
@@ -22063,7 +22067,8 @@ class Fusion {
         isImportOnly,
         importFilePaths: [],
         filepathsWithParserDefinitions,
-        exists
+        exists,
+        lineCount
       }
     }
     const particle = new Particle(processedCode)
@@ -22082,7 +22087,8 @@ class Fusion {
           exists: true,
           absoluteImportFilePath,
           importParticle,
-          circularImportError
+          circularImportError,
+          lineCount
         }
       }
       // todo: race conditions
@@ -22091,7 +22097,8 @@ class Fusion {
         expandedFile,
         exists,
         absoluteImportFilePath,
-        importParticle
+        importParticle,
+        lineCount: expandedFile.lineCount
       }
     })
     const imported = await Promise.all(importResults)
@@ -22100,11 +22107,14 @@ class Fusion {
     let footers = []
     let hasCircularImportError = false
     imported.forEach(importResults => {
-      const { importParticle, absoluteImportFilePath, expandedFile, exists, circularImportError } = importResults
+      const { importParticle, absoluteImportFilePath, expandedFile, exists, circularImportError, lineCount } = importResults
       importFilePaths.push(absoluteImportFilePath)
       importFilePaths = importFilePaths.concat(expandedFile.importFilePaths)
+      const originalLine = importParticle.getLine()
       importParticle.setLine("imported " + absoluteImportFilePath)
       importParticle.set("exists", `${exists}`)
+      importParticle.set("original", `${originalLine}`)
+      importParticle.set("lines", `${lineCount}`)
       if (circularImportError) {
         hasCircularImportError = true
         importParticle.set("circularImportError", circularImportError)
@@ -22119,6 +22129,7 @@ class Fusion {
       importFilePaths,
       isImportOnly,
       fused: particle.toString(),
+      lineCount,
       footers,
       circularImportError: hasCircularImportError,
       exists: allImportsExist,
@@ -22208,6 +22219,34 @@ class Fusion {
     if (!hit) console.log(`Warning: '${folderPath}' not yet loaded in '${this.fusionId}'. Requested by '${requester.filePath}'`)
     return hit || []
   }
+  makeSourceMap(fileName, fusedCode) {
+    const fileStack = [{ fileName, lineNumber: 0, linesLeft: fusedCode.split("\n").length }]
+    return new Particle(fusedCode)
+      .map(particle => {
+        const currentFile = fileStack[fileStack.length - 1]
+        currentFile.lineNumber++
+        currentFile.linesLeft--
+        if (particle.cue === "imported") {
+          const linesLeft = parseInt(particle.get("lines"))
+          const original = particle.get("original")
+          fileStack.push({ fileName: particle.atoms[1], lineNumber: 0, linesLeft })
+          return `${currentFile.fileName}:${currentFile.lineNumber} ${original}\n` + particle.map(line => `${currentFile.fileName}:${currentFile.lineNumber}  ${line}`).join("\n")
+        }
+        if (!currentFile.linesLeft) fileStack.pop()
+        return particle
+          .toString()
+          .split("\n")
+          .map((line, index) => {
+            if (index) {
+              currentFile.lineNumber++
+              currentFile.linesLeft--
+            }
+            return `${currentFile.fileName}:${currentFile.lineNumber} ${line}`
+          })
+          .join("\n")
+      })
+      .join("\n")
+  }
   async getLoadedFilesInFolder(folderPath, extension) {
     folderPath = Utils.ensureFolderEndsInSlash(folderPath)
     if (this.folderCache[folderPath]) return this.folderCache[folderPath]
@@ -22225,10 +22264,10 @@ window.FusionFile = FusionFile
 
 {
   class stumpParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(
+    createParserPool() {
+      return new Particle.ParserPool(
         errorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {
           blockquote: htmlTagParser,
           colgroup: htmlTagParser,
           datalist: htmlTagParser,
@@ -22639,10 +22678,10 @@ bernParser
   }
 
   class htmlTagParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(
+    createParserPool() {
+      return new Particle.ParserPool(
         undefined,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {
           blockquote: htmlTagParser,
           colgroup: htmlTagParser,
           datalist: htmlTagParser,
@@ -23113,8 +23152,8 @@ bernParser
   }
 
   class htmlAttributeParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(errorParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(errorParser, undefined, undefined)
     }
     get htmlAttributeNameAtom() {
       return this.getAtom(0)
@@ -23146,8 +23185,8 @@ bernParser
   }
 
   class lineOfHtmlContentParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(lineOfHtmlContentParser, undefined, undefined)
     }
     get anyHtmlContentAtom() {
       return this.getAtomsFrom(0)
@@ -23161,8 +23200,8 @@ bernParser
   }
 
   class bernParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(lineOfHtmlContentParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(lineOfHtmlContentParser, undefined, undefined)
     }
     get bernKeywordAtom() {
       return this.getAtom(0)
@@ -23184,8 +23223,8 @@ bernParser
 
 {
   class hakonParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(selectorParser, Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), { comment: commentParser }), undefined)
+    createParserPool() {
+      return new Particle.ParserPool(selectorParser, Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), { comment: commentParser }), undefined)
     }
     getSelector() {
       return ""
@@ -23304,8 +23343,8 @@ selectorParser
   }
 
   class propertyParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(errorParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(errorParser, undefined, undefined)
     }
     get propertyNameAtom() {
       return this.getAtom(0)
@@ -23327,8 +23366,8 @@ selectorParser
   }
 
   class errorParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(errorParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(errorParser, undefined, undefined)
     }
     getErrors() {
       return this._getErrorParserErrors()
@@ -23339,8 +23378,8 @@ selectorParser
   }
 
   class commentParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(commentParser, undefined, undefined)
+    createParserPool() {
+      return new Particle.ParserPool(commentParser, undefined, undefined)
     }
     get commentKeywordAtom() {
       return this.getAtom(0)
@@ -23351,10 +23390,10 @@ selectorParser
   }
 
   class selectorParser extends ParserBackedParticle {
-    createParserCombinator() {
-      return new Particle.ParserCombinator(
+    createParserPool() {
+      return new Particle.ParserPool(
         selectorParser,
-        Object.assign(Object.assign({}, super.createParserCombinator()._getCueMapAsObject()), {
+        Object.assign(Object.assign({}, super.createParserPool()._getCueMapAsObject()), {
           "border-bottom-right-radius": propertyParser,
           "transition-timing-function": propertyParser,
           "animation-iteration-count": propertyParser,
