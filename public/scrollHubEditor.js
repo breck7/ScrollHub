@@ -148,14 +148,14 @@ class EditorApp {
       // Use custom scroll parser mode with its autocomplete
       this.codeMirrorInstance = new ParsersCodeMirrorMode(mode, () => this.parser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(textarea, {
         lineWrapping: true,
-        lineNumbers: false,
+        lineNumbers: this.showLineNumbers,
         mode
       })
     } else {
       // Use standard CodeMirror with appropriate mode and hint addons
       this.codeMirrorInstance = CodeMirror.fromTextArea(textarea, {
         lineWrapping: true,
-        lineNumbers: false,
+        lineNumbers: this.showLineNumbers,
         mode
       })
     }
@@ -209,6 +209,15 @@ class EditorApp {
     this.initCodeMirror(mode)
     this.codeMirrorInstance.setValue(currentContent)
     this.mode = mode
+  }
+
+  get showLineNumbers() {
+    return this.getFromLocalOrMemory("showLineNumbers") === "true"
+  }
+
+  toggleLineNumbersCommand() {
+    this.setFromLocalOrMemory("showLineNumbers", !this.showLineNumbers)
+    this.codeMirrorInstance.setOption("lineNumbers", this.showLineNumbers)
   }
 
   toggleAutocompleteCommand() {
@@ -640,6 +649,7 @@ nokey5 listSubfoldersCommand Folder
 nokey7 showGitStatusCommand Folder
 command+. toggleFocusModeCommand Editor
 shift+t toggleThemeCommand Editor
+nokey91 toggleLineNumbersCommand Editor
 ctrl+p refreshParserCommand Editor
 command+3 toggleMetricsCommand Editor
 command+shift+h showHiddenFilesCommand Files
