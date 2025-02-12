@@ -18,6 +18,9 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.85.0 2/12/2025
+🎉 upgraded Scroll and ScrollSDK
+
 📦 0.84.0 1/27/2025
 🎉 various improvements
 🏥 various fixes

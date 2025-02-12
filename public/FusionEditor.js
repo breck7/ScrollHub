@@ -43,7 +43,7 @@ class FusionEditor {
   async makeFusedFile(code, filename) {
     const { ScrollFile, fs } = this
     this.fakeFs[filename] = code
-    delete fs._expandedImportCache[filename] // todo: cleanup
+    delete fs._parsersExpandersCache[filename] // todo: cleanup
     const file = new ScrollFile(code, filename, fs)
     await file.fuse()
     return file
