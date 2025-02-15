@@ -642,6 +642,7 @@ command+p formatFileCommand File
 command+h showFileHistoryCommand File
 command+h showFileBlameCommand File
 command+b buildFolderAndRefreshCommand Folder
+command+shift+f searchFolderCommand Folder
 nokey2 exportForPromptCommand Folder
 nokey4 testFolderCommand Folder
 nokey6 formatFolderCommand Folder
@@ -668,6 +669,55 @@ nokey1 showWelcomeMessageCommand Help`
 
   get theme() {
     return localStorage.getItem("editorTheme") || "light"
+  }
+
+  async searchFolderCommand(event) {
+    const query = prompt("Enter search query:")
+    if (!query) return
+
+    try {
+      this.showSpinnerWithStopwatch("Searching...")
+      const response = await fetch(`/search.htm?folderName=${this.folderName}&query=${encodeURIComponent(query)}`)
+      if (!response.ok) throw new Error(await response.text())
+
+      const results = await response.text()
+      const resultsArray = results.split("\n").filter(line => line.trim())
+
+      // Create modal content with formatted results
+      const modalContent = `
+        <div class="search-results">
+          <h3>Search Results for: "${query}"</h3>
+          <div class="search-results-container" style="max-height: 70vh; overflow-y: auto;">
+            ${resultsArray
+              .map(line => {
+                // Parse the ripgrep output line (format: "filename:line_number:content")
+                const [file, lineNum, ...contentParts] = line.split(":")
+                const content = contentParts.join(":") // Rejoin content in case it contains colons
+
+                return `
+                <div class="search-result-item" style="margin: 10px 0; padding: 10px; border-bottom: 1px solid #eee;">
+                  <div>
+                    <a href="#" 
+                       onclick="app.openFile('${file}'); return false;" 
+                       style="text-decoration: none; font-weight: bold;">
+                      ${file}
+                    </a>
+                    <span style="margin-left: 10px;">Line ${lineNum}</span>
+                  </div>
+                  <pre style="margin: 5px 0 0 20px; padding: 5px; white-space: pre-wrap;">${content}</pre>
+                </div>`
+              })
+              .join("")}
+          </div>
+        </div>
+      `
+
+      this.hideSpinner()
+      this.openModal(modalContent, "search", event)
+    } catch (error) {
+      console.error("Search error:", error)
+      this.showError("Search failed: " + error.message)
+    }
   }
 
   toggleThemeCommand() {

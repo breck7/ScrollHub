@@ -1556,6 +1556,60 @@ IPS for *${domain}*: ${ips.join(" ")}`)
       const fileName = req.query.fileName.replace(/[^a-zA-Z0-9\/_.-]/g, "")
       await this.runCommand(req, res, "git blame " + fileName)
     })
+
+    app.get("/search.htm", async (req, res) => {
+      const folderName = this.getFolderName(req)
+      const { query } = req.query
+
+      if (!query) return res.status(400).send("Search query is required")
+
+      const { rootFolder, folderCache } = this
+
+      // If folder specified, search only that folder
+      if (!folderCache[folderName]) return res.status(404).send("Folder not found")
+
+      const searchPath = path.join(rootFolder, folderName)
+      res.setHeader("Content-Type", "text/plain")
+
+      try {
+        // Sanitize the search query to prevent command injection
+        const sanitizedQuery = query.replace(/[;&|`$]/g, "")
+
+        // Create a transform stream to modify the output
+        const transform = new require("stream").Transform({
+          transform(chunk, encoding, callback) {
+            let line = chunk.toString()
+            // Replace the full path with the relative path
+            line = line.replace(searchPath + "/", "")
+            callback(null, line)
+          }
+        })
+
+        // Construct and execute the ripgrep command
+        const rgCommand = `rg -i --line-number --color never "${sanitizedQuery}" ${searchPath}`
+
+        const child = spawn(rgCommand, [], {
+          shell: true,
+          cwd: searchPath
+        })
+
+        // Pipe through transform stream to modify paths
+        child.stdout.pipe(transform).pipe(res)
+        child.stderr.pipe(res)
+
+        await new Promise((resolve, reject) => {
+          child.on("close", code => {
+            if (code === 0 || code === 1)
+              resolve() // rg returns 1 when no matches found
+            else reject(new Error(`Search failed with code ${code}`))
+          })
+          child.on("error", reject)
+        })
+      } catch (error) {
+        console.error(`Error running search:`, error)
+        res.end(`\nError: ${error.message}`)
+      }
+    })
   }
 
   async runScrollCommand(req, res, command) {
