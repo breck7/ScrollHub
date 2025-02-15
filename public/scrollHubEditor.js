@@ -994,10 +994,14 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 
   updatePreviewIFrame() {
     const { rootUrl, folderName } = this
-    this.previewIFrame = document.querySelector(".previewIFrame")
-
-    if (this.isPreviewableFile) this.previewIFrame.src = this.permalink
-    else this.previewIFrame.src = "about:blank"
+    const oldIframe = document.querySelector(".previewIFrame")
+    const newIframe = document.createElement("iframe")
+    newIframe.className = "previewIFrame"
+    newIframe.allow = ""
+    newIframe.sandbox = "allow-scripts"
+    newIframe.src = this.isPreviewableFile ? this.permalink : "about:blank"
+    oldIframe.replaceWith(newIframe)
+    this.previewIFrame = newIframe
 
     this.updateVisitLink()
     document.title = `Editing ${folderName}`
