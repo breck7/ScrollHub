@@ -14625,17 +14625,12 @@ Utils.getRange = (startIndex, endIndexExclusive, increment = 1) => {
   return range
 }
 Utils.MAX_INT = Math.pow(2, 32) - 1
-window.Utils = Utils
-;
-
 // https://github.com/browserify/path-browserify/blob/master/index.js
-
-function assertPath(path) {
+function posix_assertPath(path) {
   if (typeof path !== "string") {
     throw new TypeError("Path must be a string. Received " + JSON.stringify(path))
   }
 }
-
 // Resolves . and .. elements in a path with directory names
 function normalizeStringPosix(path, allowAboveRoot) {
   var res = ""
@@ -14694,8 +14689,7 @@ function normalizeStringPosix(path, allowAboveRoot) {
   }
   return res
 }
-
-function _format(sep, pathObject) {
+function _posixFormat(sep, pathObject) {
   var dir = pathObject.dir || pathObject.root
   var base = pathObject.base || (pathObject.name || "") + (pathObject.ext || "")
   if (!dir) {
@@ -14706,14 +14700,12 @@ function _format(sep, pathObject) {
   }
   return dir + sep + base
 }
-
 var posix = {
   // path.resolve([from ...], to)
   resolve: function resolve() {
     var resolvedPath = ""
     var resolvedAbsolute = false
     var cwd
-
     for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
       var path
       if (i >= 0) path = arguments[i]
@@ -14721,24 +14713,18 @@ var posix = {
         if (cwd === undefined) cwd = process.cwd()
         path = cwd
       }
-
-      assertPath(path)
-
+      posix_assertPath(path)
       // Skip empty entries
       if (path.length === 0) {
         continue
       }
-
       resolvedPath = path + "/" + resolvedPath
       resolvedAbsolute = path.charCodeAt(0) === 47 /*/*/
     }
-
     // At this point the path should be resolved to a full absolute path, but
     // handle relative paths to be safe (might happen when process.cwd() fails)
-
     // Normalize the path
     resolvedPath = normalizeStringPosix(resolvedPath, !resolvedAbsolute)
-
     if (resolvedAbsolute) {
       if (resolvedPath.length > 0) return "/" + resolvedPath
       else return "/"
@@ -14748,36 +14734,28 @@ var posix = {
       return "."
     }
   },
-
   normalize: function normalize(path) {
-    assertPath(path)
-
+    posix_assertPath(path)
     if (path.length === 0) return "."
-
     var isAbsolute = path.charCodeAt(0) === 47 /*/*/
     var trailingSeparator = path.charCodeAt(path.length - 1) === 47 /*/*/
-
     // Normalize the path
     path = normalizeStringPosix(path, !isAbsolute)
-
     if (path.length === 0 && !isAbsolute) path = "."
     if (path.length > 0 && trailingSeparator) path += "/"
-
     if (isAbsolute) return "/" + path
     return path
   },
-
   isAbsolute: function isAbsolute(path) {
-    assertPath(path)
+    posix_assertPath(path)
     return path.length > 0 && path.charCodeAt(0) === 47 /*/*/
   },
-
   join: function join() {
     if (arguments.length === 0) return "."
     var joined
     for (var i = 0; i < arguments.length; ++i) {
       var arg = arguments[i]
-      assertPath(arg)
+      posix_assertPath(arg)
       if (arg.length > 0) {
         if (joined === undefined) joined = arg
         else joined += "/" + arg
@@ -14786,18 +14764,13 @@ var posix = {
     if (joined === undefined) return "."
     return posix.normalize(joined)
   },
-
   relative: function relative(from, to) {
-    assertPath(from)
-    assertPath(to)
-
+    posix_assertPath(from)
+    posix_assertPath(to)
     if (from === to) return ""
-
     from = posix.resolve(from)
     to = posix.resolve(to)
-
     if (from === to) return ""
-
     // Trim any leading backslashes
     var fromStart = 1
     for (; fromStart < from.length; ++fromStart) {
@@ -14805,7 +14778,6 @@ var posix = {
     }
     var fromEnd = from.length
     var fromLen = fromEnd - fromStart
-
     // Trim any leading backslashes
     var toStart = 1
     for (; toStart < to.length; ++toStart) {
@@ -14813,7 +14785,6 @@ var posix = {
     }
     var toEnd = to.length
     var toLen = toEnd - toStart
-
     // Compare paths to find the longest common path from root
     var length = fromLen < toLen ? fromLen : toLen
     var lastCommonSep = -1
@@ -14848,7 +14819,6 @@ var posix = {
       if (fromCode !== toCode) break
       else if (fromCode === 47 /*/*/) lastCommonSep = i
     }
-
     var out = ""
     // Generate the relative path based on the path difference between `to`
     // and `from`
@@ -14858,7 +14828,6 @@ var posix = {
         else out += "/.."
       }
     }
-
     // Lastly, append the rest of the destination (`to`) path that comes after
     // the common path parts
     if (out.length > 0) return out + to.slice(toStart + lastCommonSep)
@@ -14868,13 +14837,11 @@ var posix = {
       return to.slice(toStart)
     }
   },
-
   _makeLong: function _makeLong(path) {
     return path
   },
-
   dirname: function dirname(path) {
-    assertPath(path)
+    posix_assertPath(path)
     if (path.length === 0) return "."
     var code = path.charCodeAt(0)
     var hasRoot = code === 47 /*/*/
@@ -14892,21 +14859,17 @@ var posix = {
         matchedSlash = false
       }
     }
-
     if (end === -1) return hasRoot ? "/" : "."
     if (hasRoot && end === 1) return "//"
     return path.slice(0, end)
   },
-
   basename: function basename(path, ext) {
     if (ext !== undefined && typeof ext !== "string") throw new TypeError('"ext" argument must be a string')
-    assertPath(path)
-
+    posix_assertPath(path)
     var start = 0
     var end = -1
     var matchedSlash = true
     var i
-
     if (ext !== undefined && ext.length > 0 && ext.length <= path.length) {
       if (ext.length === path.length && ext === path) return ""
       var extIdx = ext.length - 1
@@ -14944,7 +14907,6 @@ var posix = {
           }
         }
       }
-
       if (start === end) end = firstNonSlashEnd
       else if (end === -1) end = path.length
       return path.slice(start, end)
@@ -14964,14 +14926,12 @@ var posix = {
           end = i + 1
         }
       }
-
       if (end === -1) return ""
       return path.slice(start, end)
     }
   },
-
   extname: function extname(path) {
-    assertPath(path)
+    posix_assertPath(path)
     var startDot = -1
     var startPart = 0
     var end = -1
@@ -15006,7 +14966,6 @@ var posix = {
         preDotState = -1
       }
     }
-
     if (
       startDot === -1 ||
       end === -1 ||
@@ -15019,17 +14978,14 @@ var posix = {
     }
     return path.slice(startDot, end)
   },
-
   format: function format(pathObject) {
     if (pathObject === null || typeof pathObject !== "object") {
       throw new TypeError('The "pathObject" argument must be of type Object. Received type ' + typeof pathObject)
     }
-    return _format("/", pathObject)
+    return _posixFormat("/", pathObject)
   },
-
   parse: function parse(path) {
-    assertPath(path)
-
+    posix_assertPath(path)
     var ret = { root: "", dir: "", base: "", ext: "", name: "" }
     if (path.length === 0) return ret
     var code = path.charCodeAt(0)
@@ -15046,11 +15002,9 @@ var posix = {
     var end = -1
     var matchedSlash = true
     var i = path.length - 1
-
     // Track the state of characters (if any) we see before our first dot and
     // after any path separator we find
     var preDotState = 0
-
     // Get non-dir info
     for (; i >= start; --i) {
       code = path.charCodeAt(i)
@@ -15079,7 +15033,6 @@ var posix = {
         preDotState = -1
       }
     }
-
     if (
       startDot === -1 ||
       end === -1 ||
@@ -15102,28 +15055,20 @@ var posix = {
       }
       ret.ext = path.slice(startDot, end)
     }
-
     if (startPart > 0) ret.dir = path.slice(0, startPart - 1)
     else if (isAbsolute) ret.dir = "/"
-
     return ret
   },
-
   sep: "/",
   delimiter: ":",
   win32: null,
   posix: null
 }
-
 posix.posix = posix
+Utils.posix = posix
+window.Utils = Utils
+;
 
-// Check if the environment is Node.js, and export the module
-if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
-  module.exports = { posix }
-} else {
-  // Otherwise, assign the module to the global scope (browser environment)
-  window.posix = posix
-}
 ;
 
 let _scrollsdkLatestTime = 0
@@ -17753,7 +17698,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "101.2.1"
+Particle.getVersion = () => "102.0.0"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -21721,6 +21666,7 @@ class ParsersCodeMirrorMode {
 window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
 ;
 
+// todo: as much as we can, remove Fusion and move these capabilities into the root Particle class.
 const PARSERS_EXTENSION = ".parsers"
 const SCROLL_EXTENSION = ".scroll"
 // Add URL regex pattern
@@ -21917,7 +21863,7 @@ class MemoryWriter {
     if (isUrl(path)) {
       return path.substring(0, path.lastIndexOf("/"))
     }
-    return posix.dirname(path)
+    return Utils.posix.dirname(path)
   }
   join(...segments) {
     const firstSegment = segments[0]
@@ -21925,7 +21871,7 @@ class MemoryWriter {
       const baseUrl = firstSegment.endsWith("/") ? firstSegment : firstSegment + "/"
       return new URL(segments.slice(1).join("/"), baseUrl).toString()
     }
-    return posix.join(...segments)
+    return Utils.posix.join(...segments)
   }
 }
 class EmptyScrollParser extends Particle {
@@ -21942,8 +21888,6 @@ class FusionFile {
     this.defaultParser = EmptyScrollParser
     this.fileSystem = fileSystem
     this.filePath = absoluteFilePath
-    this.filename = posix.basename(absoluteFilePath)
-    this.folderPath = posix.dirname(absoluteFilePath) + "/"
     this.codeAtStart = codeAtStart
     this.timeIndex = 0
     this.timestamp = 0
@@ -21984,7 +21928,7 @@ class FusionFile {
     this.codeAfterMacroPass = codeAfterMacroPass
     this.parser = (fusedFile === null || fusedFile === void 0 ? void 0 : fusedFile.parser) || defaultParser
     // PASS 4: PARSER WITH CUSTOM PARSER OR STANDARD SCROLL PARSER
-    this.scrollProgram = new this.parser(codeAfterMacroPass)
+    this.scrollProgram = new this.parser(codeAfterMacroPass, filePath)
     this.scrollProgram.setFile(this)
     return this
   }

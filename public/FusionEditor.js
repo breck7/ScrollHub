@@ -67,7 +67,7 @@ class FusionEditor {
   }
   get errors() {
     const { parser, bufferValue } = this
-    const errs = new parser(bufferValue).getAllErrors()
+    const errs = new parser(bufferValue, this.parent.fileName).getAllErrors()
     return new Particle(errs.map(err => err.toObject())).toFormattedTable(200)
   }
   async buildMainProgram() {
