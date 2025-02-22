@@ -18,7 +18,7 @@
     "openai": "^4.77.0",
     "prettier": "^3.3.3",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^170.4.1",
+    "scroll-cli": "171.0.0",
     "scrollsdk": "^102.0.0"
   },
   "bin": {

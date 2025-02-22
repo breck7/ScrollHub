@@ -15069,8 +15069,6 @@ Utils.posix = posix
 window.Utils = Utils
 ;
 
-;
-
 let _scrollsdkLatestTime = 0
 let _scrollsdkMinTimeIncrement = 0.000000000001
 class AbstractParticle {
