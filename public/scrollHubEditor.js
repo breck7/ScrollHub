@@ -1226,13 +1226,20 @@ a ${this.authorDisplayName}
       delete this._files
       this.allFiles = allFiles
       this.useSsl = allData.hasSslCert
-      this.ips = allData.ips || []
+      this.aRecordIps = allData.aRecordIps || []
       this.serverIps = allData.serverIps || []
-      this.usesCustomDomain = this.ips.some(ip => this.serverIps.includes(ip))
+      // We look at the A Records for the domain and compare to the Server's IP addresses.
+      // If there's a match, we use the custom domain.
+      this._usesCustomDomain = this.aRecordIps.some(ip => this.serverIps.includes(ip))
       this.renderFileList()
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error.message)
     }
+  }
+
+  get usesCustomDomain() {
+    if (this._usesCustomDomain !== undefined) return this._usesCustomDomain
+    return this.folderName === window.location.hostname
   }
 
   get filenames() {

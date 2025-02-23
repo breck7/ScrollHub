@@ -983,9 +983,9 @@ If you'd like to create this folder, visit our main site to get started.
       const files = await this.getFileList(folderName)
       if (folderEntry.hasSslCert === undefined) folderEntry.hasSslCert = await this.doesHaveSslCert(folderName)
 
-      const { hasSslCert, ips } = folderEntry
+      const { hasSslCert, aRecordIps } = folderEntry
       const { serverIps } = this
-      res.send(JSON.stringify({ files, hasSslCert, ips, serverIps }, undefined, 2))
+      res.send(JSON.stringify({ files, hasSslCert, aRecordIps, serverIps }, undefined, 2))
     })
 
     app.get("/ls.csv", async (req, res) => {
@@ -1420,7 +1420,7 @@ If you'd like to create this folder, visit our main site to get started.
     return Math.min(100, cpuPercent.toFixed(1))
   }
 
-  async fetchIpsForDomainFromDns(domain) {
+  async fetchARecordIpsForDomainFromDns(domain) {
     try {
       return await dns.resolve4(domain)
     } catch (error) {
@@ -1453,10 +1453,10 @@ If you'd like to create this folder, visit our main site to get started.
 
     app.get("/dns.htm", async (req, res) => {
       const domain = req.query.domain
-      const ips = await this.fetchIpsForDomainFromDns(domain)
+      const aRecordIps = await this.fetchARecordIpsForDomainFromDns(domain)
       const html = await ScrollToHtml(`Server IPS: ${this.serverIps.join(" ")}
 
-IPS for *${domain}*: ${ips.join(" ")}`)
+A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
       res.send(html)
     })
 
@@ -1772,7 +1772,7 @@ IPS for *${domain}*: ${ips.join(" ")}`)
       const entry = await fsp.readFile(statsPath, "utf8")
       const parsed = JSON.parse(entry)
       // If we have a breaking version and need to redo cache, bump this.
-      if (parsed.scrollHubVersion && isGreaterOrEqualVersion(parsed.scrollHubVersion, "0.84.0")) {
+      if (parsed.scrollHubVersion && isGreaterOrEqualVersion(parsed.scrollHubVersion, "0.86.0")) {
         this.folderCache[folderName] = parsed
         return
       }

@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.86.0 2/23/2025
+🎉 upgraded Scroll and ScrollSDK
+🏥 fixed race condition with usesCustomDomain
+
 📦 0.85.1 2/15/2025
 🏥 fixed bug where iframe preview was adding entries to browser's back button history
 

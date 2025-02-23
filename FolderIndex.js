@@ -312,19 +312,19 @@ class FolderIndex {
       const folderLink = scrollHub.getBaseUrlForFolder(folder, scrollHub.hostname, hasSslCert ? "https:" : "http:", scrollHub.isLocalHost)
 
       // Check DNS if folder is a domain
-      let ips = []
+      let aRecordIps = []
       if (folder.includes(".")) {
         // If we've already fetched IPs for this domain, dont fetch again.
         // For now, to clear cache, simply delete the .stats.json file in the folder.
-        if (currentEntry?.ips?.length) ips = currentEntry.ips
-        else ips = await this.scrollHub.fetchIpsForDomainFromDns(folder)
+        if (currentEntry?.aRecordIps?.length) aRecordIps = currentEntry.aRecordIps
+        else aRecordIps = await this.scrollHub.fetchARecordIpsForDomainFromDns(folder)
       }
 
       const entry = {
         files,
         hasSslCert,
         loadedCert,
-        ips,
+        aRecordIps,
         scrollHubVersion: scrollHub.version,
         stats: {
           folder,
