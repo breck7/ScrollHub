@@ -32,6 +32,7 @@ To streamline your workflow, you can set up the following aliases to your `.bash
 
 ```bash
 echo 'alias gitup="git add . && git commit -m \"update\" && git push"' >> ~/.bashrc && echo 'alias gitinit="git init && git add . && git commit -m \"init\""' >> ~/.bashrc
+```
 
 ## Features in Detail
 
