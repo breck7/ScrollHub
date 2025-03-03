@@ -26,7 +26,8 @@ Optional: Create a DNS A Record pointing from your domain or subdomain to your n
 
 ## Development Environment
 
-gitinit & Gitup
+- **`gitinit`** in a new folder when working from the CLI
+- **`gitup`** to update remote in one command
 
 To streamline your workflow, you can set up the following aliases to your `.bashrc` file using the following command:
 
