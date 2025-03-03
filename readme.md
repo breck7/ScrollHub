@@ -26,13 +26,12 @@ Optional: Create a DNS A Record pointing from your domain or subdomain to your n
 
 ## Development Environment
 
-Add these helpful aliases to your `.bash_aliases`:
+gitinit & Gitup
+
+To streamline your workflow, you can set up the following aliases to your `.bashrc` file using the following command:
 
 ```bash
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit'
-alias gp='git push'
+echo 'alias gitup="git add . && git commit -m \"update\" && git push"' >> ~/.bashrc && echo 'alias gitinit="git init && git add . && git commit -m \"init\""' >> ~/.bashrc
 ```
 
 ## Features in Detail
