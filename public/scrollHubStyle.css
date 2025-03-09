@@ -325,7 +325,8 @@ textarea {
 .shortcuts-grid {
   column-count: auto;
   column-fill: auto;
-  column-width: 40ch;
+  column-width: min(40ch, 20vw);
+  overflow-x: scroll;
   column-gap: 1rem;
   height: calc(100vh - 300px);
 }
