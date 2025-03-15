@@ -1,4 +1,5 @@
 indexTop.scroll
+createLinks.scroll
 replace AGENT Claude
 replace TEMPLATE website
 replace TLD scroll.pub

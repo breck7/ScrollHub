@@ -1985,6 +1985,9 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
       fs.writeFileSync(createOptionsPath, sampleCreate, "utf8")
       execSync(`git add ${createOptionsPath}; git commit -m 'added create options'`, { cwd: this.hubFolder })
     }
+    // If there are no AI options, make blank the default homepage.
+    const config = Particle.fromDisk(createOptionsPath)
+    if (!config.has("claude") && !config.has("deepseek")) fs.writeFileSync(path.join(this.publicFolder, "index.scroll"), `blank.scroll`, "utf8")
   }
 
   async hasGit(folderPath) {
