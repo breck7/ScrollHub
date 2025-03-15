@@ -223,12 +223,12 @@ const sampleCreate = `div
  class promptSettings
  select
   id aiModelSelect
-  option Claude
-   value claude
   option Deepseek
    value deepseek
   option DSReasoner
    value deepseekreasoner
+  option Claude
+   value claude
  select
   id tldSelect
   option Scroll.pub
