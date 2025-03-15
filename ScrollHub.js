@@ -829,7 +829,7 @@ If you'd like to create this folder, visit our main site to get started.
     app.post("/createFromPrompt.htm", checkWritePermissions, async (req, res) => {
       try {
         const prompt = req.body.prompt
-        const agent = (req.body.agent || "claude").toLowerCase()
+        const agent = (req.body.agent || "deepseek").toLowerCase()
         const template = req.body.template
         const welcomeMessage = req.body.welcomeMessage || "scrollhub"
         const domainSuffix = req.body.tld || "scroll.pub"

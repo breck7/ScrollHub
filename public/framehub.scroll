@@ -52,7 +52,7 @@ css
 // nodes.js
 
 
-replace AGENT Claude
+replace AGENT Deepseek
 replace TEMPLATE frame
 replace TLD framehub.pro
 replace WELCOME_MESSAGE framehub

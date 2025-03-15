@@ -172,7 +172,7 @@ class Agents {
     this.hubFolder = hub.hubFolder
     this.config = hub.config
     this.agents = {}
-    const availableAgents = "claude deepseek".split(" ")
+    const availableAgents = "deepseek claude".split(" ")
     availableAgents.forEach(agent => this.loadAgent(agent))
   }
 

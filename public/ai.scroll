@@ -1,6 +1,6 @@
 indexTop.scroll
 createLinks.scroll
-replace AGENT Claude
+replace AGENT Deepseek
 replace TEMPLATE website
 replace TLD scroll.pub
 replace WELCOME_MESSAGE scrollhub
