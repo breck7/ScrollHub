@@ -269,10 +269,9 @@ class EditorApp {
     if (!fileName) {
       let buffer = urlParams.get("buffer")
       if (buffer) {
-        this.refreshFileListCommand()
         buffer = buffer.replace(/TODAYS_DATE/g, new Date().toLocaleDateString("en-US"))
-        this.setFileContent(decodeURIComponent(buffer))
-        await this.refreshParserCommand()
+        this.refreshFileListCommand()
+        await this.clearBufferCommand(decodeURIComponent(buffer))
       } else {
         await this.refreshFileListCommand()
         await this.autoOpen()
@@ -284,6 +283,12 @@ class EditorApp {
     }
 
     return this
+  }
+
+  async clearBufferCommand(buffer = "") {
+    this.fileName = ""
+    this.setFileContent(buffer)
+    await this.refreshParserCommand()
   }
 
   updateUrlWithFilter() {
@@ -442,9 +447,10 @@ class EditorApp {
   async saveFile() {
     if (!this.fileName) {
       const name = new URL(window.location).searchParams.get("bufferName") || "untitled"
-      let fileName = this.sanitizeFileName(prompt("Enter a filename", name))
-      if (!fileName) return ""
-      this.fileName = fileName
+      let newFileName = this.sanitizeFileName(prompt("Enter a filename", name))
+      if (!newFileName) return ""
+      if (await this.nameTakenAndAbortRequested(newFileName)) return
+      this.fileName = newFileName
     }
     await this.writeFile("Publishing...", this.bufferValue, this.fileName)
     await this.refreshParserCommand()
@@ -653,6 +659,7 @@ shift+t toggleThemeCommand Editor
 nokey91 toggleLineNumbersCommand Editor
 ctrl+p refreshParserCommand Editor
 command+3 toggleMetricsCommand Editor
+ctrl+b clearBufferCommand Editor
 command+shift+h showHiddenFilesCommand Files
 nokey9 changeFileSortCommand Files
 command+1 previousFileCommand Navigation
@@ -1340,9 +1347,10 @@ a ${this.authorDisplayName}
   }
 
   async createFileCommand() {
-    let fileName = this.sanitizeFileName(prompt("Enter a filename", "untitled"))
-    if (!fileName) return ""
-    await this.writeFile("Creating file...", "", fileName)
+    let newFileName = this.sanitizeFileName(prompt("Enter a filename", "untitled"))
+    if (!newFileName) return ""
+    if (await this.nameTakenAndAbortRequested(newFileName)) return
+    await this.writeFile("Creating file...", "", newFileName)
   }
 
   _isFirstOpen = true
@@ -1371,7 +1379,22 @@ a ${this.authorDisplayName}
 
     const newFileName = this.sanitizeFileName(prompt(`Enter name for the duplicate of "${fileName}":`, defaultNewName))
     if (!newFileName || newFileName === fileName) return
+    if (await this.nameTakenAndAbortRequested(newFileName)) return
     await this.writeFile("Duplicating...", this.bufferValue, newFileName)
+  }
+
+  // If the filename does not exist, return true, if it already exists, prompt the user to confirm overwrite.
+  async nameTakenAndAbortRequested(newFileName) {
+    const { filenames } = this
+
+    // If the filename doesn't exist, return false (no overwrite needed)
+    if (!filenames.includes(newFileName)) return false
+
+    // If the filename exists, prompt user for confirmation
+    const confirmation = confirm(`A file named "${newFileName}" already exists. Would you like to overwrite it?`)
+
+    // Return true if user confirms overwrite, false if they cancel
+    return !confirmation
   }
 
   async formatFileCommand() {
@@ -1382,6 +1405,7 @@ a ${this.authorDisplayName}
   async renameFileCommand() {
     const oldFileName = this.fileName
     const newFileName = this.sanitizeFileName(prompt(`Enter new name for "${oldFileName}":`, oldFileName))
+    if (await this.nameTakenAndAbortRequested(newFileName)) return
     if (newFileName && newFileName !== oldFileName) this.performFileRename(oldFileName, newFileName)
   }
 

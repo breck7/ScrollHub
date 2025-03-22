@@ -1341,7 +1341,7 @@ If you'd like to create this folder, visit our main site to get started.
         await fsp.access(oldFilePath)
 
         // Run git commands
-        await execAsync(`git mv ${oldFileName} ${newFileName}; git commit ${this.getCommitAuthor(req)} -m 'Renamed ${oldFileName} to ${newFileName}'`, { cwd: folderPath })
+        await execAsync(`git mv -f ${oldFileName} ${newFileName}; git commit ${this.getCommitAuthor(req)} -m 'Renamed ${oldFileName} to ${newFileName}'`, { cwd: folderPath })
         this.addStory(req, `renamed ${oldFileName} to ${newFileName} in ${folderName}`)
         res.send("File renamed successfully")
         this.updateFolderAndBuildList(folderName)

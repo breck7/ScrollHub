@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.87.0 3/22/2025
+🎉 rename, duplicate, and new file now prompt for confirmation if filename exists
+🏥 various improvements and fixes
+
 📦 0.86.0 2/23/2025
 🎉 upgraded Scroll and ScrollSDK
 🏥 fixed race condition with usesCustomDomain
