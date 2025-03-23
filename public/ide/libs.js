@@ -15092,9 +15092,9 @@ var FileFormat
   FileFormat["tsv"] = "tsv"
   FileFormat["particles"] = "particles"
 })(FileFormat || (FileFormat = {}))
-const TN_WORD_BREAK_SYMBOL = " "
-const TN_EDGE_SYMBOL = " "
-const TN_NODE_BREAK_SYMBOL = "\n"
+const ATOM_MEMBRANE = " " // The symbol that separates atoms (words)
+const PARTICLE_MEMBRANE = "\n" // The symbol that separates particles (lines)
+const SUBPARTICLE_MEMBRANE = " " // The symbol, in combination with PARTICLE_MEMBRANE, that makes subparticles
 class AbstractParticleEvent {
   constructor(targetParticle) {
     this.targetParticle = targetParticle
@@ -15158,7 +15158,7 @@ class ParserPool {
     }
     return obj
   }
-  _getMatchingParser(line, contextParticle, lineNumber, atomBreakSymbol = TN_WORD_BREAK_SYMBOL) {
+  _getMatchingParser(line, contextParticle, lineNumber, atomBreakSymbol = ATOM_MEMBRANE) {
     return this._getCueMap().get(this._getCue(line, atomBreakSymbol)) || this._getParserFromRegexTests(line) || this._getCatchAllParser(contextParticle)
   }
   _getCatchAllParser(contextParticle) {
@@ -16414,10 +16414,10 @@ class Particle extends AbstractParticle {
     return this.toDelimited("\t")
   }
   get particleBreakSymbol() {
-    return TN_NODE_BREAK_SYMBOL
+    return PARTICLE_MEMBRANE
   }
   get atomBreakSymbol() {
-    return TN_WORD_BREAK_SYMBOL
+    return ATOM_MEMBRANE
   }
   get edgeSymbolRegex() {
     return new RegExp(this.edgeSymbol, "g")
@@ -16426,7 +16426,7 @@ class Particle extends AbstractParticle {
     return new RegExp(this.particleBreakSymbol, "g")
   }
   get edgeSymbol() {
-    return TN_EDGE_SYMBOL
+    return SUBPARTICLE_MEMBRANE
   }
   _textToContentAndSubparticlesTuple(text) {
     const lines = text.split(this.particleBreakSymbolRegex)
@@ -17655,8 +17655,8 @@ class Particle extends AbstractParticle {
     return headerRow
   }
   static nest(str, xValue) {
-    const ParticleBreakSymbol = TN_NODE_BREAK_SYMBOL
-    const AtomBreakSymbol = TN_WORD_BREAK_SYMBOL
+    const ParticleBreakSymbol = PARTICLE_MEMBRANE
+    const AtomBreakSymbol = ATOM_MEMBRANE
     const indent = ParticleBreakSymbol + AtomBreakSymbol.repeat(xValue)
     return str ? indent + str.replace(/\n/g, indent) : ""
   }
@@ -17696,7 +17696,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "102.0.0"
+Particle.getVersion = () => "103.0.0"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -17707,7 +17707,7 @@ class AbstractExtendibleParticle extends Particle {
     this.forEach(particle => {
       const path = particle._getAncestorsArray().map(particle => particle.id)
       path.reverse()
-      newParticle.touchParticle(path.join(TN_EDGE_SYMBOL))
+      newParticle.touchParticle(path.join(SUBPARTICLE_MEMBRANE))
     })
     return newParticle
   }
@@ -21943,7 +21943,7 @@ class FusionFile {
 let fusionIdNumber = 0
 class Fusion {
   constructor(inMemoryFiles) {
-    this.productCache = {}
+    this.productCache = []
     this._particleCache = {}
     this._parserCache = {}
     this._parsersExpandersCache = {}
@@ -21981,7 +21981,7 @@ class Fusion {
     return await this._storage.getCTime(absolutePath)
   }
   async writeProduct(absolutePath, content) {
-    this.productCache[absolutePath] = content
+    this.productCache.push(absolutePath)
     return await this.write(absolutePath, content)
   }
   async _getFileAsParticles(absoluteFilePathOrUrl) {
