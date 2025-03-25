@@ -25,6 +25,7 @@ libs.js
  <a class="formatFileLink" onclick="app.formatFileCommand()">Format File</a>
  <a class="deleteFileLink" onclick="app.deleteFileCommand()">Delete File</a>
  <a class="focusLink" onclick="app.enterFocusModeCommand()">Focus</a>
+ <a class="focusLink" onclick="app.findInFileCommand()">Find</a>
  </div>
 </div>
 </form>

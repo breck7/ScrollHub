@@ -644,6 +644,7 @@ class EditorApp {
       `key command category
 command+s saveAndPublishCommand File
 ctrl+n createFileCommand File
+ctrl+f findInFileCommand File
 command+p formatFileCommand File
 command+h showFileHistoryCommand File
 command+h showFileBlameCommand File
@@ -849,6 +850,35 @@ nokey1 showWelcomeMessageCommand Help`
         const filename = this.getFilenameFromUrl(url)
         await this.handleImageUrl(url, filename)
       }
+    }
+  }
+
+  findInFileCommand() {
+    const searchTerm = prompt("Enter text to find:")
+    if (!searchTerm) return
+
+    const doc = this.codeMirrorInstance.getDoc()
+    const content = doc.getValue()
+    const index = content.indexOf(searchTerm)
+
+    if (index !== -1) {
+      // Convert flat index to line/char coordinates
+      const position = doc.posFromIndex(index)
+      const endPosition = doc.posFromIndex(index + searchTerm.length)
+
+      // Select the found text
+      this.codeMirrorInstance.setSelection(position, endPosition)
+
+      // Scroll to the selection
+      this.codeMirrorInstance.scrollIntoView(
+        { from: position, to: endPosition },
+        100 // margin in pixels
+      )
+
+      // Focus the editor
+      this.codeMirrorInstance.focus()
+    } else {
+      alert(`"${searchTerm}" not found in the current file`)
     }
   }
 
