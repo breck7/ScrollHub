@@ -22,11 +22,10 @@ const httpBackend = require("git-http-backend")
 
 // PPS
 const { Particle } = require("scrollsdk/products/Particle.js")
-const { ScrollFile, ScrollFileSystem } = require("scroll-cli/scroll.js")
+const { ScrollCli } = require("scroll-cli/scroll.js")
 const { CloneCli } = require("scroll-cli/clone.js")
 const { ScriptRunner } = require("./ScriptRunner.js")
 const packageJson = require("./package.json")
-const scrollFs = new ScrollFileSystem()
 
 // This
 const { TrafficMonitor } = require("./TrafficMonitor.js")
@@ -55,6 +54,9 @@ const isGreaterOrEqualVersion = (version1, version2) => {
   return patch1 >= patch2
 }
 
+// todo: cleanup
+const sfs = new ScrollCli().sfs
+const ScrollFile = sfs.defaultFileClass
 const ScrollToHtml = async scrollCode => {
   const page = new ScrollFile(scrollCode)
   await page.fuse()
@@ -574,9 +576,7 @@ If you'd like to create this folder, visit our main site to get started.
     if (folder) {
       const reqFile = path.join(outputPath, ".requests.scroll")
       await fsp.writeFile(reqFile, requestsFile(folder), "utf8")
-      const file = new ScrollFile(undefined, reqFile, new ScrollFileSystem())
-      await file.fuse()
-      await file.scrollProgram.buildAll()
+      await this.buildFile(reqFile)
     } else await this.buildPublicFolder()
     this.isSummarizing[folder] = false
   }
@@ -1851,11 +1851,9 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
 
     if (filePath.endsWith(".scroll") || filePath.endsWith(".parsers")) {
       try {
-        const scrollFs = new ScrollFileSystem()
-        const file = await new ScrollFile(undefined, filePath, scrollFs).fuse()
-        const formatted = file.formatted
-        await fsp.writeFile(filePath, formatted, "utf8")
-        return formatted
+        const cli = new ScrollCli().silence()
+        await cli.formatCommand(path.dirname(filePath), [filePath])
+        return await fsp.readFile(filePath, "utf8")
       } catch (err) {
         console.error(`Error formatting ${filePath}. Continuing on. Error:`, err)
         return content
@@ -2032,9 +2030,8 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
   }
 
   async buildFile(filePath) {
-    const file = new ScrollFile(undefined, filePath, new ScrollFileSystem())
-    await file.fuse()
-    await file.scrollProgram.buildAll()
+    const cli = new ScrollCli().silence()
+    await cli.buildCommand(path.dirname(filePath), [filePath])
   }
 
   buildRequests = {}

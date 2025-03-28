@@ -40,4 +40,4 @@ div#folderLinks.greyText
 modal
  id theModal
 
-inlineJs FusionEditor.js scrollHubEditor.js
+inlineJs ScrollFileEditor.js scrollHubEditor.js

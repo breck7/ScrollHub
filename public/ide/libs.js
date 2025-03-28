@@ -15226,6 +15226,10 @@ class Particle extends AbstractParticle {
   }
   wake() {}
   execute() {}
+  // If you want to link a particle to a file on the filesystem.
+  setFile(file) {
+    this.file = file
+  }
   // todo: perhaps if needed in the future we can add more contextual params here
   _transformBlock(block) {
     this.particleTransformers.forEach(fn => {
@@ -17724,7 +17728,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "105.1.0"
+Particle.getVersion = () => "106.0.0"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -21692,7 +21696,7 @@ class ParsersCodeMirrorMode {
 window.ParsersCodeMirrorMode = ParsersCodeMirrorMode
 ;
 
-// todo: as much as we can, remove Fusion and move these capabilities into the root Particle class.
+// todo: as much as we can, remove ScrollFileSystem and move these capabilities into the root Particle class.
 const PARSERS_EXTENSION = ".parsers"
 const SCROLL_EXTENSION = ".scroll"
 // Add URL regex pattern
@@ -21900,15 +21904,10 @@ class MemoryWriter {
     return Utils.posix.join(...segments)
   }
 }
-class EmptyScrollParser extends Particle {
-  setFile(fusionFile) {
-    this.file = fusionFile
-  }
-}
-class FusionFile {
-  constructor(codeAtStart, absoluteFilePath = "", fileSystem = new Fusion({})) {
+class ScrollFile {
+  constructor(codeAtStart, absoluteFilePath = "", fileSystem = new ScrollFileSystem({})) {
     this.defaultParserCode = ""
-    this.defaultParser = EmptyScrollParser
+    this.defaultParser = Particle
     this.fileSystem = fileSystem
     this.filePath = absoluteFilePath
     this.codeAtStart = codeAtStart
@@ -21961,21 +21960,55 @@ class FusionFile {
     return true
   }
 }
-let fusionIdNumber = 0
-class Fusion {
-  constructor(inMemoryFiles) {
+let scrollFileSystemIdNumber = 0
+const parserCache = {}
+class ScrollFileSystem {
+  constructor(inMemoryFiles, standardParserDirectory) {
     this.productCache = []
     this._particleCache = {}
     this._parserCache = {}
     this._parsersExpandersCache = {}
     this._pendingFuseRequests = {}
-    this.defaultFileClass = FusionFile
     this.parsedFiles = {}
     this.folderCache = {}
     if (inMemoryFiles) this._storage = new MemoryWriter(inMemoryFiles)
     else this._storage = new DiskWriter()
-    fusionIdNumber = fusionIdNumber + 1
-    this.fusionId = fusionIdNumber
+    scrollFileSystemIdNumber = scrollFileSystemIdNumber + 1
+    this.scrollFileSystemIdNumber = scrollFileSystemIdNumber
+    this.defaultFileClass = ScrollFile
+    this.standardParserDirectory = standardParserDirectory
+    if (standardParserDirectory) this._loadDefaultParser()
+  }
+  _loadDefaultParser() {
+    const { standardParserDirectory } = this
+    const cacheHit = parserCache[standardParserDirectory]
+    if (cacheHit) {
+      this.defaultParser = cacheHit.defaultParser
+      this.defaultFileClass = cacheHit.defaultFileClass
+      return this
+    }
+    const defaultParserFiles = Disk.getFiles(standardParserDirectory).filter(file => file.endsWith(PARSERS_EXTENSION))
+    this._setDefaultParser(
+      standardParserDirectory,
+      defaultParserFiles,
+      defaultParserFiles.map(filePath => Disk.read(filePath))
+    )
+    return this
+  }
+  _setDefaultParser(standardParserDirectory, defaultParserFiles, contents) {
+    const defaultParser = ScrollFileSystem.combineParsers(defaultParserFiles, contents)
+    parserCache[standardParserDirectory] = {
+      defaultParser,
+      defaultFileClass: class extends ScrollFile {
+        constructor() {
+          super(...arguments)
+          this.defaultParserCode = defaultParser.parsersCode
+          this.defaultParser = defaultParser.parser
+        }
+      }
+    }
+    this.defaultParser = parserCache[standardParserDirectory].defaultParser
+    this.defaultFileClass = parserCache[standardParserDirectory].defaultFileClass
   }
   async read(absolutePath) {
     return await this._storage.read(absolutePath)
@@ -22142,7 +22175,12 @@ class Fusion {
   }
   async _getOneParsersParserFromFiles(filePaths, baseParsersCode) {
     const fileContents = await Promise.all(filePaths.map(async filePath => await this._storage.read(filePath)))
-    return Fusion.combineParsers(filePaths, fileContents, baseParsersCode)
+    return ScrollFileSystem.combineParsers(filePaths, fileContents, baseParsersCode)
+  }
+  clearParserCache(filename) {
+    delete this._pendingFuseRequests[filename]
+    delete this._parsersExpandersCache[filename] // todo: cleanup
+    delete this._parserCache[filename]
   }
   async getParser(filePaths, baseParsersCode = "") {
     const { _parserCache } = this
@@ -22201,36 +22239,8 @@ class Fusion {
   getCachedLoadedFilesInFolder(folderPath, requester) {
     folderPath = Utils.ensureFolderEndsInSlash(folderPath)
     const hit = this.folderCache[folderPath]
-    if (!hit) console.log(`Warning: '${folderPath}' not yet loaded in '${this.fusionId}'. Requested by '${requester.filePath}'`)
+    if (!hit) console.log(`Warning: '${folderPath}' not yet loaded in '${this.scrollFileSystemIdNumber}'. Requested by '${requester.filePath}'`)
     return hit || []
-  }
-  makeSourceMap(fileName, fusedCode) {
-    const fileStack = [{ fileName, lineNumber: 0, linesLeft: fusedCode.split("\n").length }]
-    return new Particle(fusedCode)
-      .map(particle => {
-        const currentFile = fileStack[fileStack.length - 1]
-        currentFile.lineNumber++
-        currentFile.linesLeft--
-        if (particle.cue === "imported") {
-          const linesLeft = parseInt(particle.get("lines"))
-          const original = particle.get("original")
-          fileStack.push({ fileName: particle.atoms[1], lineNumber: 0, linesLeft })
-          return `${currentFile.fileName}:${currentFile.lineNumber} ${original}\n` + particle.map(line => `${currentFile.fileName}:${currentFile.lineNumber}  ${line}`).join("\n")
-        }
-        if (!currentFile.linesLeft) fileStack.pop()
-        return particle
-          .toString()
-          .split("\n")
-          .map((line, index) => {
-            if (index) {
-              currentFile.lineNumber++
-              currentFile.linesLeft--
-            }
-            return `${currentFile.fileName}:${currentFile.lineNumber} ${line}`
-          })
-          .join("\n")
-      })
-      .join("\n")
   }
   // todo: this is weird. i know we evolved our way here but we should step back and clean this up.
   async getLoadedFilesInFolder(folderPath, extension) {
@@ -22244,8 +22254,8 @@ class Fusion {
     return this.folderCache[folderPath]
   }
 }
-window.Fusion = Fusion
-window.FusionFile = FusionFile
+window.ScrollFileSystem = ScrollFileSystem
+window.ScrollFile = ScrollFile
 ;
 
 {

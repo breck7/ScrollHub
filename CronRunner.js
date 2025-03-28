@@ -1,5 +1,5 @@
 const path = require("path")
-const { ScrollFile, ScrollFileSystem } = require("scroll-cli/scroll.js")
+const { ScrollCli } = require("scroll-cli/scroll.js")
 
 class CronRunner {
   constructor(scrollHub) {
@@ -35,22 +35,22 @@ class CronRunner {
       try {
         // Skip if already running
         if (this.runningJobs.has(folderName)) continue
+        const folderPath = path.join(rootFolder, folderName)
 
-        const cronJsPath = path.join(rootFolder, folderName, "cron.js")
+        const cronJsPath = path.join(folderPath, "cron.js")
         const jsExists = await this.scrollHub.exists(cronJsPath)
         if (jsExists) {
           delete require.cache[require.resolve(cronJsPath)]
           require(cronJsPath)
         }
 
-        const cronPath = path.join(rootFolder, folderName, "cron.scroll")
+        const cronPath = path.join(folderPath, "cron.scroll")
         const exists = await this.scrollHub.exists(cronPath)
         if (!exists) continue
 
         this.runningJobs.add(folderName)
-        const file = new ScrollFile(undefined, cronPath, new ScrollFileSystem())
-        await file.fuse()
-        await file.scrollProgram.buildAll()
+        const cli = new ScrollCli().silence()
+        await this.buildCommand(folderPath, [cronPath])
         this.runningJobs.delete(folderName)
       } catch (err) {
         console.error(`Error running cron for ${folderName}:`, err)

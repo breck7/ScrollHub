@@ -39,6 +39,7 @@ class EditorApp {
   constructor() {
     this.folderName = ""
     this.previewIFrame = null
+    this.sfEditor = new ScrollFileEditor(AppConstants.parsers, this)
     this.initCodeMirror("custom")
     window.addEventListener("resize", () => this.updateEditorDimensions())
 
@@ -48,7 +49,6 @@ class EditorApp {
       this.updateFilteredFileList()
       this.updateUrlWithFilter()
     })
-    this.fusionEditor = new FusionEditor(AppConstants.parsers, this)
   }
 
   get editorHeight() {
@@ -136,7 +136,7 @@ class EditorApp {
   }
 
   get parser() {
-    return this.fusionEditor.customParser
+    return this.sfEditor.parser
   }
 
   initCodeMirror(mode) {
@@ -371,7 +371,7 @@ class EditorApp {
     const dir = this.rootUrl.replace(/\/$/, "") + "/"
     const { fileName } = this
     if (!fileName.endsWith(".scroll")) return dir + fileName
-    const { outputFileNames } = this.fusionEditor.mainProgram
+    const { outputFileNames } = this.sfEditor.mainProgram
     const primaryOutputFile = outputFileNames.find(name => name.endsWith(".html")) || outputFileNames[0]
     if (!primaryOutputFile) return dir + fileName
     const path = fileName.split("/")
@@ -504,7 +504,7 @@ class EditorApp {
   }
 
   async refreshParserCommand() {
-    await this.fusionEditor.buildMainProgram()
+    await this.sfEditor.buildMainProgram()
     console.log("Parser refreshed")
     this.rehighlight()
   }
@@ -953,7 +953,7 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
 -Breck`
     }
 
-    const html = await this.fusionEditor.scrollToHtml(content)
+    const html = await this.sfEditor.scrollToHtml(content)
     this.openModal(html, "welcome", event)
     document.querySelector("#theModal").classList.add("scrollModalFit")
   }
@@ -1179,7 +1179,7 @@ a ${this.authorDisplayName}
  class folderActionLink
  linkify false
  onclick window.app.loginCommand()`
-    const html = await this.fusionEditor.scrollToHtml(code)
+    const html = await this.sfEditor.scrollToHtml(code)
     document.getElementById("folderLinks").innerHTML = html
   }
 
@@ -1428,7 +1428,7 @@ a ${this.authorDisplayName}
   }
 
   async formatFileCommand() {
-    const bufferValue = await this.fusionEditor.getFormatted()
+    const bufferValue = await this.sfEditor.getFormatted()
     this.setFileContent(bufferValue)
   }
 
