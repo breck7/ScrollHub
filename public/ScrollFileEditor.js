@@ -23,7 +23,7 @@ class ScrollFileEditor {
     this.parent = parent
     this.fakeFs = {}
     this.fs = new ScrollFileSystem(this.fakeFs)
-    this.fs._setDefaultParser("", ["scroll"], [defaultParserCode])
+    this.fs.setDefaultParserFromString(defaultParserCode)
     const urlWriter = new UrlWriter(this.fakeFs)
     urlWriter.getBaseUrl = () => parent.rootUrl || ""
     this.fs._storage = urlWriter
@@ -33,25 +33,18 @@ class ScrollFileEditor {
     return parsed.asHtml
   }
   async parseScroll(scrollCode) {
-    const { scrollFile } = this
-    const page = new scrollFile(scrollCode)
-    await page.fuse()
-    return page.scrollProgram
-  }
-  get scrollFile() {
-    return this.fs.defaultFileClass
+    const file = this.fs.newFile(scrollCode)
+    await file.singlePassFuse()
+    return file.scrollProgram
   }
   get parser() {
-    return this.fusedFile?.parser || this.fs.defaultParser.parser
+    return this.fusedFile?.scrollProgram.constructor || this.fs.defaultParser
   }
-  _previousFileName
   async makeFusedFile(code, filename) {
-    const { scrollFile, fs } = this
+    const { fs } = this
     this.fakeFs[filename] = code
-    if (this._previousFileName) fs.clearParserCache(this._previousFileName)
-    this._previousFileName = filename
-    const file = new scrollFile(code, filename, fs)
-    await file.fuse()
+    const file = this.fs.newFile(code, filename)
+    await file.singlePassFuse()
     return file
   }
   async getFusedFile() {
@@ -61,7 +54,7 @@ class ScrollFileEditor {
   }
   async getFusedCode() {
     const fusedFile = await this.getFusedFile()
-    return fusedFile.fusedCode
+    return fusedFile.scrollProgram.toString()
   }
   get bufferValue() {
     return this.parent.bufferValue
@@ -73,7 +66,7 @@ class ScrollFileEditor {
   }
   async buildMainProgram() {
     const fusedFile = await this.getFusedFile()
-    const fusedCode = fusedFile.fusedCode
+    const fusedCode = await this.getFusedCode()
     this._mainProgram = fusedFile.scrollProgram
     try {
       await this._mainProgram.load()
