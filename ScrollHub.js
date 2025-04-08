@@ -56,11 +56,10 @@ const isGreaterOrEqualVersion = (version1, version2) => {
 
 // todo: cleanup
 const sfs = new ScrollCli().sfs
-const ScrollFile = sfs.defaultFileClass
 const ScrollToHtml = async scrollCode => {
-  const page = new ScrollFile(scrollCode)
-  await page.fuse()
-  return page.scrollProgram.asHtml
+  const file = sfs.newFile(scrollCode, "")
+  await file.singlePassFuse()
+  return file.scrollProgram.asHtml
 }
 
 const generateFileName = async (basePath, strategy, content) => {

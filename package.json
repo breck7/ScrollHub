@@ -18,14 +18,15 @@
     "openai": "^4.77.0",
     "prettier": "^3.3.3",
     "rss-parser": "^3.13.0",
-    "scroll-cli": "^176.0.0",
-    "scrollsdk": "^106.0.0"
+    "scroll-cli": "177.0.0",
+    "scrollsdk": "^107.0.0"
   },
   "bin": {
     "hub": "./cli.js"
   },
   "scripts": {
-    "beta": "git push github; git push gitlab; ssh root@beta.scroll.pub 'cd ScrollHub && npm run upgrade'",
+    "beta": "npm install ~/scroll; npm install ~/sdk; cp ~/tryscroll/dist/constants.js public/ide/parsers.js; cp ~/tryscroll/dist/libs.js public/ide/libs.js",
+    "stage": "git push github; git push gitlab; ssh root@beta.scroll.pub 'cd ScrollHub && npm run upgrade'",
     "build": "scroll build",
     "test": " scroll test; node ScrollHub.test.js",
     "ssh": "ssh root@hub.scroll.pub",
