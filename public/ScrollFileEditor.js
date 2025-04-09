@@ -28,17 +28,17 @@ class ScrollFileEditor {
     urlWriter.getBaseUrl = () => parent.rootUrl || ""
     this.fs._storage = urlWriter
   }
+  async init() {
+    await this.buildMainProgram()
+  }
   async scrollToHtml(scrollCode) {
-    const parsed = await this.parseScroll(scrollCode)
+    const parsed = await this._parseScroll(scrollCode)
     return parsed.asHtml
   }
-  async parseScroll(scrollCode) {
+  async _parseScroll(scrollCode) {
     const file = this.fs.newFile(scrollCode)
     await file.singlePassFuse()
     return file.scrollProgram
-  }
-  get parser() {
-    return this.fusedFile?.scrollProgram.constructor || this.fs.defaultParser
   }
   async makeFusedFile(code, filename) {
     const { fs } = this
@@ -60,28 +60,23 @@ class ScrollFileEditor {
     return this.parent.bufferValue
   }
   get errors() {
-    const { parser, bufferValue } = this
-    const errs = new parser(bufferValue, this.parent.fileName).getAllErrors()
+    const errs = this.mainProgram.getAllErrors()
     return new Particle(errs.map(err => err.toObject())).toFormattedTable(200)
   }
   async buildMainProgram() {
     const fusedFile = await this.getFusedFile()
     const fusedCode = await this.getFusedCode()
-    this._mainProgram = fusedFile.scrollProgram
+    this.mainProgram = fusedFile.scrollProgram
     try {
-      await this._mainProgram.load()
+      await this.mainProgram.load()
     } catch (err) {
       console.error(err)
     }
-    return this._mainProgram
+    return this.mainProgram
   }
   async getFormatted() {
     const mainDoc = await this.buildMainProgram(false)
     return mainDoc.formatted
-  }
-  get mainProgram() {
-    if (!this._mainProgram) this.buildMainProgram()
-    return this._mainProgram
   }
   get mainOutput() {
     const { mainProgram } = this
@@ -95,6 +90,22 @@ class ScrollFileEditor {
       type: particle.extension.toLowerCase(),
       content: particle.buildOutput()
     }
+  }
+  _cachedCode
+  _cachedProgram
+  getParsedProgramForCodeMirror(code) {
+    // Note: this uses the latest loaded constructor and does a SYNC parse.
+    // This allows us to use and loaded parsers, but gives sync, real time best
+    // answers for highlighting and autocomplete.
+    // It reparses the whole document. Actually seems to be fine for now.
+    // Ideally we could also just run off mainProgram and not reparse, but
+    // it gets tricky with the CodeMirror lib and async stuff. Maybe in the
+    // future we can clean this up.
+    if (code === this._cachedCode) return this._cachedProgram
+
+    this._cachedCode = code
+    this._cachedProgram = new this.mainProgram.latestConstructor(code)
+    return this._cachedProgram
   }
 }
 

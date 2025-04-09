@@ -17883,7 +17883,7 @@ Particle.iris = `sepal_length,sepal_width,petal_length,petal_width,species
 4.9,2.5,4.5,1.7,virginica
 5.1,3.5,1.4,0.2,setosa
 5,3.4,1.5,0.2,setosa`
-Particle.getVersion = () => "107.0.0"
+Particle.getVersion = () => "107.0.1"
 class AbstractExtendibleParticle extends Particle {
   _getFromExtended(cuePath) {
     const hit = this._getParticleFromExtended(cuePath)
@@ -21484,19 +21484,10 @@ const textMateScopeToCodeMirrorStyle = (scopeSegments, style = tmToCm) => {
   return matchingBranch ? textMateScopeToCodeMirrorStyle(scopeSegments, matchingBranch) || matchingBranch.$ || null : null
 }
 class ParsersCodeMirrorMode {
-  constructor(name, getRootParserFn, getProgramCodeFn, codeMirrorLib = undefined) {
+  constructor(name, getParsedProgramFn, codeMirrorLib = undefined) {
     this._name = name
-    this._getRootParserFn = getRootParserFn
-    this._getProgramCodeFn = getProgramCodeFn || (instance => (instance ? instance.getValue() : this._originalValue))
+    this._getParsedProgram = getParsedProgramFn
     this._codeMirrorLib = codeMirrorLib
-  }
-  _getParsedProgram() {
-    const source = this._getProgramCodeFn(this._cmInstance) || ""
-    if (!this._cachedProgram || this._cachedSource !== source) {
-      this._cachedSource = source
-      this._cachedProgram = new (this._getRootParserFn())(source)
-    }
-    return this._cachedProgram
   }
   _getExcludedIntelliSenseTriggerKeys() {
     return {
@@ -21573,7 +21564,8 @@ class ParsersCodeMirrorMode {
   async codeMirrorAutocomplete(cmInstance, options) {
     const cursor = cmInstance.getDoc().getCursor()
     const codeMirrorLib = this._getCodeMirrorLib()
-    const result = await this._getParsedProgram().getAutocompleteResultsAt(cursor.line, cursor.ch)
+    const program = this._getParsedProgram()
+    const result = await program.getAutocompleteResultsAt(cursor.line, cursor.ch)
     // It seems to be better UX if there's only 1 result, and its the atom the user entered, to close autocomplete
     if (result.matches.length === 1 && result.matches[0].text === result.atom) return null
     return result.matches.length

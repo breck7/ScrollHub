@@ -39,7 +39,11 @@ class EditorApp {
   constructor() {
     this.folderName = ""
     this.previewIFrame = null
+  }
+
+  async init() {
     this.sfEditor = new ScrollFileEditor(AppConstants.parsers, this)
+    await this.sfEditor.init()
     this.initCodeMirror("custom")
     window.addEventListener("resize", () => this.updateEditorDimensions())
 
@@ -136,7 +140,7 @@ class EditorApp {
   }
 
   get parser() {
-    return this.sfEditor.parser
+    return this.sfEditor.mainProgram.latestConstructor
   }
 
   initCodeMirror(mode) {
@@ -146,7 +150,7 @@ class EditorApp {
 
     if (mode === "custom") {
       // Use custom scroll parser mode with its autocomplete
-      this.codeMirrorInstance = new ParsersCodeMirrorMode(mode, () => this.parser, undefined, CodeMirror).register().fromTextAreaWithAutocomplete(textarea, {
+      this.codeMirrorInstance = new ParsersCodeMirrorMode(mode, () => this.sfEditor.getParsedProgramForCodeMirror(this.codeMirrorInstance.getValue()), CodeMirror).register().fromTextAreaWithAutocomplete(textarea, {
         lineWrapping: true,
         lineNumbers: this.showLineNumbers,
         mode
@@ -241,7 +245,7 @@ class EditorApp {
   }
 
   get bufferValue() {
-    return this.codeMirrorInstance.getValue().replace(/\r/g, "")
+    return this.codeMirrorInstance ? this.codeMirrorInstance.getValue().replace(/\r/g, "") : ""
   }
 
   get filePath() {
@@ -647,6 +651,7 @@ ctrl+n createFileCommand File
 ctrl+f findInFileCommand File
 command+p formatFileCommand File
 command+h showFileHistoryCommand File
+command+i inspectFileCommand File
 command+h showFileBlameCommand File
 command+b buildFolderAndRefreshCommand Folder
 command+shift+f searchFolderCommand Folder
@@ -904,6 +909,16 @@ nokey1 showWelcomeMessageCommand Help`
 
   async showFileHistoryCommand(event) {
     this.openIframeModal(`fileHistory.htm?folderName=${this.folderName}&filePath=${this.fileName}`, event)
+  }
+
+  async inspectFileCommand(event) {
+    let content = `container 600px
+
+<pre>${app.sfEditor.mainProgram.inspect().replace(/\n/g, "\n ")}</pre>
+`
+    const html = await this.sfEditor.scrollToHtml(content)
+    this.openModal(html, "inspect", event)
+    copy(app.sfEditor.mainProgram.inspect())
   }
 
   async showWelcomeMessageCommand(event) {
@@ -1456,7 +1471,8 @@ a ${this.authorDisplayName}
 }
 
 // Initialize the app when the DOM is fully loaded
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   window.app = new EditorApp()
+  await window.app.init()
   window.app.main()
 })
