@@ -515,7 +515,7 @@ If you'd like to create this folder, visit our main site to get started.
     }
 
     app.use((req, res, next) => {
-      const hostname = req.hostname?.toLowerCase()
+      let hostname = req.hostname?.toLowerCase()
 
       // If no hostname, continue to next middleware
       if (!hostname) return next()
@@ -524,6 +524,7 @@ If you'd like to create this folder, visit our main site to get started.
       if (isRootHost(req)) return next()
 
       // If the hostname requested isnt root host and doesn't exist in folderCache, return 400
+      hostname = hostname.replace(/\.localhost$/, "")
       if (!folderCache[hostname]) return this.sendFolderNotFound(res, hostname)
 
       // If domain exists, serve from its folder
@@ -2062,7 +2063,12 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
     const folderName = req.body?.folderName || req.query?.folderName || req.params?.folderName
     if (folderName && this.folderCache[folderName]) return folderName
 
-    if (req.hostname && this.folderCache[req.hostname]) return req.hostname
+    let hostname = req.hostname?.toLowerCase()
+    if (hostname) {
+      // Remove .localhost suffix if present
+      if (this.isLocalHost) hostname = hostname.replace(/\.localhost$/, "")
+      if (this.folderCache[hostname]) return hostname
+    }
 
     const folderPart = req.url.split("/")[1]
     if (folderPart && this.folderCache[folderPart]) return folderPart
