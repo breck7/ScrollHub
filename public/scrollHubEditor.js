@@ -187,6 +187,8 @@ class EditorApp {
     const currentCursor = this.codeMirrorInstance.getCursor()
     const currentScrollInfo = this.codeMirrorInstance.getScrollInfo()
 
+    this.codeMirrorInstance.setValue("\n" + currentContent)
+
     // Completely reinitialize CodeMirror with current mode
     this.initCodeMirror(this.mode)
 
@@ -353,6 +355,7 @@ class EditorApp {
       this.updateUIForBinaryFile(false)
       await this.refreshParserCommand()
       this.updateEditorMode(this.getEditorMode(fileName))
+      this.codeMirrorInstance.clearHistory()
     }
 
     this.setFileNameInUrl(fileName)
