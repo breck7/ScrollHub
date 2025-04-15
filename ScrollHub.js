@@ -1573,15 +1573,8 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
       // Check if certificate exists
       const certExists = await exists(certPath)
       if (!certExists) {
-        // Trigger new certificate creation
-        try {
-          await this.makeCert(folderName)
-          this.addStory(req, `renewed certificate for ${folderName} (no prior cert)`)
-          return res.send(`No existing certificate found. New certificate creation triggered for ${folderName}.`)
-        } catch (err) {
-          console.error(`Error creating new certificate for ${folderName}:`, err)
-          return res.status(500).send(`Failed to create new certificate: ${err.message}`)
-        }
+        this.makeCert(folderName)
+        return res.send(`No existing certificate found. New certificate creation triggered for ${folderName}.`)
       }
 
       // Read certificate
