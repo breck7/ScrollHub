@@ -336,13 +336,18 @@ class EditorApp {
     await this.updateFooterLinks()
   }
 
+  async refreshOpenFile() {
+    await this.openFile(this.fileName)
+  }
+
+  hideBinaryFiles = true
   async openFile(fileName) {
     const { folderName } = this
     this.fileName = fileName
     const filePath = `${folderName}/${fileName}`
 
     // Update UI state for binary files
-    if (this.isBinaryFile(fileName)) {
+    if (this.isBinaryFile(fileName) && this.hideBinaryFiles) {
       this.setFileContent("Binary file not shown.")
       this.codeMirrorInstance.setOption("readOnly", true)
       this.updateUIForBinaryFile(true)
@@ -669,6 +674,7 @@ nokey91 toggleLineNumbersCommand Editor
 ctrl+p refreshParserCommand Editor
 command+3 toggleMetricsCommand Editor
 ctrl+b clearBufferCommand Editor
+nokey122 toggleShowBinaryFilesCommand Editor
 command+shift+h showHiddenFilesCommand Files
 nokey9 changeFileSortCommand Files
 command+1 previousFileCommand Navigation
@@ -740,6 +746,11 @@ nokey1 showWelcomeMessageCommand Help`
     const newTheme = this.theme === "light" ? "dark" : "light"
     document.documentElement.setAttribute("data-theme", newTheme)
     localStorage.setItem("editorTheme", newTheme)
+  }
+
+  async toggleShowBinaryFilesCommand() {
+    this.hideBinaryFiles = !this.hideBinaryFiles
+    await this.refreshOpenFile()
   }
 
   showHiddenFilesCommand() {
