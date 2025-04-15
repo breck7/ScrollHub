@@ -1557,6 +1557,82 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
       await this.runCommand(req, res, "git blame " + fileName)
     })
 
+    app.get("/renew.htm", checkWritePermissions, async (req, res) => {
+      const folderName = this.getFolderName(req)
+      const { folderCache, rootFolder } = this
+
+      // Verify folder exists
+      if (!folderCache[folderName]) {
+        return res.status(404).send("Folder not found")
+      }
+
+      const certPath = this.makeCertPath(folderName)
+      const keyPath = certPath.replace(/\.crt$/, ".key")
+      const statsPath = this.getStatsPath(folderName)
+
+      // Check if certificate exists
+      const certExists = await exists(certPath)
+      if (!certExists) {
+        // Trigger new certificate creation
+        try {
+          await this.makeCert(folderName)
+          this.addStory(req, `renewed certificate for ${folderName} (no prior cert)`)
+          return res.send(`No existing certificate found. New certificate creation triggered for ${folderName}.`)
+        } catch (err) {
+          console.error(`Error creating new certificate for ${folderName}:`, err)
+          return res.status(500).send(`Failed to create new certificate: ${err.message}`)
+        }
+      }
+
+      try {
+        // Read certificate
+        const certContent = await fsp.readFile(certPath, "utf8")
+
+        // Parse certificate to check expiry
+        const certInfo = crypto.createPublicKey({ key: certContent, format: "pem" })
+        const cert = new crypto.X509Certificate(certContent)
+        const now = new Date()
+        const notAfter = new Date(cert.validTo)
+
+        if (now < notAfter) {
+          // Certificate is still valid
+          return res.send(`Certificate for ${folderName} is still valid until ${notAfter.toISOString()}.`)
+        }
+
+        // Certificate is expired, proceed with deletion
+        await Promise.all([
+          fsp.unlink(certPath).catch(err => {
+            if (err.code !== "ENOENT") throw err
+          }),
+          fsp.unlink(keyPath).catch(err => {
+            if (err.code !== "ENOENT") throw err
+          }),
+          fsp.unlink(statsPath).catch(err => {
+            if (err.code !== "ENOENT") throw err
+          })
+        ])
+
+        // Clear from cert cache
+        this.certCache.delete(folderName)
+        if (folderCache[folderName]) {
+          folderCache[folderName].loadedCert = null
+          folderCache[folderName].hasSslCert = false
+        }
+
+        // Trigger new certificate creation
+        await this.makeCert(folderName)
+
+        this.addStory(req, `renewed certificate for ${folderName}`)
+        res.send(`Certificate for ${folderName} was expired. Old files removed and new certificate creation triggered.`)
+
+        // Update folder cache
+        await this.updateFolderAndBuildList(folderName)
+      } catch (err) {
+        console.error(`Error renewing certificate for ${folderName}:`, err)
+        res.status(500).send(`Failed to renew certificate: ${err.message}`)
+      }
+    })
+
     app.get("/search.htm", async (req, res) => {
       const folderName = this.getFolderName(req)
       const { query } = req.query
