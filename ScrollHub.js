@@ -2336,7 +2336,7 @@ scrollVersionLink`
     const { app, hubFolder } = this
     const tls = require("tls")
     const { CertificateMaker } = require("./CertificateMaker.js")
-    const certMaker = new CertificateMaker(app).setupChallengeHandler()
+    const certMaker = new CertificateMaker(app, this).setupChallengeHandler()
 
     this.certCache = new Map()
     await this.loadWildCardCerts()

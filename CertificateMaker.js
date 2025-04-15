@@ -7,8 +7,9 @@ ACME.setLogger(message => {
 })
 
 class CertificateMaker {
-  constructor(app) {
+  constructor(app, logger) {
     this.app = app
+    this.logger = logger
     this.challengeTokens = {}
 
     // Set up the HTTP challenge handler
@@ -32,7 +33,7 @@ class CertificateMaker {
 
   async log(domain, message) {
     console.log(`Make cert for: ${domain}. ${message}`)
-    await this.app.folderLog(domain, message)
+    await this.logger.folderLog(domain, message)
   }
 
   async makeCertificate(domain, email, directory) {
