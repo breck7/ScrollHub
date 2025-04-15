@@ -1584,53 +1584,38 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
         }
       }
 
-      try {
-        // Read certificate
-        const certContent = await fsp.readFile(certPath, "utf8")
+      // Read certificate
+      const certContent = await fsp.readFile(certPath, "utf8")
 
-        // Parse certificate to check expiry
-        const certInfo = crypto.createPublicKey({ key: certContent, format: "pem" })
-        const cert = new crypto.X509Certificate(certContent)
-        const now = new Date()
-        const notAfter = new Date(cert.validTo)
+      // Parse certificate to check expiry
+      const certInfo = crypto.createPublicKey({ key: certContent, format: "pem" })
+      const cert = new crypto.X509Certificate(certContent)
+      const now = new Date()
+      const notAfter = new Date(cert.validTo)
 
-        if (now < notAfter) {
-          // Certificate is still valid
-          return res.send(`Certificate for ${folderName} is still valid until ${notAfter.toISOString()}.`)
-        }
-
-        // Certificate is expired, proceed with deletion
-        await Promise.all([
-          fsp.unlink(certPath).catch(err => {
-            if (err.code !== "ENOENT") throw err
-          }),
-          fsp.unlink(keyPath).catch(err => {
-            if (err.code !== "ENOENT") throw err
-          }),
-          fsp.unlink(statsPath).catch(err => {
-            if (err.code !== "ENOENT") throw err
-          })
-        ])
-
-        // Clear from cert cache
-        this.certCache.delete(folderName)
-        if (folderCache[folderName]) {
-          folderCache[folderName].loadedCert = null
-          folderCache[folderName].hasSslCert = false
-        }
-
-        // Trigger new certificate creation
-        await this.makeCert(folderName)
-
-        this.addStory(req, `renewed certificate for ${folderName}`)
-        res.send(`Certificate for ${folderName} was expired. Old files removed and new certificate creation triggered.`)
-
-        // Update folder cache
-        await this.updateFolderAndBuildList(folderName)
-      } catch (err) {
-        console.error(`Error renewing certificate for ${folderName}:`, err)
-        res.status(500).send(`Failed to renew certificate: ${err.message}`)
+      if (now < notAfter) {
+        // Certificate is still valid
+        return res.send(`Certificate for ${folderName} is still valid until ${notAfter.toISOString()}.`)
       }
+
+      // Certificate is expired, proceed with deletion
+      await Promise.all([
+        fsp.unlink(certPath).catch(err => {
+          if (err.code !== "ENOENT") throw err
+        }),
+        fsp.unlink(keyPath).catch(err => {
+          if (err.code !== "ENOENT") throw err
+        }),
+        fsp.unlink(statsPath).catch(err => {
+          if (err.code !== "ENOENT") throw err
+        })
+      ])
+
+      // Clear from cert cache
+      this.certCache.delete(folderName)
+      await this.updateFolderAndBuildList(folderName)
+      this.makeCert(folderName)
+      res.send(`Certificate for ${folderName} was expired. Old files removed and new certificate creation triggered.`)
     })
 
     app.get("/search.htm", async (req, res) => {
