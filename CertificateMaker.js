@@ -30,9 +30,9 @@ class CertificateMaker {
     return this
   }
 
-  log(domain, message) {
+  async log(domain, message) {
     console.log(`Make cert for: ${domain}. ${message}`)
-    this.app.folderLog(domain, message)
+    await this.app.folderLog(domain, message)
   }
 
   async makeCertificate(domain, email, directory) {
@@ -124,6 +124,7 @@ class CertificateMaker {
       this.log(domain, "wrote cert. SUCCESS!")
     } catch (error) {
       console.error(`An error occurred making cert for ${domain}`, error)
+      this.log(domain, `An error occurred making cert for ${domain}. Error: ${error}`)
     }
   }
 }
