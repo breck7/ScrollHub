@@ -638,13 +638,15 @@ If you'd like to create this folder, visit our main site to get started.
 
     this.broadCastMessage(folderName, logEntry, ip)
 
-    if (folderName && folderCache[folderName]) {
-      const folderLogFile = this.getFolderLogFile(folderName)
-      try {
-        await fsp.appendFile(folderLogFile, logEntry)
-      } catch (err) {
-        console.error(`Failed to log request to folder log (${folderLogFile}):`, err)
-      }
+    if (folderName && folderCache[folderName]) await this.folderLog(folderName, logEntry)
+  }
+
+  async folderLog(folderName, logEntry) {
+    const folderLogFile = this.getFolderLogFile(folderName)
+    try {
+      await fsp.appendFile(folderLogFile, logEntry)
+    } catch (err) {
+      console.error(`Failed to log request to folder log (${folderLogFile}):`, err)
     }
   }
 

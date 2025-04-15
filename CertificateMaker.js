@@ -32,6 +32,7 @@ class CertificateMaker {
 
   log(domain, message) {
     console.log(`Make cert for: ${domain}. ${message}`)
+    this.app.folderLog(domain, message)
   }
 
   async makeCertificate(domain, email, directory) {
