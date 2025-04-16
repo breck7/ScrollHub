@@ -18,6 +18,10 @@ node_modules/scroll-cli/microlangs/changes.parsers
 
 thinColumns 1
 
+📦 0.90.0 4/16/2025
+🎉 updated Scroll
+🏥 fix flickers on load
+
 📦 0.89.0 4/10/2025
 🎉 add support for .localhost serving
  // Thanks to jFriedensreich for the tip!

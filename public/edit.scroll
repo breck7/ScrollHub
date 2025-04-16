@@ -3,6 +3,11 @@ buildHtml
 
 settings.scroll
 metaTags
+
+script
+ // Set theme now to avoid flicker
+ document.documentElement.setAttribute("data-theme", localStorage.getItem("editorTheme") || "light")
+
 inlineCss .gazette.css .scroll.css scrollHubStyle.css ./ide/codeMirror.css
 homeButton
 

@@ -396,3 +396,9 @@ textarea {
 .binary-file .CodeMirror-cursor {
   display: none !important;
 }
+
+#fileEditor {
+  /* Make it smaller and w/o border to avoid flicker */
+  width: 70ch;
+  border: 0;
+}

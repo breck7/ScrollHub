@@ -255,7 +255,6 @@ class EditorApp {
   }
 
   async main() {
-    this.initTheme()
     this.bindFileListListeners()
     this.bindFileDrop()
     this.bindKeyboardShortcuts()
@@ -684,10 +683,6 @@ command+/ toggleHelpCommand Hidden
 nokey1 showWelcomeMessageCommand Help`
     ).toObject()
   )
-
-  initTheme() {
-    document.documentElement.setAttribute("data-theme", this.theme)
-  }
 
   get theme() {
     return localStorage.getItem("editorTheme") || "light"
