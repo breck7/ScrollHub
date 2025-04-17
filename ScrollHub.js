@@ -839,8 +839,10 @@ If you'd like to create this folder, visit our main site to get started.
 
         // Generate website content from prompt
         const response = await agents.createFolderNameAndFilesFromPrompt(prompt, this.folderCache, agent, template, domainSuffix)
-        const { folderName, files } = response.parsedResponse
+        let { folderName, files } = response.parsedResponse
         files["prompt.json"] = JSON.stringify(response.completion, null, 2)
+
+        folderName = sanitizeFolderName(folderName)
 
         // Create the folder with generated files
         await this.createFolderFromFiles(folderName, files)
@@ -2235,6 +2237,7 @@ scrollVersionLink`
   }
 
   async createFolderFromFiles(folderName, files) {
+    folderName = sanitizeFolderName(folderName)
     const folderPath = path.join(this.rootFolder, folderName)
     await fsp.mkdir(folderPath, { recursive: true })
     for (const [filename, content] of Object.entries(files)) {

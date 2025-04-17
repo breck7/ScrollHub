@@ -59,6 +59,9 @@ ${domainExpression}`
       }
     }
 
+    // sometimes LLMs are returning junk with spaces and newlines etc
+    suggestedDomain = suggestedDomain.split(" ")[0].split("\n")[0]
+
     if (!suggestedDomain) suggestedDomain = "error"
 
     const { domainSuffix } = this
