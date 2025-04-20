@@ -672,7 +672,7 @@ If you'd like to create this folder, visit our main site to get started.
       req.pipe(handlers).pipe(res)
     })
 
-    app.post("/:repo.git/*", checkWritePermissions, async (req, res) => {
+    const handleGitPosts = async (req, res) => {
       const repo = req.params.repo
       const repoPath = path.join(rootFolder, repo)
       req.url = "/" + req.url.split("/").slice(2).join("/")
@@ -692,7 +692,11 @@ If you'd like to create this folder, visit our main site to get started.
         })
       })
       req.pipe(handlers).pipe(res)
-    })
+    }
+
+    // git clones may use post, even though they are read only.
+    app.post("/:repo.git/git-upload-pack", handleGitPosts)
+    app.post("/:repo.git/*", checkWritePermissions, handleGitPosts)
   }
 
   initHistoryRoutes() {
