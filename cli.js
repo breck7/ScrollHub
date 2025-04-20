@@ -5,6 +5,7 @@ const parseArgs = require("minimist")
 const path = require("path")
 const fs = require("fs")
 const child_process = require("child_process")
+const { spawn } = require("child_process")
 
 // Particles Includes
 const { Disk } = require("scrollsdk/products/Disk.node.js")
@@ -89,6 +90,51 @@ class ScrollHubCLI extends SimpleCLI {
       } catch (error) {
         console.error(`Error killing process ${proc.pid}:`, error.message)
       }
+    })
+  }
+
+  logCommand(cwd, args) {
+    const hubFolder = path.join(cwd, ".hub")
+    const logFile = args.file || ".global.log.txt"
+    const validLogFiles = [".global.log.txt", ".slow.txt", ".writes.txt"]
+
+    if (!validLogFiles.includes(logFile)) {
+      console.error(`Invalid log file. Must be one of: ${validLogFiles.join(", ")}`)
+      process.exit(1)
+    }
+
+    const logPath = path.join(hubFolder, logFile)
+
+    // Check if log file exists
+    if (!fs.existsSync(logPath)) {
+      console.error(`Log file ${logPath} does not exist`)
+      process.exit(1)
+    }
+
+    console.log(`Streaming logs from ${logPath} (Ctrl+C to stop)`)
+
+    // Spawn tail -f to stream the log file
+    const tail = spawn("tail", ["-f", logPath])
+
+    // Pipe stdout to console
+    tail.stdout.on("data", data => {
+      process.stdout.write(data)
+    })
+
+    // Handle errors
+    tail.stderr.on("data", data => {
+      console.error(`Error: ${data}`)
+    })
+
+    // Handle process exit
+    tail.on("close", code => {
+      console.log(`Log streaming stopped (exit code: ${code})`)
+    })
+
+    // Handle Ctrl+C gracefully
+    process.on("SIGINT", () => {
+      tail.kill()
+      process.exit(0)
     })
   }
 }
