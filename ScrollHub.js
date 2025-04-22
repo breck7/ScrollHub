@@ -1195,13 +1195,10 @@ If you'd like to create this folder, visit our main site to get started.
         const tempZipPath = path.join(tempPath, "upload.zip")
         await zipFile.mv(tempZipPath)
 
-        // Create the target folder
-        await fsp.mkdir(folderPath, { recursive: true })
-
         // Unzip the file
-        await execAsync(`unzip "${tempZipPath}"`, { cwd: folderPath })
+        await execAsync(`unzip "${tempZipPath}"`, { cwd: this.rootFolder })
 
-        // Initialize git repository
+        // Initialize git repository if it does not exist
         if (!fs.existsSync(path.join(folderPath, ".git"))) await execAsync(`git init; git add .; git commit -m "Initial import from zip file"`, { cwd: folderPath })
 
         // Add to story and update caches
