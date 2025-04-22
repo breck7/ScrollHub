@@ -1049,21 +1049,24 @@ I'd love to hear your requests and feedback! Find me on Warpcast.
     }
   }
 
-  // New method to handle multiple file uploads
   async uploadFiles(files) {
-    const uploadPromises = Array.from(files).map(file => this.uploadFile(file))
+    const succeeded = []
+    const failed = []
+    for (let file of files) {
+      let filename = file.name
+      try {
+        await this.uploadFile(file)
+        succeeded.push(filename)
+      } catch (err) {
+        console.error(err)
+        failed.push(filename)
+      }
+    }
 
-    Promise.all(uploadPromises)
-      .then(() => {
-        console.log("All files uploaded successfully")
-        this.refreshFileListCommand()
-        this.buildFolderCommand()
-      })
-      .catch(error => {
-        console.error("Error uploading files:", error)
-        // todo: show error to user
-        alert("Error uploading files:" + error)
-      })
+    await this.refreshFileListCommand()
+    await this.buildFolderCommand()
+
+    if (failed.length) alert(`Uploaded ${succeeded.length} files successfully. Error uploading files: ${failed.join(", ")}`)
   }
 
   // Modified uploadFile method to return a Promise
