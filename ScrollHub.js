@@ -1018,7 +1018,7 @@ If you'd like to create this folder, visit our main site to get started.
         res.send(content)
       } catch (error) {
         console.error(error)
-        res.status(500).send(`An error occurred while reading '${filepath}'.`)
+        res.status(500).send(`An error occurred while reading '${filePath}'.`)
       }
     })
 
