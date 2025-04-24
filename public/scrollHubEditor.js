@@ -1,10 +1,15 @@
 const getBaseUrlForFolder = (folderName, hostname, protocol, usesCustomDomain) => {
+  // If requesting from root scrollhub running on localhost
   if (hostname === "localhost" || hostname.startsWith("localhost:")) return `http://${hostname}/${folderName}`
 
+  // If using localhost but using custom domains such as pldb.io.localhost
+  if (hostname.endsWith(".localhost")) return protocol + "//" + hostname
+
+  // If serving from a web server not from a custom domain
   if (!folderName.includes(".") || !usesCustomDomain) return protocol + "//" + hostname + "/" + folderName
 
   // now it might be a custom domain, serve it as if it is
-  // of course, sometimes it would not be
+  // of course, sometimes it would not be... todo? huh? what does that mean?
   return protocol + "//" + folderName
 }
 
