@@ -439,7 +439,7 @@ class EditorApp {
   }
 
   showSpinner(message, style) {
-    document.querySelector("#spinner").innerHTML = `<span${style}>${message}</span>`
+    document.querySelector("#spinner").innerHTML = `<div${style}>${message}</div>`
     document.querySelector("#spinner").style.display = "block"
   }
 
@@ -673,6 +673,7 @@ ctrl+f findInFileCommand File
 command+p formatFileCommand File
 command+h showFileHistoryCommand File
 command+i inspectFileCommand File
+ctrl+t testFileCommand File
 command+h showFileBlameCommand File
 command+b buildFolderAndRefreshCommand Folder
 command+shift+f searchFolderCommand Folder
@@ -1466,6 +1467,18 @@ a ${this.authorDisplayName}
 
     // Return true if user confirms overwrite, false if they cancel
     return !confirmation
+  }
+
+  async testFileCommand(event) {
+    await this.sfEditor.buildMainProgram()
+    const errors = this.sfEditor.mainProgram.getAllErrors()
+    if (!errors.length) {
+      this.showSpinner("No errors")
+      setTimeout(() => this.hideSpinner(), 2000)
+      return
+    }
+    const html = "<pre>" + new Particle(errors.map(err => err.toObject())).toFormattedTable(100).replace(/\n/g, "<br>") + "</pre>"
+    this.showError(html)
   }
 
   async formatFileCommand() {

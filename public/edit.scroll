@@ -14,7 +14,7 @@ homeButton
 libs.js
 
 # <a id="folderNameLink" target="visit">New file</a>
-<div id="spinner"></div>
+<div id="spinner" onclick="app.hideSpinner()"></div>
 <form id="editForm">
 <div>
  <div class="iframeHolder"><iframe class="previewIFrame" allow="" sandbox="allow-scripts"></iframe></div>
@@ -25,12 +25,13 @@ libs.js
  <textarea name="content" id="fileEditor" rows="30"></textarea>
  <div class="buttonRow">
  <button onclick="app.saveAndPublishCommand(); return false;" class="scrollButton publishButton">Publish</button>
- <a class="renameFileLink" onclick="app.renameFileCommand()">Rename File</a>
- <a class="duplicateFileLink" onclick="app.duplicateFileCommand()">Duplicate File</a>
- <a class="formatFileLink" onclick="app.formatFileCommand()">Format File</a>
- <a class="deleteFileLink" onclick="app.deleteFileCommand()">Delete File</a>
- <a class="focusLink" onclick="app.enterFocusModeCommand()">Focus</a>
- <a class="focusLink" onclick="app.findInFileCommand()">Find</a>
+ <a class="fileCommandLink" onclick="app.renameFileCommand()">Rename File</a>
+ <a class="fileCommandLink" onclick="app.duplicateFileCommand()">Duplicate File</a>
+ <a class="fileCommandLink" onclick="app.deleteFileCommand()">Delete File</a>
+ <a class="fileCommandLink" onclick="app.formatFileCommand()">Format</a>
+ <a class="fileCommandLink" onclick="app.testFileCommand()">Test</a>
+ <a class="fileCommandLink" onclick="app.enterFocusModeCommand()">Focus</a>
+ <a class="fileCommandLink" onclick="app.findInFileCommand()">Find</a>
  </div>
 </div>
 </form>
