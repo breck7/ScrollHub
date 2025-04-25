@@ -189,19 +189,25 @@ class EditorApp {
 
     // Store current state
     const currentContent = this.codeMirrorInstance.getValue()
-    const currentCursor = this.codeMirrorInstance.getCursor()
-    const currentScrollInfo = this.codeMirrorInstance.getScrollInfo()
+    this._saveCursorState()
 
     this.codeMirrorInstance.setValue("\n" + currentContent)
 
     // Completely reinitialize CodeMirror with current mode
     this.initCodeMirror(this.mode)
 
-    // Restore content and cursor position
     this.codeMirrorInstance.setValue(currentContent)
-    this.codeMirrorInstance.setCursor(currentCursor)
+    this._restoreCursorState()
+  }
 
-    // Restore scroll position
+  _saveCursorState() {
+    this._currentCursor = this.codeMirrorInstance.getCursor()
+    this._currentScrollInfo = this.codeMirrorInstance.getScrollInfo()
+  }
+
+  _restoreCursorState() {
+    this.codeMirrorInstance.setCursor(this._currentCursor)
+    const currentScrollInfo = this._currentScrollInfo
     this.codeMirrorInstance.scrollTo(currentScrollInfo.left, currentScrollInfo.top)
   }
 
@@ -513,7 +519,10 @@ class EditorApp {
     this.hideSpinner()
   }
 
+  formatOnSave = true
+
   async saveAndPublishCommand() {
+    if (this.formatOnSave) await this.formatFileCommand()
     await this.saveFile()
     await this.refreshFileListCommand()
     await this.buildFolderCommand()
@@ -1460,8 +1469,10 @@ a ${this.authorDisplayName}
   }
 
   async formatFileCommand() {
+    this._saveCursorState()
     const bufferValue = await this.sfEditor.getFormatted()
     this.setFileContent(bufferValue)
+    this._restoreCursorState()
   }
 
   async renameFileCommand() {
