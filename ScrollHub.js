@@ -1513,6 +1513,7 @@ A Record IPS for *${domain}*: ${aRecordIps.join(" ")}`)
           }
         },
         activity: {
+          wildCardCerts: this.wildCardCerts.map(cert => ({ pattern: cert.pattern })),
           requestsServed: this.requestsServed,
           requestsPerSecond: (this.requestsServed / uptime).toFixed(2),
           activeFolders: Object.keys(this.folderCache).length,
