@@ -215,7 +215,6 @@ const sanitizeFileName = name => {
 }
 
 const sampleConfig = `// Sample config options below. Uncomment and fill out to use.
-// wildcard *.example.com /etc/letsencrypt/live/example.com/fullchain.pem /etc/letsencrypt/live/example.com/privkey.pem
 // claude [anthropic api key]
 // deepseek [deepseek api key]`
 
@@ -2317,23 +2316,65 @@ scrollVersionLink`
   }
 
   async loadWildCardCerts() {
-    const wildcards = this.config.getParticles("wildcard")
-    if (!wildcards.length) return
-    wildcards.forEach(wildcardConfig => {
-      const [_, pattern, certFile, keyFile] = wildcardConfig.atoms
-      const sslOptions = {
-        cert: fs.readFileSync(certFile, "utf8"),
-        key: fs.readFileSync(keyFile, "utf8")
+    const letsEncryptPath = "/etc/letsencrypt/live/"
+    try {
+      // Check if the directory exists
+      if (!(await exists(letsEncryptPath))) {
+        console.warn(`Directory ${letsEncryptPath} does not exist. No wildcard certificates loaded.`)
+        return
       }
-      // Convert wildcard pattern to regex
-      // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
-      const regexPattern = pattern
-        .replace(/\./g, "\\.") // Escape dots
-        .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
-      const regex = new RegExp(`^${regexPattern}$`)
 
-      this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
-    })
+      // Read all subdirectories in /etc/letsencrypt/live/
+      const domains = await fsp.readdir(letsEncryptPath, { withFileTypes: true })
+
+      for (const dirent of domains) {
+        if (!dirent.isDirectory()) continue
+
+        const domain = dirent.name
+        const certPath = path.join(letsEncryptPath, domain, "fullchain.pem")
+        const keyPath = path.join(letsEncryptPath, domain, "privkey.pem")
+
+        // Check if both cert and key files exist
+        if (!(await exists(certPath)) || !(await exists(keyPath))) {
+          continue
+        }
+
+        try {
+          // Read certificate to check if it's a wildcard
+          const certContent = await fsp.readFile(certPath, "utf8")
+          const cert = new crypto.X509Certificate(certContent)
+          const subject = cert.subject
+          const cnMatch = subject.match(/CN=([^\n]+)/)
+          if (!cnMatch) continue
+
+          let pattern = cnMatch[1]
+          // Only process wildcard certificates (e.g., *.example.com)
+          if (!pattern.startsWith("*.")) continue
+
+          // Load cert and key
+          const sslOptions = {
+            cert: certContent,
+            key: await fsp.readFile(keyPath, "utf8")
+          }
+
+          // Convert wildcard pattern to regex
+          // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
+          const regexPattern = pattern
+            .replace(/\./g, "\\.") // Escape dots
+            .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
+          const regex = new RegExp(`^${regexPattern}$`)
+
+          this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
+          console.log(`Loaded wildcard certificate for ${pattern}`)
+        } catch (err) {
+          console.error(`Error processing certificate for ${domain}:`, err)
+        }
+      }
+
+      console.log(`Loaded ${this.wildCardCerts.length} wildcard certificates from ${letsEncryptPath}`)
+    } catch (err) {
+      console.error(`Error reading ${letsEncryptPath}:`, err)
+    }
   }
 
   async startHttpsServer() {
