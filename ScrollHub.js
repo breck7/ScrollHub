@@ -2341,31 +2341,16 @@ scrollVersionLink`
         }
 
         try {
-          // Read certificate to check if it's a wildcard
           const certContent = await fsp.readFile(certPath, "utf8")
-          const cert = new crypto.X509Certificate(certContent)
-          const subject = cert.subject
-          const cnMatch = subject.match(/CN=([^\n]+)/)
-          if (!cnMatch) continue
-
-          let pattern = cnMatch[1]
-          // Only process wildcard certificates (e.g., *.example.com)
-          if (!pattern.startsWith("*.")) continue
 
           // Load cert and key
           const sslOptions = {
             cert: certContent,
             key: await fsp.readFile(keyPath, "utf8")
           }
+          const regex = new RegExp(`^*.${domain}$`)
 
-          // Convert wildcard pattern to regex
-          // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
-          const regexPattern = pattern
-            .replace(/\./g, "\\.") // Escape dots
-            .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
-          const regex = new RegExp(`^${regexPattern}$`)
-
-          this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
+          this.wildCardCerts.push({ regex, pattern: domain, cert: sslOptions })
           console.log(`Loaded wildcard certificate for ${pattern}`)
         } catch (err) {
           console.error(`Error processing certificate for ${domain}:`, err)
