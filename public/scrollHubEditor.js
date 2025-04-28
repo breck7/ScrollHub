@@ -66,11 +66,10 @@ class EditorApp {
 
   updateEditorDimensions() {
     const { editorHeight, isMobile } = this
-    const fileListHeight = isMobile ? "auto" : `${editorHeight - 138}px`
-    const fileListWidth = isMobile ? document.body.clientWidth - 40 + "px" : "200px"
     const fileList = document.getElementById("fileList")
-    fileList.style.height = fileListHeight
-    fileList.style.width = fileListWidth
+    fileList.style.maxHeight = isMobile ? "352px" : `100vh`
+    fileList.style.height = isMobile ? "auto" : `${editorHeight - 138}px`
+    fileList.style.width = isMobile ? document.body.clientWidth - 40 + "px" : "200px"
     this.codeMirrorInstance.setSize(this.width, editorHeight)
     if (this.isFocusMode) {
       console.log("Entering focus mode")
