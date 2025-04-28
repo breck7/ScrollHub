@@ -2332,6 +2332,7 @@ scrollVersionLink`
         if (!dirent.isDirectory()) continue
 
         const domain = dirent.name
+        const pattern = "*." + domain
         const certPath = path.join(letsEncryptPath, domain, "fullchain.pem")
         const keyPath = path.join(letsEncryptPath, domain, "privkey.pem")
 
@@ -2348,9 +2349,15 @@ scrollVersionLink`
             cert: certContent,
             key: await fsp.readFile(keyPath, "utf8")
           }
-          const regex = new RegExp(`^*.${domain}$`)
 
-          this.wildCardCerts.push({ regex, pattern: domain, cert: sslOptions })
+          // Convert wildcard pattern to regex
+          // e.g., "*.example.com" becomes "^[^.]+\.example\.com$"
+          const regexPattern = pattern
+            .replace(/\./g, "\\.") // Escape dots
+            .replace(/\*/g, "[^.]+") // Replace * with regex for non-dot chars
+          const regex = new RegExp(`^${regexPattern}$`)
+
+          this.wildCardCerts.push({ regex, pattern, cert: sslOptions })
           console.log(`Loaded wildcard certificate for ${pattern}`)
         } catch (err) {
           console.error(`Error processing certificate for ${domain}:`, err)
