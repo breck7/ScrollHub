@@ -22015,7 +22015,7 @@ class ScrollFileSystem {
   // todo: this is weird. i know we evolved our way here but we should step back and clean this up.
   async getFusedFilesInFolder(folderPath, extension) {
     folderPath = Utils.ensureFolderEndsInSlash(folderPath)
-    if (this._folderCache[folderPath]) return this._folderCache[folderPath]
+    if (this._folderCache[folderPath]) return await this._folderCache[folderPath]
     const allFiles = (await this.list(folderPath)).filter(file => file.endsWith(extension))
     const loadedFiles = []
     for (let filePath of allFiles) {
