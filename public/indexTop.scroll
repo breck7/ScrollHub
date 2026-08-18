@@ -1,7 +1,7 @@
 importOnly
 title ScrollHub: publish faster
 
-baseUrl http://hub.scroll.pub/
+baseUrl http://hub.scroll.surf/
 openGraphImage screenshot.png
 homeButton
 editBaseUrl https://github.com/breck7/ScrollHub/blob/main

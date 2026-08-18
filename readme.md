@@ -2,11 +2,11 @@
 
 ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more. It provides a fast, efficient way to manage and serve content with built-in version control and real-time editing capabilities.
 
-[![Version](https://img.shields.io/badge/version-0.60.0-blue.svg)](https://hub.scroll.pub)
+[![Version](https://img.shields.io/badge/version-0.60.0-blue.svg)](https://hub.scroll.surf)
 
 ## Features
 
-- 🚀 **Instant Publishing**: The fastest way to publish content online
+- 🚀 **Instant Publishing**: The fastest way to publish online
 - 📝 **Universal Content Support**: Publish websites, scientific articles, blog posts, books, and more
 - 🔄 **Built-in Version Control**: Integrated Git support for versioning and collaboration
 - 🎨 **Live Preview**: Real-time editing with instant preview
@@ -19,21 +19,15 @@ ScrollHub is a super server for publishing websites, scientific articles, blog p
 Get your own ScrollHub server up and running in 60 seconds:
 
 ```bash
-apt install -y make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.pub" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && npm install -g . && git config --global receive.denyCurrentBranch updateInstead && cd && pm2 start ~/ScrollHub/server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
+apt install -y make zip && git clone https://github.com/tj/n && cd n && make install && n latest && cd && git config --global user.name "ScrollHub" && git config --global user.email "scrollhub@scroll.surf" && git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && npm install scroll-cli pm2 prettier -g && npm install -g . && git config --global receive.denyCurrentBranch updateInstead && cd && pm2 start ~/ScrollHub/server.js --node-args="--max-old-space-size=4096" --log ~/ScrollHub/pm2.log && pm2 startup && pm2 save
 ```
 
 Optional: Create a DNS A Record pointing from your domain or subdomain to your new server.
 
 ## Development Environment
 
-**gitinit** in a new folder when working from the CLI
-
-**gitup** to update remote in one command
-
-To streamline your workflow, you can set up the following aliases to your `.bashrc` file using the following command:
-
 ```bash
-echo 'alias gitup="git add . && git commit -m \"update\" && git push"' >> ~/.bashrc && echo 'alias gitinit="git init && git add . && git commit -m \"init\""' >> ~/.bashrc
+git clone https://github.com/breck7/ScrollHub && cd ScrollHub && npm install . && sudo npm install -g .
 ```
 
 ## Features in Detail
@@ -96,7 +90,7 @@ ScrollHub provides several API endpoints for managing content:
 - Each process independently serves its own root folder
 - Custom port support
 
-See [Release Notes](https://hub.scroll.pub/releaseNotes.html) for full changelog.
+See [Release Notes](https://hub.scroll.surf/releaseNotes.html) for full changelog.
 
 ## Public Domain
 
@@ -104,8 +98,8 @@ ScrollHub is public domain.
 
 ## Try It Online
 
-Visit [https://hub.scroll.pub](https://hub.scroll.pub) to try ScrollHub without installation.
+Visit [https://hub.scroll.surf](https://hub.scroll.surf) to try ScrollHub without installation.
 
 ---
 
-For more information, visit the [ScrollHub Documentation](https://hub.scroll.pub).
+For more information, visit the [ScrollHub Documentation](https://hub.scroll.surf).

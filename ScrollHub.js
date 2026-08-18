@@ -231,8 +231,8 @@ const sampleCreate = `div
    value claude
  select
   id tldSelect
-  option Scroll.pub
-   value scroll.pub
+  option scroll.surf
+   value scroll.surf
   option Powerhouse.wiki
    value powerhouse.wiki
   option FrameHub.pro
@@ -837,7 +837,7 @@ If you'd like to create this folder, visit our main site to get started.
         const agent = (req.body.agent || "deepseek").toLowerCase()
         const template = req.body.template
         const welcomeMessage = req.body.welcomeMessage || "scrollhub"
-        const domainSuffix = req.body.tld || "scroll.pub"
+        const domainSuffix = req.body.tld || "scroll.surf"
         if (!prompt) return res.status(400).send("Prompt is required")
 
         // Generate website content from prompt
@@ -2390,7 +2390,7 @@ scrollVersionLink`
     this.pendingCerts = pendingCerts
     this.makeCert = async domain => {
       pendingCerts[domain] = true
-      const email = domain + "@hub.scroll.pub"
+      const email = domain + "@hub.scroll.surf"
       await certMaker.makeCertificate(domain, email, path.join(this.rootFolder, domain))
       await this.updateFolderAndBuildList(domain)
     }

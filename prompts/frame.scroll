@@ -40,7 +40,7 @@ header
   p The extendible markup language that makes source beautiful and compiles to anything
   a Get Started
    class primary-button
-   href https://hub.scroll.pub/
+   href https://hub.scroll.surf/
 main
  section
   id features
@@ -88,11 +88,11 @@ footer
   div
    class footer-links
    a Documentation
-    href https://scroll.pub/tutorial.html
+    href https://scroll.surf/tutorial.html
    a Community
     href https://www.reddit.com/r/WorldWideScroll/
    a Blog
-    href https://scroll.pub/blog
+    href https://scroll.surf/blog
   p Started by Breck Yunits. Evolved by a community.
    https://twitter.com/breckyunits Breck Yunits
    https://github.com/breck7/scroll/graphs/contributors community

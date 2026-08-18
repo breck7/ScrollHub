@@ -7,9 +7,9 @@
 	"frame": {
 		"version": "0.0.0",
 		"name": "FrameHub",
-		"iconUrl": "https://hub.scroll.pub/templates/frame_template/splash.png",
-		"splashImageUrl": "https://hub.scroll.pub/templates/frame_template/splash.png",
+		"iconUrl": "https://hub.scroll.surf/templates/frame_template/splash.png",
+		"splashImageUrl": "https://hub.scroll.surf/templates/frame_template/splash.png",
 		"splashBackgroundColor": "purple",
-		"homeUrl": "https://hub.scroll.pub/framehub.html"
+		"homeUrl": "https://hub.scroll.surf/framehub.html"
 	}
 }

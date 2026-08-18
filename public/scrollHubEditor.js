@@ -964,7 +964,7 @@ We make Scroll and ScrollHub to help you refine and publish your best ideas.
 I'd love to hear your requests and feedback! Contact me on X, GitHub, or email.
  https://x.com/breckyunits X
   target _blank
- email breck@scroll.pub email
+ email breck@scroll.surf email
   target _blank
  https://github.com/breck7 GitHub
   target _blank
@@ -1236,7 +1236,7 @@ a ${this.authorDisplayName}
 
   async loginCommand() {
     const { author } = this
-    const defaultAuthor = "Anon <anon@scroll.pub>"
+    const defaultAuthor = "Anon <anon@scroll.surf>"
     const newAuthorName = prompt(`Your name and email:`, author || defaultAuthor)
     if (newAuthorName === "" || newAuthorName === defaultAuthor) {
       localStorage.removeItem("author", undefined)

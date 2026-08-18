@@ -7,7 +7,7 @@ container 560px
 
 ScrollHub is a super server for publishing websites, scientific articles, blog posts, books, and more.
 
-It is the fastest way to publish. Don't take my word for it, try for yourself here: https://hub.scroll.pub
+It is the fastest way to publish. Don't take my word for it, try for yourself here: https://hub.scroll.surf
 
 # Run your own ScrollHub in 60 seconds
 Follow the steps below to run your own ScrollHub server in 60 seconds!
@@ -36,7 +36,7 @@ ScrollHub uses git for versioning files.
 
 If developing locally, occasionally you may run into merge conflicts.
 
-To see the "git status" for a folder visit: https://hub.scroll.pub/status/[folderName]
+To see the "git status" for a folder visit: https://hub.scroll.surf/status/[folderName]
 
 It is recommended to prevent force pushes on your server with `git config --system receive.denyNonFastForwards true`.
 

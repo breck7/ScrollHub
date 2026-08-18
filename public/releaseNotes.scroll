@@ -97,7 +97,7 @@ codeWithHeader migrateCerts.sh
  for cert in *.crt; do
      # Skip if no matches found
      [[ -f "$cert" ]] || continue
-     # Get the base name without extension (e.g., xiuzhen1.scroll.pub)
+     # Get the base name without extension (e.g., xiuzhen1.scroll.surf)
      base="${cert%.crt}"
      # Copy both cert and key with leading dot
      cp "$cert" "/root/$base/.$cert"
@@ -271,7 +271,7 @@ codeWithHeader migrateCerts.sh
 📦 0.32.0 11/11/2024
 🎉 updated to Scroll 148
 ⚠️ BREAKING: see Scroll release notes for breaks in 148
- https://scroll.pub/releaseNotes.html Scroll release notes
+ https://scroll.surf/releaseNotes.html Scroll release notes
 
 📦 0.31.0 11/11/2024
 🏥 more open cors

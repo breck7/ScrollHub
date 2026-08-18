@@ -43,7 +43,7 @@ class NodesAnimation {
     /* Example entry of folders.json:
   [{
     "folder": "22",
-    "folderLink": "https://hub.scroll.pub/22",
+    "folderLink": "https://hub.scroll.surf/22",
     "created": "2024-12-20T16:01:16.000Z",
     "revised": "2024-12-20T16:01:16.000Z",
     "files": 1,
